@@ -19,6 +19,18 @@ Independent research and engineering repository for a reusable, multi-tenant AI 
 - Write decisions, limitations, and results to GitHub; local-only files, unpushed branches and chat summaries do **not** count as delivered work.
 - Start with the [project kickoff issue](https://github.com/kha997/ai-chatbot/issues) and progress through the research gates without technical-choice escalations to the Owner.
 
+## Gate 0–1 research package
+
+- [Owner brief (Vietnamese)](docs/OWNER_BRIEF.md)
+- [OSS evidence and licenses](docs/OSS_DUE_DILIGENCE.md)
+- [Recommended architecture and A/B alternative](docs/ARCHITECTURE.md)
+- [Tenant threat model and learning governance](docs/SECURITY_AND_MEMORY.md)
+- [Synthetic evaluation and scoring specification](docs/EVALUATION_SPEC.md)
+- [Widget, mock handoff and cost/operations protocol](docs/INTEGRATION_AND_OPERATIONS.md)
+- [Observed CLI capabilities and dispatcher design](docs/AGENT_DISPATCHER_DESIGN.md)
+
+All runtime results remain NOT_RUN. Read [status](docs/STATUS.md) for reviewed commits and the current gate decision.
+
 ## Product principles
 
 One reusable core, multiple strictly isolated tenants. Retrieval grounded in approved evidence. Memory and learning only through governed promotion. Human takeover when needed. Provider portability, observability, reversible changes and safe defaults.

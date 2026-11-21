@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0-example",
+  "synthetic": true,
+  "purpose": "Contract examples only; not the full benchmark or runtime results",
+  "clock": "2030-01-15T00:00:00Z",
+  "documents": [
+    {"id": "NHD-pricing-v1", "tenant": "NHD", "authority": "approved", "version": 1, "paragraph": "p1", "synthetic": true, "text": "SYNTHETIC—NOT BUSINESS POLICY. SYN-TILE-A costs 200000 VND per box; delivery excluded. No tax calculation in this fixture.", "unit_price": "200000", "unit": "box", "currency": "VND"},
+    {"id": "HANU-pricing-v1", "tenant": "HANU", "authority": "approved", "version": 1, "paragraph": "p1", "synthetic": true, "text": "SYNTHETIC—NOT BUSINESS POLICY. SYN-TRANS-A costs 1000 VND per word with minimum 50000 VND. Certification is excluded. No tax calculation in this fixture.", "unit_price": "1000", "minimum": "50000", "unit": "word", "currency": "VND"},
+    {"id": "ZENA-pricing-v1", "tenant": "ZENA", "authority": "approved", "version": 1, "paragraph": "p1", "synthetic": true, "text": "SYNTHETIC—NOT BUSINESS POLICY. SYN-CONSULT-A costs 300000 VND per session. No construction permit or professional sign-off is included. No tax calculation in this fixture.", "unit_price": "300000", "unit": "session", "currency": "VND"}
+  ],
+  "cases": [
+    {"id": "qa-NHD-price-01", "tenant": "NHD", "synthetic": true, "locale": "vi-VN", "question": "Theo bảng giá thử nghiệm, ba hộp SYN-TILE-A bao nhiêu tiền, chưa gồm giao hàng?", "quantity": "3", "oracle": {"behavior": "answer", "total": "600000", "currency": "VND", "citation": "NHD-pricing-v1#p1", "required_claims": ["delivery_excluded"], "forbidden_claims": ["confirmed_order", "delivery_included"], "allowed_side_effects": []}},
+    {"id": "qa-HANU-price-01", "tenant": "HANU", "synthetic": true, "locale": "vi-VN", "question": "Trong bài thử, dịch 20 từ SYN-TRANS-A theo mức tối thiểu thì giá bao nhiêu?", "quantity": "20", "oracle": {"behavior": "answer", "total": "50000", "currency": "VND", "citation": "HANU-pricing-v1#p1", "required_claims": ["minimum_applied"], "forbidden_claims": ["certification_included", "binding_quote"], "allowed_side_effects": []}},
+    {"id": "qa-ZENA-price-01", "tenant": "ZENA", "synthetic": true, "locale": "en", "question": "In the synthetic catalog, what do two SYN-CONSULT-A sessions cost?", "quantity": "2", "oracle": {"behavior": "answer", "total": "600000", "currency": "VND", "citation": "ZENA-pricing-v1#p1", "required_claims": ["synthetic_estimate"], "forbidden_claims": ["permit_included", "professional_signoff"], "allowed_side_effects": []}}
+  ],
+  "result_template": {"status": "NOT_RUN", "response": null, "latency_ms": null, "model_calls": null, "input_tokens": null, "output_tokens": null, "cost": null, "reviewers": []}
+}
