@@ -1,5 +1,11 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 offline SSE diagnosis — Issue #16
+
+- **STATE:** Reproduced Kilo exit 1 offline when the original relay labelled an HTTP 200 JSON error as SSE. Fixed response validation, multi-line parsing, bounded wire framing and sanitized CLI diagnostics. Historical live root cause remains **UNKNOWN**.
+- **DECISION:** **NO-GO** for Dispatcher. PR #15 merged as a factual failure record only. This work used zero provider/model requests. Kilo and OpenCode remain at 1/1, and Qoder remains blocked.
+- **HEAD/BRANCH/PR:** Reviewed technical commit `1a077759c8d2d80cd4c6704a1745a4b8c607b4e2` on `evidence/kilo-offline-sse`, [PR #17](https://github.com/kha997/ai-chatbot/pull/17). [Evidence hierarchy, validation and future approval conditions](GATE_1_5_KILO_OFFLINE_SSE.md).
+
 ## Gate 1.5 follow-up — Issue #14
 
 - **STATE:** Kilo offline isolation/oracle passed. One anonymous zero-priced Kilo POST returned HTTP 200, but CLI exit 1 and no valid result or usage receipt. One extra local request was blocked. Kilo and OpenCode allowances are now spent. Qoder sent zero prompts and remains blocked on selected-model credits and isolation.
