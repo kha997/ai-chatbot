@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 exact Kilo activation — Issue #26
+
+- **STATE:** Offline preparation for a new, single-use Owner Gate. The prior Issue #20 approval remains spent. Dispatcher, Gate 2 and production remain **NO-GO**.
+- **ARTIFACT:** `5f9a05f65701f60c832732550aca9eafd6cb4d80` with the 256 KiB bounded TLS/SSE adapter, 24 s hard HTTPS deadline and 55 s pipeline watchdog. [Exact manifest, evidence and Owner decision](KILO_OWNER_GATE_26.md).
+
 ## Gate 1.5 local TLS and hard cancellation — Issue #24
 
 - **STATE:** Offline loopback TLS candidate. No provider inference or use of Issue #20 authorization. Dispatcher, Gate 2 and production remain **NO-GO**.
