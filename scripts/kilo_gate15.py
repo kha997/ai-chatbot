@@ -338,11 +338,17 @@ def emit_filter(file):
     file.seek(0)
 
 
-def run(archive, mode, fixture=None, *, sandbox_stage=None, exchange=None):
+def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
     if mode not in ("mock", "timeout"):
         raise SystemExit("Only offline mock and timeout modes are enabled")
-    if exchange is not None and (sandbox_stage is None or fixture is not None):
-        raise ValueError("candidate requires the verified sandbox and a single offline exchange")
+    if sandbox is not None or exchange is not None:
+        # The host accepts only local data, never a transport or staging callback.
+        from scripts.kilo_owner_gate import OfflineExchange, stage_sandbox
+
+        if not isinstance(sandbox, Path) or fixture is not None or (
+            type(exchange) is not OfflineExchange if mode == "mock" else exchange is not None
+        ):
+            raise ValueError("candidate requires pinned sandbox and inert fixture data")
     if os.uname().machine != "x86_64":
         raise SystemExit("Requires x86-64 Linux")
     with archive.open("rb") as file:
@@ -385,7 +391,7 @@ def run(archive, mode, fixture=None, *, sandbox_stage=None, exchange=None):
 
     with tempfile.TemporaryDirectory(prefix="gate15-kilo-", dir="/tmp") as tmp, tempfile.TemporaryFile(dir="/tmp") as bpf:
         folder = Path(tmp)
-        bwrap = sandbox_stage(folder / "bwrap") if sandbox_stage else "/usr/bin/bwrap"
+        bwrap = stage_sandbox(sandbox, folder / "bwrap") if sandbox is not None else "/usr/bin/bwrap"
         canary = folder / "host-only" / "canary"
         canary.parent.mkdir()
         canary.write_text("synthetic outside-namespace fixture")
@@ -433,7 +439,7 @@ def run(archive, mode, fixture=None, *, sandbox_stage=None, exchange=None):
                     "--setenv","OPENCODE_DISABLE_SHARE","1","/usr/bin/python3","/gate/probe.py",
                     {"timeout":"--hang", "mock":"--mock-inner"}[mode]]
             proc = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    pass_fds=(bpf.fileno(),), start_new_session=True)
+                                    env={}, pass_fds=(bpf.fileno(),), start_new_session=True)
             buffers = [bytearray(), bytearray()]
 
             def kill_group():

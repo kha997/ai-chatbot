@@ -1,7 +1,6 @@
 """Exercise the frozen one-POST contract against local fixtures and pinned Bubblewrap."""
 
 from contextlib import redirect_stdout
-from functools import partial
 import hashlib
 import io
 import json
@@ -11,14 +10,13 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.kilo_gate15 import MAX_BYTES, MODEL, run
-from scripts.kilo_owner_gate import FixtureReply, OfflineExchange, stage_sandbox
+from scripts.kilo_owner_gate import FixtureReply, OfflineExchange
 from test_kilo_sse import FIXTURES, SSE, VALID
 
 
 def main(archive, sandbox, name):
-    stage = partial(stage_sandbox, sandbox)
     if name == "timeout":
-        return run(archive, "timeout", sandbox_stage=stage)
+        return run(archive, "timeout", sandbox=sandbox)
     if name == "response_cap":
         media, raw, expected = SSE, b":" * (MAX_BYTES + 1), 502
     elif name == "encoding":
@@ -31,7 +29,7 @@ def main(archive, sandbox, name):
     }}]}, fixture)
     output = io.StringIO()
     with redirect_stdout(output):
-        code = run(archive, "mock", sandbox_stage=stage, exchange=exchange)
+        code = run(archive, "mock", sandbox=sandbox, exchange=exchange)
     result = json.loads(output.getvalue())
     result.update(fixture=name, fixture_sha256=hashlib.sha256(raw).hexdigest(),
                   simulated_posts=exchange.attempts, wrapper_exit=code)

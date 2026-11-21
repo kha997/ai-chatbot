@@ -111,19 +111,21 @@ def fixture_wire(fixture):
 class OfflineExchange:
     """Records one would-be POST against local response data. No connector is accepted."""
 
+    __slots__ = ("_wire", "_permit", "attempts")
+
     def __init__(self, catalog, fixture):
         if not approved_catalog(catalog) or type(fixture) is not FixtureReply:
             raise ValueError("invalid free catalog or fixture")
-        self.fixture = fixture
-        self.permit = Permit()
+        self._wire = fixture_wire(fixture)
+        self._permit = Permit()
         self.attempts = 0
 
     def __call__(self, body):
         prepare_request(body)
-        if not self.permit.take():
+        if not self._permit.take():
             raise ValueError("offline exchange already attempted")
         self.attempts += 1
-        return inspect_http_fixture(fixture_wire(self.fixture))
+        return inspect_http_fixture(self._wire)
 
 
 def stage_sandbox(source, target):

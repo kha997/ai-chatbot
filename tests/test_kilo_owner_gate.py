@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.kilo_gate15 import MAX_BYTES, MODEL, PROMPT, relay_response
+from scripts.kilo_gate15 import MAX_BYTES, MAX_RELAY_FRAME, MODEL, PROMPT, decode_reply_frame, relay_response, run
 from scripts.kilo_owner_gate import (
     FixtureReply, OfflineExchange, approved_catalog, prepare_request, stage_sandbox,
 )
@@ -90,3 +90,18 @@ class OwnerGateTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "sandbox digest"):
                 stage_sandbox(source, target)
             self.assertFalse(target.exists())
+
+    def test_launcher_refuses_arbitrary_host_hooks_before_using_archive(self):
+        def unexpected(*args):
+            self.fail("executed untrusted hook")
+
+        with self.assertRaisesRegex(ValueError, "inert fixture"):
+            run(None, "mock", sandbox=Path("unused"), exchange=unexpected)
+        with self.assertRaisesRegex(ValueError, "inert fixture"):
+            run(None, "timeout", sandbox=unexpected)
+        with self.assertRaisesRegex(ValueError, "inert fixture"):
+            run(None, "mock", exchange=OfflineExchange(catalog(), FixtureReply(200, SSE, VALID)))
+
+    def test_relay_rejects_frame_overflow(self):
+        with self.assertRaisesRegex(ValueError, "incomplete relay frame"):
+            decode_reply_frame(b" " * MAX_RELAY_FRAME + b"\n")
