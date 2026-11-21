@@ -4,7 +4,6 @@ import sys
 
 
 def bootstrap_fixture():
-    import http.client
     from pathlib import Path
     import pwd
     import runpy
@@ -25,24 +24,24 @@ def bootstrap_fixture():
             or int(capabilities["NoNewPrivs"]) != 1):
         raise SystemExit("test fixture requires no-egress namespace")
     account = SimpleNamespace(pw_dir=home)
-    https = http.client.HTTPSConnection
+    create_connection = socket.create_connection
+    load_ca = ssl.SSLContext.load_verify_locations
     sendall = socket.socket.sendall
 
-    class FixtureHTTPS(https):
-        def __init__(self, host, port, *, context, timeout):
-            if port != 443 or host not in ("ai-gateway.kilo.ai", "api.github.com"):
-                raise AssertionError("unpinned hostname or port")
-            if context.verify_mode != ssl.CERT_REQUIRED or not context.check_hostname:
-                raise AssertionError("TLS verification disabled")
-            context.load_verify_locations(cafile=trust)
-            super().__init__(host, port, context=context, timeout=timeout)
-            target = int(owner if host == "api.github.com" else post if timeout is None else catalog)
+    def fixture_ca(context, *, cafile):
+        if (cafile != "/etc/ssl/certs/ca-certificates.crt"
+                or context.verify_mode != ssl.CERT_REQUIRED or not context.check_hostname):
+            raise AssertionError("expected pinned system TLS policy")
+        return load_ca(context, cafile=trust)
 
-            def local(address, seconds, source):
-                if address != (host, 443) or source is not None or not target:
-                    raise AssertionError("unexpected fixture connection")
-                return socket.create_connection(("127.0.0.1", target), seconds)
-            self._create_connection = local
+    def local(address, seconds, source):
+        host, port = address
+        if port != 443 or host not in ("ai-gateway.kilo.ai", "api.github.com") or source is not None:
+            raise AssertionError("unpinned hostname or port")
+        target = int(owner if host == "api.github.com" else post if seconds is None else catalog)
+        if not target:
+            raise AssertionError("unexpected fixture connection")
+        return create_connection(("127.0.0.1", target), seconds)
 
     def fault_write(conn, data, flags=0):
         if conn.family != socket.AF_UNIX or not data.startswith(b'{"status": 200, "body":'):
@@ -62,7 +61,9 @@ def bootstrap_fixture():
 
     sys.argv = [launcher, "--repo", repo, "--commit", commit, "--archive", archive, "--sandbox", sandbox]
     sys.argv.extend(["--describe"] if fault == "describe" else ["--approval", "2600001"])
-    with patch.object(pwd, "getpwuid", return_value=account), patch.object(http.client, "HTTPSConnection", FixtureHTTPS):
+    with (patch.object(pwd, "getpwuid", return_value=account),
+          patch.object(ssl.SSLContext, "load_verify_locations", fixture_ca),
+          patch.object(socket, "create_connection", local)):
         if fault == "pipeline-unix-stall":
             with patch.object(socket.socket, "sendall", fault_write):
                 runpy.run_path(launcher, run_name="__main__")
@@ -139,12 +140,13 @@ def run_case(case, launcher, repo, commit, archive, sandbox, ca):
         assert socket_counts() == before and set(Path("/tmp").glob("issue26-kilo-*")) == scratch
         if case == "old-proof":
             assert result.returncode == 1 and not spent and not claimed and not post_hits
-            assert meta_hits == [["accepted", "get"], []]
+            assert meta_hits == [["accepted", "get"], []], (meta_hits, result.stdout)
         elif case == "paid":
             assert result.returncode == 1 and spent and not claimed and not post_hits
-            assert meta_hits == [["accepted", "get"], ["accepted", "get"]]
+            assert meta_hits == [["accepted", "get"], ["accepted", "get"]], (meta_hits, result.stdout)
         else:
-            assert spent and claimed and meta_hits == [["accepted", "get"], ["accepted", "get"]]
+            assert spent and claimed and meta_hits == [["accepted", "get"], ["accepted", "get"]], (
+                spent, claimed, meta_hits, result.stdout)
             posts = 0 if case == "wrong-hostname" else 1
             assert post_hits == ["accepted"] + ["post"] * posts
             receipt = json.loads(result.stdout)
