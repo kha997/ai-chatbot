@@ -50,6 +50,8 @@ Future measurement rows: candidate/config/commit/dependency/model/corpus hashes;
 
 Compare A/B at identical per-tenant resources and workload: concurrency 1/5/10, 100 requests per tenant per cell per repetition, 3 repetitions. Separate cold/warm runs and include parsing/indexing time. Record actual host/OS/runtime versions and background contention. Proposed target: warm p95 <=8s at concurrency 5; error <=1% in each tenant/load cell. Report distributions and minima, not just overall averages. No capacity or cost result exists yet.
 
+Measure from client request dispatch to first visible token and to final completed response using monotonic clock; include gateway, queue and retries. Declare a 30-second request deadline for the synthetic load profile. Sort successful-request durations and use nearest-rank p95 at index ceil(0.95*N), one-based; if no successes, p95 is undefined. Report failures/timeouts separately with count, elapsed time and outcome, and an all-request completion distribution with timeouts censored at the deadline. Never drop failed/time-out requests from the reliability denominator or imply successful-only p95 proves overall latency acceptance. Both latency and <=1% failure targets must pass in each declared cell.
+
 ## Backup, rollback, portability and upgrades
 
 Future synthetic targets: RPO <=24h; RTO <=60min. Backup covers tenant DB, object corpus, vector index rebuild inputs, configuration revisions and approval/audit records, with independently controlled credentials and encryption. Restore one tenant into isolated target; apply revocation/deletion tombstones before reads; verify source hashes, authorization and regression cases. A successful backup command is not restore proof.

@@ -80,6 +80,8 @@ At any stage, missing Qoder/Kilo/OpenCode is a **capability shortfall**, not a r
 
 ## 6. Historical baseline (2026-11-21, original PR head c429243)
 
+Subsequent dated machine observations and the refined design are in [Agent Dispatcher Design](AGENT_DISPATCHER_DESIGN.md). The following bullets preserve the original author's historical baseline, not current readiness assertions.
+
 - GitHub issue and agent roles exist.
 - This file supplies a design to connect the tools.
 - **No executable orchestrator was built.**
