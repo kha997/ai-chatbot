@@ -77,24 +77,26 @@ def inspect_http_fixture(wire):
     try:
         with HTTPResponse(MemoryInput()) as response:
             response.begin()
-            headers = response.headers
-            metadata = {name: headers.get_all(name, []) for name in (
-                "Content-Type", "Content-Encoding", "Transfer-Encoding", "Content-Length",
-            )}
-            if any(len(values) > 1 for values in metadata.values()):
-                raise ValueError("ambiguous HTTP headers")
-            transfer = headers.get("Transfer-Encoding")
-            length = headers.get("Content-Length")
-            if transfer and (transfer.lower() != "chunked" or length is not None):
-                raise ValueError("ambiguous HTTP framing")
-            if length is not None and (not length.isascii() or not length.isdecimal() or len(length) > 12):
-                raise ValueError("invalid HTTP length")
-            raw = response.read(MAX_BYTES + 1)
-            if length is not None and len(raw) != min(int(length), MAX_BYTES + 1):
-                raise ValueError("truncated HTTP body")
-            return response.status, headers.get("Content-Type"), raw, headers.get("Content-Encoding")
+            return read_http_response(response)
     except HTTPException as exc:
         raise ValueError("invalid HTTP framing") from exc
+
+
+def read_http_response(response, limit=MAX_BYTES):
+    headers = response.headers
+    for name in ("Content-Type", "Content-Encoding", "Transfer-Encoding", "Content-Length"):
+        if len(headers.get_all(name, [])) > 1:
+            raise ValueError("ambiguous HTTP headers")
+    transfer = headers.get("Transfer-Encoding")
+    length = headers.get("Content-Length")
+    if transfer and (transfer.lower() != "chunked" or length is not None):
+        raise ValueError("ambiguous HTTP framing")
+    if length is not None and (not length.isascii() or not length.isdecimal() or len(length) > 12):
+        raise ValueError("invalid HTTP length")
+    raw = response.read(limit + 1)
+    if length is not None and len(raw) != min(int(length), limit + 1):
+        raise ValueError("truncated HTTP body")
+    return response.status, headers.get("Content-Type"), raw, headers.get("Content-Encoding")
 
 
 def fixture_wire(fixture):
