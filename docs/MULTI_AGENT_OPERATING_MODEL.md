@@ -1,6 +1,6 @@
 # Multi-Agent Operating Model — AI ChatBot
 
-**Status:** PROPOSED, documented in PR; effective for Codex once merged into `main`.
+**Status:** ACCEPTED via [PR #2](https://github.com/kha997/ai-chatbot/pull/2), merged as `919b018045abd88e45a3ca7716643a48d25a5ce8` on 2026-11-21. Effective for Gate 0–1 only.
 **Architecture owner:** ChatGPT (technical recommendation and later remote evidence review); **engineering lead:** Codex; **business owner:** non-technical Owner.
 **Applicable Gate:** Gate 0–1 only. No authority to start executable Gate 2, spend money, connect live data, change other projects or deploy.
 
