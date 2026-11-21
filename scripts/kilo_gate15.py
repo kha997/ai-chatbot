@@ -359,9 +359,16 @@ def emit_filter(file):
 
 def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
     tls_mock = mode == "tls-mock"
-    streaming = mode == "stream-mock" or tls_mock
-    activated = mode == "authorized"
-    if tls_mock:
+    activated26 = mode == "authorized26"
+    streaming = mode == "stream-mock" or tls_mock or activated26
+    activated = mode == "authorized" or activated26
+    if activated26:
+        from scripts.kilo_activate26 import AuthorizedExchange
+
+        if (type(exchange) is not AuthorizedExchange or not exchange.armed
+                or not isinstance(sandbox, Path) or fixture is not None):
+            raise ValueError("missing verified Issue #26 exchange")
+    elif tls_mock:
         from scripts.kilo_tls_offline import LocalTLSExchange, require_loopback
 
         require_loopback()
@@ -420,8 +427,8 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
                             stats["forwarded"] = exchange.post_count
                         answer = response if streaming else relay_response(
                             *response, expected_model=MODEL if activated else None)
-                        if tls_mock:
-                            stats["tls_worker"] = answer["worker"]
+                        if tls_mock or activated26:
+                            stats["tls_worker"] = answer.get("worker")
                     elif fixture is not None:
                         answer = relay_response(*fixture)
                     else:
@@ -433,7 +440,7 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
                     stats["relay_status"] = answer["status"]
             except (AttributeError, ValueError, OSError, KeyError, http.client.HTTPException):
                 answer = json_reply(502)
-            if tls_mock:
+            if tls_mock or activated26:
                 try:
                     send_relay_reply(self.request, answer)
                 except OSError:
@@ -441,7 +448,7 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
             else:
                 self.wfile.write(reply_frame(answer))
 
-    scratch = exchange.scratch if tls_mock else None
+    scratch = exchange.scratch if tls_mock or activated26 else None
     with (tempfile.TemporaryDirectory(prefix="gate15-kilo-", dir=scratch or "/tmp") as tmp,
           tempfile.TemporaryFile(dir="/tmp") as bpf):
         folder = Path(tmp)
@@ -470,7 +477,7 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
         emit_filter(bpf)
         with socketserver.ThreadingUnixStreamServer(str(folder / "relay.sock"), Relay) as relay:
             # Local TLS handlers must be joined after the hard worker and bounded Unix timeout.
-            relay.daemon_threads = not tls_mock
+            relay.daemon_threads = not (tls_mock or activated26)
             threading.Thread(target=relay.serve_forever, daemon=True).start()
             args = [str(bwrap),"--unshare-all","--unshare-user","--disable-userns","--die-with-parent","--new-session","--clearenv",
                     "--cap-drop","ALL","--seccomp",str(bpf.fileno()),

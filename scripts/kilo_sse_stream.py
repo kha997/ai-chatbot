@@ -250,10 +250,10 @@ def sanitized_sse(parts, info):
     return "".join("data: " + json.dumps(chunk, ensure_ascii=False) + "\n\n" for chunk in chunks) + "data: [DONE]\n\n"
 
 
-def inspect_response(stream):
+def inspect_response(stream, *, seconds=BODY_SECONDS):
     """Read synchronous HTTP input incrementally. The caller owns hard I/O cancellation."""
     start = monotonic()
-    deadline = start + BODY_SECONDS
+    deadline = start + seconds
     info = {"http_status": None, "media": "other", "encoding": "identity", "declared_bytes": None,
             "bytes": 0, "frames": 0, "events": 0, "text_bytes": 0, "done": False, "finish": "absent",
             "model_supplied": False, "usage_present": False, "usage": None, "relay_bytes": 0}
