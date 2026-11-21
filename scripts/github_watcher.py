@@ -16,6 +16,9 @@ AGENTS = {"codex", "qoder", "opencode", "kilo"}
 # Mapping applies only to verified GitHub identities. Add others through review.
 USERS = {"kha997": "codex"}
 TEAMS = {}
+# Owner explicitly assigned Issue #5 to Codex. Amend only in a reviewed PR
+# linked to the Owner decision. Labels and GitHub assignments route discovery.
+APPROVALS = {5: {"codex"}}
 LIMIT = 8 * 1024 * 1024
 PAGES = 5
 PAGE_SIZE = 50
@@ -105,10 +108,10 @@ def classify(issues, pulls):
                 review_routes = {agent for agent in AGENTS if f"review:{agent}" in labels}
                 pull_metadata[number] = (routes, review_routes)
                 continue
-            approved = (item["author_association"] == "OWNER"
-                        and "work:approved" in labels)
+            approved = APPROVALS.get(number, set()) if item["author_association"] == "OWNER" else set()
+            routes |= approved
             for agent in routes:
-                jobs.add(("issue", number, agent, "approved" if approved else "triage", ""))
+                jobs.add(("issue", number, agent, "approved" if agent in approved else "triage", ""))
         for item in pulls:
             number = item["number"]
             sha = item["head"]["sha"]

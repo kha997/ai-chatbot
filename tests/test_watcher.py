@@ -15,11 +15,22 @@ class WatcherTests(unittest.TestCase):
         pr = dict(number=6, requested_reviewers=[{"login": "kha997"}],
                   requested_teams=[], draft=False, head={"sha": "a" * 40})
         self.assertEqual(watcher.classify([issue], [pr]), [
-            ["issue", 5, "qoder", "approved", ""],
+            ["issue", 5, "codex", "approved", ""],
+            ["issue", 5, "qoder", "triage", ""],
             ["review", 6, "codex", "review-requested", "a" * 40],
         ])
         issue["author_association"] = "NONE"
         self.assertEqual(watcher.classify([issue], [])[0][3], "triage")
+
+    def test_review_label_routes_non_draft_pr_without_authorizing_work(self):
+        issue = dict(number=6, labels=[{"name": "review:kilo"}],
+                     assignees=[], pull_request={})
+        pr = dict(number=6, requested_reviewers=[], requested_teams=[],
+                  draft=False, head={"sha": "b" * 40})
+        self.assertEqual(watcher.classify([issue], [pr]),
+                         [["review", 6, "kilo", "review-requested", "b" * 40]])
+        pr["draft"] = True
+        self.assertEqual(watcher.classify([issue], [pr]), [])
 
     def test_restart_duplicates_and_failure_preserves_queue(self):
         with tempfile.TemporaryDirectory() as directory:

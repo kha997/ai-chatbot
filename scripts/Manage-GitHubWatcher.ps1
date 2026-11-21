@@ -11,7 +11,10 @@ $folder = Join-Path $env:LOCALAPPDATA 'AIChatBotWatcher'
 $installed = Join-Path $folder 'github_watcher.py'
 $paused = Join-Path $folder 'paused'
 $user = [Security.Principal.WindowsIdentity]::GetCurrent()
-$python = (Get-Command python.exe -CommandType Application).Source
+$python = Get-Command python.exe -CommandType Application |
+    Where-Object { $_.Source -notmatch '\\WindowsApps\\' } |
+    Select-Object -First 1 -ExpandProperty Source
+if (!$python) { throw 'An existing Python executable is required.' }
 $task = Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction SilentlyContinue
 if ($task) {
     $taskUser = $task.Principal.UserId
