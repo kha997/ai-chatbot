@@ -46,7 +46,19 @@ Seven Python runs per size/method in Ubuntu 24.04 WSL, reporting median elapsed 
 - Serial Kilo **v7.8.32 Linux ELF** cases use verified private Bubblewrap **v0.13.1**, with the existing nested network/filesystem boundaries, pinned artifacts, fixed synthetic request and model, one fixture permit, no credential forwarding, duplicate denial and an explicit cleanup check. Positive cases are the small control and 32,769 / 65,536 / 131,072 / 262,144 bytes. Negative cases are a large terminal suffix, a large truncated chunked body, and an oversized event. Each fixture uses only an outer isolated network namespace with loopback and no external route.
 - A positive run requires Kilo exit 0, one terminal CLI step and the exact JSON `{"catalog":2,"handoff":1,"total":3}`. Every invalid run requires CLI exit 1, zero forwarded task bytes and the expected classification. Every fixture expects zero real POSTs.
 - The inherited forced-timeout probe checks exit `-9`, zero forwards and closed output streams. The final WSL process scan checks for orphaned Kilo and sandbox probes.
-- Reproducible commands from the worktree. `ARCHIVE` and `BWRAP` point to the local artifacts pinned in PR #21.
+
+| Kilo ELF fixture | Body declared / observed | Classification | Relay SSE bytes | CLI exit |
+| --- | --- | --- | ---: | ---: |
+| Small control | 876 / 876 B | complete | 661 | 0 |
+| First byte beyond old cap | chunked / 32,769 B | complete | 661 | 0 |
+| 64 KiB | chunked / 65,536 B | complete | 661 | 0 |
+| 128 KiB | chunked / 131,072 B | complete | 661 | 0 |
+| 256 KiB | chunked / 262,144 B | complete | 661 | 0 |
+| Data after terminal marker | 65,749 / 65,749 B | data_after_done | 0 | 1 |
+| Truncated terminal chunk | chunked / 131,072 B | invalid_http_framing | 0 | 1 |
+| Oversized event | 73,736 / 8,192 B | frame_cap | 0 | 1 |
+
+Reproducible commands from the worktree. `ARCHIVE` and `BWRAP` point to the local artifacts pinned in PR #21.
 
 ```bash
 unshare --user --map-current-user --net python3 -m unittest discover -s tests -q
