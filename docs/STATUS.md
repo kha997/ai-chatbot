@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 local TLS and hard cancellation — Issue #24
+
+- **STATE:** Offline loopback TLS candidate. No provider inference or use of Issue #20 authorization. Dispatcher, Gate 2 and production remain **NO-GO**.
+- **RESULT:** Bounded SSE parser exercised over TLS and through the pinned Kilo Linux sandbox. Hard deadlines cover blocked reads and deliberate Unix write stalls. [Socket matrix, cleanup and Owner Gate conditions](KILO_LOCAL_TLS.md).
+
 ## Gate 1.5 bounded Kilo SSE — Issue #22
 
 - **STATE:** Offline fix validated for synthetic SSE over 32 KiB. Live qualification and Dispatcher remain **NO-GO**. The Issue #20 authorization remains consumed.
