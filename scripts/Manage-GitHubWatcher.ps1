@@ -27,7 +27,7 @@ if ($task) {
     if ($task.Description -cne $description -or
         @($task.Actions).Count -ne 1 -or
         $task.Actions.Execute -ine $python -or
-        $task.Actions.WorkingDirectory -ine $folder -or
+        $task.Actions.WorkingDirectory -or
         $task.Actions.Arguments -cne ('-I "' + $installed + '"') -or
         $taskSid -ne $user.User.Value -or
         $task.Principal.LogonType -ne 'Interactive' -or $task.Principal.RunLevel -ne 'Limited' -or
@@ -55,7 +55,7 @@ switch ($Action) {
             Copy-Item -LiteralPath $source -Destination $installed
         }
         New-Item -ItemType File -Path $paused -Force | Out-Null
-        $job = New-ScheduledTaskAction -Execute $python -Argument ('-I "' + $installed + '"') -WorkingDirectory $folder
+        $job = New-ScheduledTaskAction -Execute $python -Argument ('-I "' + $installed + '"')
         $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(2) -RepetitionInterval (New-TimeSpan -Minutes 30)
         $principal = New-ScheduledTaskPrincipal -UserId $user.Name -LogonType Interactive -RunLevel Limited
         $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
@@ -86,8 +86,14 @@ switch ($Action) {
     }
     'Status' {
         if ($task) {
-            $task | Select-Object TaskName, State
-            $task | Get-ScheduledTaskInfo | Select-Object LastRunTime, LastTaskResult, NextRunTime
+            $info = $task | Get-ScheduledTaskInfo
+            [pscustomobject]@{
+                TaskName = $task.TaskName
+                State = $task.State
+                LastRunTime = $info.LastRunTime
+                LastTaskResult = $info.LastTaskResult
+                NextRunTime = $info.NextRunTime
+            }
         }
         if (Test-Path -LiteralPath (Join-Path $folder 'state.json')) {
             Get-Content -LiteralPath (Join-Path $folder 'state.json') -Raw
