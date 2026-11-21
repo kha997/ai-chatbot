@@ -6,7 +6,7 @@
 - **DECISION:** NO-GO for an autonomous dispatcher. Diagnose Kilo stream handling offline before requesting any further live attempt. OpenCode's 429 is unexplained and upstream v1/free relay compatibility warnings are documented.
 - **HEAD/BRANCH/PR:** Reviewed runner commit `60d670dda3b871f79f574ba7b0e6b4f763179c7b` on `evidence/gate-15-kilo-isolation`, tracked in [PR #15](https://github.com/kha997/ai-chatbot/pull/15). [Evidence and reviewer provenance](GATE_1_5_KILO_ISOLATION.md).
 
-## New Owner authorization — existing agent accounts (2026-11-21)
+## Historical qualification — existing agent accounts (PR #13, 2026-11-21)
 
 - **STATE:** Qoder sign-in verified. Qoder model test `BLOCKED_COST_OR_AUTH` and native isolation unqualified. Kilo free catalog verified, model test `BLOCKED_ISOLATION`. OpenCode Beam Free `FAIL_RATE_LIMIT`: one upstream prompt received HTTP 429 and no retry was sent.
 - **OWNER-REPORTED ACCOUNTS:** Qoder Pro (paid existing subscription); OpenCode/Kilo free use (reported 200,000 tokens/day, **not provider verified**).

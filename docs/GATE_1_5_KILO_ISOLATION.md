@@ -14,7 +14,7 @@ The [vendor CLI guide](https://kilo.ai/docs/code-with-ai/platforms/cli) supports
 
 | Approach | Assessment |
 | --- | --- |
-| Linux ELF plus Bubblewrap and fixed relay | Selected. Proven loopback-only net namespace, read-only runtime/work mounts, no host mounts or ambient credentials, and exactly one gated provider request. |
+| Linux ELF plus Bubblewrap and fixed relay | Selected. Proven loopback-only net namespace and read-only Linux runtime/work mounts. Excludes host workspace, home and Windows mounts, and ambient credentials. Allows exactly one gated provider request. |
 | Windows Kilo through WSL interop | Excluded. WSL can hand Windows executables to host execution. Linux namespace checks cannot establish Windows process restrictions. [WSL interop](https://github.com/microsoft/WSL/blob/master/doc/docs/technical-documentation/interop.md). |
 | Native Windows disposable isolation | Design alternative. Requires independent isolation and request-budget checks. Native sandbox not qualified on this host. |
 
