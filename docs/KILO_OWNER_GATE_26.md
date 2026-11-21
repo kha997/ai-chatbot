@@ -40,6 +40,18 @@ The selected 24 s leaves four seconds before the existing 28 s bridge wait and f
 - The fixture suite covers the previous issue scope, changed price, 256 KiB delayed success, certificate mismatch, HTTP 429/302, blocking header/body I/O, and a full Unix send buffer. It checks physical local POST counts, durable replay refusal, FD and TCP/Unix socket counts and removal of staging paths. The underlying prior suite covers malformed SSE, interrupted HTTP, invalid TLS, frame/response bounds and early worker exit/descendant cleanup.
 - It is confirmed that the prior live Issue #20 response crossed the old 32 KiB cap. The historical full stream, future live SSE size, completion, usage and billing receipt are unverified. The 256 KiB and timing choices are fixture-supported bounds.
 
+| Exact staged case | Synthetic HTTPS POSTs | Observed result |
+| --- | ---: | --- |
+| Issue #20 proof presented to the new scope | 0 | Rejected. No reservation or catalog lookup. |
+| Price changed after valid scoped proof | 0 | Rejected. Reservation remained consumed and replay was refused. |
+| SSE with 4 s before its first byte, 256 KiB complete | 1 | 4,068 ms HTTPS worker, 24,427 ms pipeline, exit 0. 262 frames, 260 data events, 661 bytes relayed and exact oracle. |
+| Wrong TLS hostname | 0 | Certificate rejection, zero task bytes and exit 1. |
+| HTTP 429 and 302 | 1 each | Both stopped at the first response, with zero task bytes and exit 1. |
+| Header trickle and stall after SSE stop | 1 each | HTTPS worker killed and reaped with signal 9 at 24,006 ms in both cases. Zero task bytes and exit 1. |
+| Full Unix send buffer during the sandbox run | 1 | Pipeline watchdog killed and reaped the driver with signal 9 at 55,047 ms against 55,000 ms. No task result or surviving child. |
+
+All nine exact staged cases achieved their expected outcomes and sent zero external POSTs. The terminal inventory found no test PIDs or temporary paths. The real Issue #26 slot has no reservation or POST claim. Both Issue #20 historical markers retain their original modification times.
+
 ## Owner action
 
 If you choose to proceed, personally post **one unedited line** on Issue #26 with a UTC expiry in `YYYY-MM-DDTHH:MM:SSZ` format within 24 hours of publication. Four hours is sufficient for a coordinated run. This authorizes one manual Kilo Free POST at **0 VND** incremental spend, with no retry. [Issue #26](https://github.com/kha997/ai-chatbot/issues/26).
