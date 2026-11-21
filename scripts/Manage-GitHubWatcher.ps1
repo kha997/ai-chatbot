@@ -58,7 +58,8 @@ switch ($Action) {
         $job = New-ScheduledTaskAction -Execute $python -Argument ('-I "' + $installed + '"') -WorkingDirectory $folder
         $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(2) -RepetitionInterval (New-TimeSpan -Minutes 30)
         $principal = New-ScheduledTaskPrincipal -UserId $user.Name -LogonType Interactive -RunLevel Limited
-        $settings = New-ScheduledTaskSettingsSet -Disabled -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+        $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+        $settings.Enabled = $false
         Register-ScheduledTask -TaskName $name -TaskPath '\' -Action $job -Trigger $trigger -Principal $principal -Settings $settings -Description $description
     }
     'Enable' {
