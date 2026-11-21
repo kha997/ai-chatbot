@@ -1,5 +1,11 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 one-use Kilo activation — Issue #20
+
+- **STATE:** `READY_FOR_OWNER_GATE`, with live approval pending. PR #19 is merged as offline evidence. Issue #20 sent zero inference requests. Dispatcher remains **NO-GO**.
+- **ACTIVATION:** Exactly one anonymous Free POST at 0 VND incremental spend, conditional on the Owner's exact GitHub approval, protected runner state, current zero pricing and isolation checks. No retries.
+- **SHA/BRANCH/PR:** `ace3a4ef35c75e4899f52b5bf1a92b64dcbd0064`, `evidence/kilo-final-activation`, [PR #21](https://github.com/kha997/ai-chatbot/pull/21). [Review evidence, Owner decision and invocation](KILO_FINAL_ACTIVATION.md).
+
 ## Gate 1.5 Owner Gate readiness — Issue #18
 
 - **STATE:** `READY_FOR_OWNER_GATE` for the offline candidate; `NO_LIVE_AUTHORIZATION`. PR #17 merged as offline evidence at `0190319c757e800507d61896a34b318cbf38dfbf`. **Dispatcher NO-GO.**
