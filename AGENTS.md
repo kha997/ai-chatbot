@@ -130,3 +130,17 @@ The Owner has separately approved the narrow local-setup task in [Issue #5](http
 - Publish the implementation and actual evidence via a short-lived branch/PR with an accurate distinction between `INSTALLED`, `RUNNING`, `BLOCKED` and `NOT_TESTED`.
 
 If older Gate 0–1 docs forbid CLI installation or any scheduled service, **Issue #5 + this explicit supplement prevail only for the narrowly approved tasks**. No wider authorization is implied.
+
+
+## 12. Owner-approved existing-account connection (2026-11-21)
+
+The Owner has explicitly permitted Codex to initiate **official, interactive authentication** of the Owner's **existing** Qoder Pro, OpenCode free and Kilo free account access **for Gate 1.5 only**, as recorded in [Issue #8](https://github.com/kha997/ai-chatbot/issues/8). This is a narrow exception to the no-login text in §11 for **connecting already-owned accounts**, not approval for creating paid accounts or new credentials.
+
+- Codex may inspect CLI provider/auth help and user-scoped settings, invoke documented official sign-in flows, and wait for the Owner to complete password/MFA/browser/device-code consent **personally**. Do not ask for or copy passwords, recovery codes, API keys, tokens, session cookies or private account details into chats, source code, shell history or GitHub.
+- Existing subscriptions are not proof of CLI authentication or included API usage. The Owner reports approximately **200,000 free tokens/day** for OpenCode/Kilo use; this is **unverified account-level information** and must be checked per provider, per model and per CLI. Do not infer that one app's free usage carries over to another CLI/provider.
+- **Incremental spend cap: 0 VND.** Never upgrade, purchase credits, enable pay-as-you-go, add payment credentials or use a chargeable fallback. Confirm a provider-side or account-side limit on extra charges before model execution. If enforceable billing protection cannot be demonstrated, report `BLOCKED_COST_OR_AUTH` and request the exact minimum Owner action; do not bypass the gate.
+- Original Gate 1.5 limit remains **3 actual AI prompts total, at most one per CLI**, with public/synthetic inputs, read-only and isolated execution, bounded time/output and redacted evidence. No model-call retries. No automatic scheduled dispatch, no autonomous dispatcher activation, no Bot product Gate 2, no production or real data.
+- Codex decides configuration, model and tests **within verified free/included entitlements**, reports each actual test (including spend/usage or `UNKNOWN`), and publishes reviewable evidence through a PR. Keep the existing GitHub Watcher as a read-only queue sensor.
+- Local Ollama research is now a secondary option if existing account routes are blocked; never borrow or modify another project's service without specific approval.
+
+All other reserved matters in §3 remain in force; **interactive consent remains the Owner's action**.
