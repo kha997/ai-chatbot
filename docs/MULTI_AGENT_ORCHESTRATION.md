@@ -64,7 +64,7 @@ Each delegated work item has a scoped, versioned prompt; immutable base commit; 
 - Capture exit code, machine-readable output, timestamps, tool version/model metadata if exposed, prompt hash, git diff and artifact hashes.
 - Enforce bounded runtime and cap retries; redact log content before pushing; never collect tokens/passwords in stdout.
 - Do not consider an exit code of 0 equivalent to passing factual/security tests.
-- Let Codex independently review and correct results. A reviewer must receive independently scoped questions and source access, not merely the author's conclusions.
+- Codex performs integration review and corrections; a separate fresh reviewer performs required independent review. That reviewer receives independently scoped questions and source access, not merely the author's conclusions.
 - **Publish the audited summary/evidence to GitHub** (work branch/PR), not raw secret-bearing logs.
 
 An authorized child can perform **only** its assigned role. Git push/merge/release privileges are not inherited by default.
@@ -74,11 +74,11 @@ An authorized child can perform **only** its assigned role. Git push/merge/relea
 - **P0 — Read-only discovery:** Check CLIs, versions, safe invocation/permission options, access limits; publish capability matrix on GitHub.
 - **P1 — Nonmutating smoke test (separate authorization for any paid model usage):** One synthetic task each, verify outputs and logs, compare behavior and actual cost.
 - **P2 — Delegation in Gate 0/1:** Split independent research, fixture/test design, adversarial review; Codex integrates and publishes PRs, reviews and limitations.
-- **P3 — Code-writing delegated work (future separately scoped):** Only then add worktree isolation, branch gating, least-privilege tool access and automated validation. This does not grant Gate 2 executable PoC permissions.
+- **P3 — Code-writing delegated work (future separately scoped):** Extend the isolation and least-privilege controls required from the first execution to code-writing tasks, with branch gating and automated validation. This does not grant Gate 2 executable PoC permissions. Building or running the actual dispatcher also requires separate Owner approval.
 
 At any stage, missing Qoder/Kilo/OpenCode is a **capability shortfall**, not a reason to block in-scope Codex research; it can use its own subprocesses/subagents for independent work while labeling review provenance honestly.
 
-## 6. Current truth
+## 6. Historical baseline (2026-11-21, original PR head c429243)
 
 - GitHub issue and agent roles exist.
 - This file supplies a design to connect the tools.
