@@ -82,21 +82,52 @@ def inspect_http_fixture(wire):
         raise ValueError("invalid HTTP framing") from exc
 
 
-def read_http_response(response, limit=MAX_BYTES):
+def read_http_response(response, limit=MAX_BYTES, *, require_framed=False):
     headers = response.headers
     for name in ("Content-Type", "Content-Encoding", "Transfer-Encoding", "Content-Length"):
         if len(headers.get_all(name, [])) > 1:
             raise ValueError("ambiguous HTTP headers")
     transfer = headers.get("Transfer-Encoding")
     length = headers.get("Content-Length")
-    if transfer and (transfer.lower() != "chunked" or length is not None):
+    if transfer is not None and (transfer.lower() != "chunked" or length is not None):
         raise ValueError("ambiguous HTTP framing")
     if length is not None and (not length.isascii() or not length.isdecimal() or len(length) > 12):
         raise ValueError("invalid HTTP length")
-    raw = response.read(limit + 1)
+    if transfer is not None:
+        if response.fp is None:
+            raise ValueError("missing chunked body")
+        raw = strict_chunks(response.fp, limit)
+    else:
+        if require_framed and length is None:
+            raise ValueError("missing explicit HTTP framing")
+        raw = response.read(limit + 1)
     if length is not None and len(raw) != min(int(length), limit + 1):
         raise ValueError("truncated HTTP body")
     return response.status, headers.get("Content-Type"), raw, headers.get("Content-Encoding")
+
+
+def strict_chunks(stream, limit):
+    import re
+
+    raw = bytearray()
+    while True:
+        size_text = stream.readline(32)
+        if not re.fullmatch(rb"[0-9A-Fa-f]{1,8}\r\n", size_text):
+            raise ValueError("invalid chunk header")
+        size = int(size_text[:-2], 16)
+        if size == 0:
+            if stream.read(2) != b"\r\n":
+                raise ValueError("missing chunk terminator or unsupported trailers")
+            return bytes(raw)
+        remaining = limit + 1 - len(raw)
+        data = stream.read(min(remaining, size))
+        if len(data) != min(remaining, size):
+            raise ValueError("truncated chunk")
+        raw.extend(data)
+        if len(raw) > limit:
+            return bytes(raw)
+        if stream.read(2) != b"\r\n":
+            raise ValueError("invalid chunk delimiter")
 
 
 def fixture_wire(fixture):

@@ -17,6 +17,7 @@ from test_kilo_sse import SSE, VALID, JSON_ERROR
 
 SHA = "1" * 40
 DIGEST = "2" * 64
+RUNNER = "4" * 64
 NOW = datetime(2026, 11, 21, 7, 0, tzinfo=timezone.utc)
 
 
@@ -24,23 +25,24 @@ def comment():
     return {"id": 999, "issue_url": live.ISSUE_URL, "author_association": "OWNER",
             "user": {"id": live.OWNER_ID, "login": "kha997"},
             "created_at": "2026-11-21T06:55:00Z", "updated_at": "2026-11-21T06:55:00Z",
-            "body": live.approval_line(SHA, DIGEST, "2026-11-21T08:00:00Z")}
+            "body": live.approval_line(SHA, DIGEST, RUNNER, "2026-11-21T08:00:00Z")}
 
 
 class ActivationTests(unittest.TestCase):
     def test_explicit_exact_owner_approval_only(self):
-        self.assertTrue(live.verify_approval(comment(), 999, SHA, DIGEST, NOW))
+        self.assertTrue(live.verify_approval(comment(), 999, SHA, DIGEST, RUNNER, NOW))
         for values in ({}, comment() | {"author_association": "MEMBER"},
                        comment() | {"user": {"id": 123, "login": "kha997"}},
                        comment() | {"issue_url": live.ISSUE_URL + "0"},
                        comment() | {"updated_at": "2026-11-21T06:56:00Z"},
                        comment() | {"body": "agent:codex approved"},
-                       comment() | {"body": live.approval_line(SHA, DIGEST, "2026-11-21T06:56:00Z")}):
-            self.assertFalse(live.verify_approval(values, 999, SHA, DIGEST, NOW))
-        self.assertFalse(live.verify_approval(comment(), 1000, SHA, DIGEST, NOW))
-        self.assertFalse(live.verify_approval(comment(), 999, "3"*40, DIGEST, NOW))
-        self.assertFalse(live.verify_approval(comment(), 999, SHA, "3"*64, NOW))
-        self.assertFalse(live.verify_approval(comment(), 999, SHA, DIGEST,
+                       comment() | {"body": live.approval_line(SHA, DIGEST, RUNNER, "2026-11-21T06:56:00Z")}):
+            self.assertFalse(live.verify_approval(values, 999, SHA, DIGEST, RUNNER, NOW))
+        self.assertFalse(live.verify_approval(comment(), 1000, SHA, DIGEST, RUNNER, NOW))
+        self.assertFalse(live.verify_approval(comment(), 999, "3"*40, DIGEST, RUNNER, NOW))
+        self.assertFalse(live.verify_approval(comment(), 999, SHA, "3"*64, RUNNER, NOW))
+        self.assertFalse(live.verify_approval(comment(), 999, SHA, DIGEST, "5"*64, NOW))
+        self.assertFalse(live.verify_approval(comment(), 999, SHA, DIGEST, RUNNER,
                                              datetime(2026, 11, 21, 8, 0, tzinfo=timezone.utc)))
 
     def test_only_reviewed_file_bytes(self):
@@ -76,6 +78,22 @@ class ActivationTests(unittest.TestCase):
         with patch.object(live.http.client, "HTTPSConnection", side_effect=AssertionError("transport reached")):
             with self.assertRaisesRegex(ValueError, "POST proof"):
                 live.network("post")
+
+    def test_nonzero_tiny_catalog_price_and_duplicate_keys_fail_closed(self):
+        from scripts.kilo_owner_gate import approved_catalog
+
+        raw = b'{"data":[{"id":"recursive/flint-v1.0:free","pricing":{"prompt":1e-999,"completion":0}}]}'
+        self.assertFalse(approved_catalog(live.strict_json(raw)))
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            live.strict_json(b'{"pricing":{"prompt":1,"prompt":0}}')
+
+    def test_malformed_chunk_delimiters_and_terminal_blank_line(self):
+        from scripts.kilo_owner_gate import inspect_http_fixture
+
+        headers = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
+        for body in (b"1\r\nxXX0\r\n\r\n", b"1\r\nx\r\n0\r\n"):
+            with self.assertRaises(ValueError):
+                inspect_http_fixture(headers + body)
 
     @unittest.skipUnless(live.LINUX_LOCKS, "Linux filesystem-lock test")
     def test_durable_reservation_and_single_active_runner(self):
@@ -114,14 +132,16 @@ class ActivationTests(unittest.TestCase):
         for status in (429, 302):
             with self.subTest(status=status), tempfile.TemporaryDirectory() as root:
                 with live.lease(Path(root) / "gate") as grant:
+                    runner = live.runner_binding(grant, create=True)
+                    self.assertEqual(live.runner_binding(grant), runner)
                     live.reserve(grant, SHA, DIGEST, 999)
                     now = datetime.now(timezone.utc)
                     utc = lambda t: t.strftime("%Y-%m-%dT%H:%M:%SZ")
                     stamp = utc(now - timedelta(seconds=2))
                     expires = utc(now + timedelta(minutes=1))
                     record = comment() | {"created_at": stamp, "updated_at": stamp,
-                                          "body": live.approval_line(SHA, DIGEST, expires)}
-                    proof = live.PostProof(grant, record, 999, SHA, DIGEST)
+                                          "body": live.approval_line(SHA, DIGEST, runner, expires)}
+                    proof = live.PostProof(grant, record, 999, SHA, DIGEST, runner)
 
                     class Memory:
                         def makefile(self, mode):
@@ -146,6 +166,22 @@ class ActivationTests(unittest.TestCase):
                     self.assertEqual(connection.request.call_args.args, ("POST", "/api/v1/chat/completions"))
                     self.assertNotIn("Authorization", connection.request.call_args.kwargs["headers"])
                     connection.close.assert_called_once()
+
+    @unittest.skipUnless(live.LINUX_LOCKS, "Linux process worker test")
+    def test_approval_expiring_during_tls_never_writes_post(self):
+        with tempfile.TemporaryDirectory() as root, live.lease(Path(root) / "gate") as grant:
+            runner = live.runner_binding(grant, create=True)
+            live.reserve(grant, SHA, DIGEST, 999)
+            proof = live.PostProof(grant, comment(), 999, SHA, DIGEST, runner)
+            connection = MagicMock()
+            with (patch.object(proof, "valid", side_effect=[True, False]),
+                  patch.object(live.http.client, "HTTPSConnection", return_value=connection),
+                  patch.object(live, "require_tls")):
+                self.assertEqual(live.network("post", proof=proof), (0, (502, None, b"", None)))
+            connection.connect.assert_called_once()
+            connection.request.assert_not_called()
+            connection.close.assert_called_once()
+            self.assertTrue((Path(root) / "gate" / "issue20.post").is_file())
 
     @unittest.skipUnless(live.LINUX_LOCKS, "Linux process worker test")
     def test_worker_deadline_reaps_process_and_refuses_reuse(self):

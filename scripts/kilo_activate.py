@@ -36,8 +36,8 @@ def compact(data):
     return json.dumps(data, sort_keys=True, separators=(",", ":")).encode("ascii")
 
 
-def approval_line(commit, manifest, expires):
-    return (f"APPROVE ONE KILO FREE POST | issue=20 | commit={commit} | manifest={manifest}"
+def approval_line(commit, manifest, runner, expires):
+    return (f"APPROVE ONE KILO FREE POST | issue=20 | commit={commit} | manifest={manifest} | runner={runner}"
             f" | model={MODEL} | max_posts=1 | incremental_vnd=0 | expires={expires}")
 
 
@@ -47,9 +47,10 @@ def parse_utc(stamp):
     return datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
-def verify_approval(record, comment_id, commit, manifest, now):
+def verify_approval(record, comment_id, commit, manifest, runner, now):
     try:
         if (not re.fullmatch(r"[a-f0-9]{40}", commit) or not re.fullmatch(r"[a-f0-9]{64}", manifest)
+                or not re.fullmatch(r"[a-f0-9]{64}", runner)
                 or type(comment_id) is not int or comment_id < 1
                 or record["id"] != comment_id or record["issue_url"] != ISSUE_URL
                 or record["author_association"] != "OWNER"
@@ -59,7 +60,7 @@ def verify_approval(record, comment_id, commit, manifest, now):
         created = parse_utc(record["created_at"])
         expiry_text = record["body"].rsplit(" | expires=", 1)[1]
         expiry = parse_utc(expiry_text)
-        return (record["body"] == approval_line(commit, manifest, expiry_text)
+        return (record["body"] == approval_line(commit, manifest, runner, expiry_text)
                 and created <= now < expiry <= created + timedelta(hours=24))
     except (AttributeError, IndexError, KeyError, TypeError, ValueError):
         return False
@@ -84,8 +85,23 @@ def lease(path):
 
     if not LINUX_LOCKS:
         raise ValueError("Linux locks required")
-    path.mkdir(mode=0o700, exist_ok=True)
-    directory = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    parent = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        info = os.fstat(parent)
+        if info.st_uid != os.geteuid() or info.st_mode & 0o022:
+            raise ValueError("untrusted state parent")
+        try:
+            os.mkdir(path.name, mode=0o700, dir_fd=parent)
+        except FileExistsError:
+            pass
+        directory = os.open(path.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+        try:
+            os.fsync(parent)
+        except OSError:
+            os.close(directory)
+            raise
+    finally:
+        os.close(parent)
     lock = None
     grant = Lease(directory)
     try:
@@ -126,6 +142,33 @@ def reserve(grant, commit, manifest, comment_id):
         os.fsync(file.fileno())
     os.fsync(grant.directory)
     grant.reserved = True
+
+
+def runner_binding(grant, *, create=False):
+    if type(grant) is not Lease or not grant.active:
+        raise ValueError("runner binding unavailable")
+    name = "runner-identity"
+    flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+    try:
+        fd = os.open(name, flags, dir_fd=grant.directory)
+    except FileNotFoundError:
+        if not create:
+            raise
+        fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                     0o600, dir_fd=grant.directory)
+        with os.fdopen(fd, "wb") as file:
+            file.write(os.urandom(32))
+            file.flush()
+            os.fsync(file.fileno())
+        os.fsync(grant.directory)
+        fd = os.open(name, flags, dir_fd=grant.directory)
+    with os.fdopen(fd, "rb") as file:
+        ensure_regular(file.fileno())
+        nonce = file.read(33)
+    machine = Path("/etc/machine-id").read_bytes().strip()
+    if len(nonce) != 32 or not re.fullmatch(rb"[a-f0-9]{32}", machine):
+        raise ValueError("untrusted runner identity")
+    return sha(b"AIChatBot Issue 20\0" + machine + nonce)
 
 
 def tls_context():
@@ -178,10 +221,12 @@ def network(kind, comment_id=None, proof=None):
         connection.connect()
         require_tls(connection.sock, host)
         connection.auto_open = 0
+        if kind == "post" and not proof.valid():
+            raise ValueError("approval expired before POST")
         posts = int(kind == "post")  # Count at the request boundary, even for write failure.
         connection.request(method, path, body=body, headers=headers)
         with connection.getresponse() as response:
-            reply = read_http_response(response, limit)
+            reply = read_http_response(response, limit, require_framed=(kind == "post"))
         return posts, reply
     except (OSError, ValueError, http.client.HTTPException):
         return posts, (502, None, b"", None)
@@ -191,14 +236,19 @@ def network(kind, comment_id=None, proof=None):
 
 
 class PostProof:
-    def __init__(self, grant, record, comment_id, commit, manifest):
+    def __init__(self, grant, record, comment_id, commit, manifest, runner):
         self.grant, self.record = grant, record
         self.comment_id, self.commit, self.manifest = comment_id, commit, manifest
+        self.runner = runner
 
     def valid(self):
-        return (type(self.grant) is Lease and self.grant.active and self.grant.reserved
-                and verify_approval(self.record, self.comment_id, self.commit, self.manifest,
-                                    datetime.now(timezone.utc)))
+        try:
+            return (type(self.grant) is Lease and self.grant.active and self.grant.reserved
+                    and runner_binding(self.grant) == self.runner
+                    and verify_approval(self.record, self.comment_id, self.commit, self.manifest,
+                                        self.runner, datetime.now(timezone.utc)))
+        except (ValueError, OSError):
+            return False
 
     def claim(self):
         if not self.valid():
@@ -309,7 +359,24 @@ def read_json_operation(kind, comment_id=None):
             or (media or "").split(";", 1)[0].lower() not in ("application/json", "application/vnd.github+json")
             or encoding not in (None, "", "identity")):
         raise ValueError("metadata request rejected")
-    return json.loads(raw)
+    return strict_json(raw)
+
+
+def strict_json(raw):
+    from decimal import Decimal
+
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+
+    try:
+        return json.loads(raw, parse_float=Decimal, object_pairs_hook=unique)
+    except RecursionError as exc:
+        raise ValueError("invalid metadata nesting") from exc
 
 
 def git_bytes(root, *args):
@@ -341,21 +408,42 @@ def pin_artifact(source, target, expected, limit):
     target.write_bytes(data)
 
 
-def activate(args):
+def verify_local_wsl(home):
+    release = Path("/proc/sys/kernel/osrelease").read_text().lower()
+    fs = subprocess.check_output(["/usr/bin/findmnt", "-T", str(home), "-n", "-o", "FSTYPE"],
+                                 stderr=subprocess.DEVNULL, timeout=5, env={}).decode().strip()
+    if "microsoft" not in release or fs != "ext4":
+        raise ValueError("requires the reviewed WSL local ext4 state boundary")
+
+
+def local_home():
     import pwd
 
-    if not LINUX_LOCKS or os.geteuid() == 0 or not sys.flags.isolated:
-        raise ValueError("use isolated Python as an ordinary WSL user")
-    root = Path(args.repo).resolve()
-    if Path(__file__).resolve() != root / SOURCE_FILES[0]:
-        raise ValueError("wrong launcher path")
+    if not LINUX_LOCKS or os.geteuid() == 0 or not sys.flags.isolated or not sys.flags.no_site:
+        raise ValueError("use Python -IS as an ordinary WSL user")
     home = Path(pwd.getpwuid(os.geteuid()).pw_dir)
     if home.is_symlink() or home.stat().st_uid != os.geteuid() or home.stat().st_mode & 0o022:
         raise ValueError("untrusted home")
+    verify_local_wsl(home)
+    return home
+
+
+def activate(args):
+    home = local_home()
+    root = Path(args.repo).resolve()
+    launcher = Path(__file__).resolve()
+    if (launcher == root / SOURCE_FILES[0] or launcher.parent.stat().st_uid != os.geteuid()
+            or stat.S_IMODE(launcher.parent.stat().st_mode) != 0o700):
+        raise ValueError("launcher must be externally verified in a private staging directory")
     with tempfile.TemporaryDirectory(prefix="issue20-kilo-", dir="/tmp") as temp:
         stage = Path(temp)
         sources = pin_source(root, args.commit, stage)
+        if not match_digest(launcher.read_bytes(), sources[SOURCE_FILES[0]]):
+            raise ValueError("staged launcher digest mismatch")
         # Only the verified Git blobs can supply these modules.
+        if any(name == "scripts" or name.startswith("scripts.") for name in sys.modules):
+            raise ValueError("unexpected preloaded application modules")
+        (stage / "scripts" / "__init__.py").write_bytes(b"")
         sys.path.insert(0, temp)
         if __name__ == "__main__":
             sys.modules["scripts.kilo_activate"] = sys.modules[__name__]
@@ -368,14 +456,15 @@ def activate(args):
         manifest = sha(compact({"sources": sources, "archive": RELEASE_SHA, "kilo": KILO_ELF_SHA,
                                 "bwrap": SANDBOX_SHA256, "body": sha(prepare_request(fixed_body()).body)}))
         with lease(home / ".aichatbot-issue20") as grant:
+            runner = runner_binding(grant)
             owner = read_json_operation("owner", args.approval)
-            if not verify_approval(owner, args.approval, args.commit, manifest, datetime.now(timezone.utc)):
+            if not verify_approval(owner, args.approval, args.commit, manifest, runner, datetime.now(timezone.utc)):
                 raise ValueError("missing exact Owner authorization")
             expires = parse_utc(owner["body"].rsplit(" | expires=", 1)[1])
             reserve(grant, args.commit, manifest, args.approval)
             if not approved_catalog(read_json_operation("catalog")):
                 raise ValueError("exact model unavailable or price not zero")
-            proof = PostProof(grant, owner, args.approval, args.commit, manifest)
+            proof = PostProof(grant, owner, args.approval, args.commit, manifest, runner)
             from contextlib import redirect_stdout
             import io
 
@@ -384,7 +473,10 @@ def activate(args):
                 exchange = AuthorizedExchange(grant, worker, expires)
                 with redirect_stdout(evidence):
                     result = run(archive, "authorized", sandbox=sandbox, exchange=exchange)
-            print(json.dumps(json.loads(evidence.getvalue()) | {"network_worker_closed": True}))
+            receipt = json.loads(evidence.getvalue())
+            usage = receipt.get("protocol", {}).get("usage") or "UNKNOWN"
+            print(json.dumps(receipt | {"network_worker_closed": True, "qualification_passed": result == 0,
+                                        "provider_usage": usage}))
             return result
 
 
@@ -392,10 +484,20 @@ def main(argv=None):
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--local-runner-id", action="store_true")
     for name in ("repo", "commit", "approval", "archive", "sandbox"):
         parser.add_argument("--" + name)
     args = parser.parse_args(argv)
-    if (not all(vars(args).values()) or not re.fullmatch(r"[a-f0-9]{40}", args.commit)
+    if args.local_runner_id and not any(getattr(args, name) for name in ("repo", "commit", "approval", "archive", "sandbox")):
+        try:
+            with lease(local_home() / ".aichatbot-issue20") as grant:
+                print(runner_binding(grant, create=True))
+            return 0
+        except (OSError, ValueError, subprocess.SubprocessError):
+            print("Runner identity unavailable")
+            return 1
+    if (args.local_runner_id or not all(getattr(args, name) for name in ("repo", "commit", "approval", "archive", "sandbox"))
+            or not re.fullmatch(r"[a-f0-9]{40}", args.commit)
             or not re.fullmatch(r"[1-9][0-9]{0,18}", args.approval)):
         print("NO_LIVE_AUTHORIZATION")
         return 1

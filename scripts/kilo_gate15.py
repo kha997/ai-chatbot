@@ -155,7 +155,7 @@ def relay_response(status, content_type, raw, content_encoding=None, *, expected
                 return reject("invalid_event")
             if event.get("error") is not None:
                 return reject("embedded_error")
-            if event.get("model") is not None:
+            if "model" in event:
                 info["model_supplied"] = True
                 if expected_model is not None and event["model"] != expected_model:
                     return reject("model_mismatch")
@@ -188,6 +188,8 @@ def relay_response(status, content_type, raw, content_encoding=None, *, expected
         return reject("invalid_utf8")
     except json.JSONDecodeError:
         return reject("malformed_json")
+    except RecursionError:
+        return reject("malformed_json")
     except ValueError as exc:
         return reject(str(exc))
     if not info["text_deltas"] or info["finish"] != "stop":
@@ -217,10 +219,16 @@ def cli_evidence(stdout):
                 parts.append(text)
             else:
                 info["invalid_text"] += 1
+    def reject_duplicate_keys(pairs):
+        result = dict(pairs)
+        if len(result) != len(pairs):
+            raise ValueError("duplicate oracle key")
+        return result
+
     try:
-        result = json.loads("".join(parts))
+        result = json.loads("".join(parts), object_pairs_hook=reject_duplicate_keys)
         match = isinstance(result, dict) and result == EXPECTED and all(type(v) is int for v in result.values())
-    except ValueError:
+    except (ValueError, RecursionError):
         match = False
     return info, bool(match and not info["error"] and not info["invalid_text"])
 
@@ -387,9 +395,10 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
                 else:
                     stats["admitted"] += 1
                     if exchange is not None:
-                        answer = relay_response(*exchange(payload), expected_model=MODEL if activated else None)
+                        response = exchange(payload)
                         if activated:
                             stats["forwarded"] = exchange.post_count
+                        answer = relay_response(*response, expected_model=MODEL if activated else None)
                     elif fixture is not None:
                         answer = relay_response(*fixture)
                     else:
@@ -506,7 +515,8 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
         return 0 if safe and stats.get("timeout") and stats["forwarded"] == 0 and stats["exit"] == -9 else 1
     expected = (stats["forwarded"] == int(activated) and stats["relay_status"] == 200
                 and stats["duplicate_denied"] and stats["auxiliary_denied"]) if "relay_status" in stats else False
-    return 0 if safe and expected and stats["admitted"] == 1 and stats["exit"] == 0 and stats["result"] else 1
+    terminal = not activated or stats["cli"]["step_finish"] == 1
+    return 0 if safe and expected and terminal and stats["admitted"] == 1 and stats["exit"] == 0 and stats["result"] else 1
 
 
 if __name__ == "__main__":

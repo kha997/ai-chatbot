@@ -27,6 +27,7 @@ def main(archive, sandbox, case):
         "valid": (200, SSE, VALID, None),
         "429": (429, "application/json", b"{}", None),
         "json_error": (200, "application/json", JSON_ERROR, None),
+        "wrong_model": (200, SSE, VALID.replace(gate.MODEL.encode(), b"different/model:free"), None),
     }
 
     def fake_network(kind, comment_id, proof):
@@ -46,10 +47,12 @@ def main(archive, sandbox, case):
         record = {"id": comment_id, "issue_url": gate.ISSUE_URL, "author_association": "OWNER",
                   "user": {"id": gate.OWNER_ID, "login": "kha997"},
                   "created_at": created, "updated_at": created,
-                  "body": gate.approval_line(commit, manifest, utc(expires))}
+                  }
         with gate.lease(state) as grant:
+            runner = gate.runner_binding(grant, create=True)
+            record["body"] = gate.approval_line(commit, manifest, runner, utc(expires))
             gate.reserve(grant, commit, manifest, comment_id)
-            proof = gate.PostProof(grant, record, comment_id, commit, manifest)
+            proof = gate.PostProof(grant, record, comment_id, commit, manifest, runner)
             captured = io.StringIO()
             with patch.object(gate, "network", side_effect=fake_network):
                 with gate.Worker("post", proof=proof) as worker:
@@ -77,6 +80,6 @@ def main(archive, sandbox, case):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4 or sys.argv[3] not in ("valid", "429", "json_error"):
+    if len(sys.argv) != 4 or sys.argv[3] not in ("valid", "429", "json_error", "wrong_model"):
         raise SystemExit("usage: run_kilo_activation_mock.py ARCHIVE BWRAP FIXTURE")
     raise SystemExit(main(Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]))

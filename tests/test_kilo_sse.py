@@ -97,6 +97,10 @@ class KiloSSERelayTests(unittest.TestCase):
         self.assertEqual(evidence["error"], 1)
         self.assertNotIn("canary", json.dumps(evidence))
         self.assertFalse(cli_evidence(b'{"type":"text","part":[]}')[1])
+        for oracle in ('{"catalog":8,"catalog":2,"handoff":1,"total":3}',
+                       '{"catalog":2,"handoff":true,"total":3}', '{"catalog":2,"handoff":1'):
+            invalid = json.dumps({"type": "text", "part": {"text": oracle}}).encode()
+            self.assertFalse(cli_evidence(invalid)[1])
 
     def test_live_mode_rejected_before_reading_an_archive(self):
         with self.assertRaisesRegex(SystemExit, "Only offline"):
