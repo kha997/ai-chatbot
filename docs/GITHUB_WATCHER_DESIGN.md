@@ -7,7 +7,7 @@ Issue #5 runs one Windows Task Scheduler entry for `kha997/ai-chatbot` under the
 | Source | Route | Status |
 | --- | --- | --- |
 | Open issue or PR | Exact `agent:codex`, `agent:qoder`, `agent:opencode`, `agent:kilo` labels. With no label, use an explicitly mapped assignee. | Triage |
-| Open issue | Reviewed approval table in code tied to Owner authorization and GitHub OWNER authorship. Initially Issue #5 for Codex. | Approved queue entry |
+| Open issue | Reviewed approval table in code tied to Owner authorization and GitHub OWNER authorship. Issue #5 (CLI/Watcher) and Issue #8 (bounded Gate 1.5) for Codex, subject to the exact authority documented in each issue; approvals only alter queue classification, not execution. | Approved queue entry |
 | Open non-draft PR | Explicit `review:<agent>` label or current GitHub review request to a mapped identity | Review requested |
 
 The only verified login mapping is `kha997 → codex`. Other agents can be routed using labels. Unmapped staff/team names create no inferred assignment. Approval table updates require a linked Owner decision in a reviewed PR. A label, assignment, or review request is a discovery signal. The program has no execution or authorization path for any queue entry. Codex can read `state.json` via Status without asking the Owner to relay GitHub content.
