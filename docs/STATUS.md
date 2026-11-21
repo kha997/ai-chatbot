@@ -1,5 +1,12 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 Owner Gate readiness — Issue #18
+
+- **STATE:** `READY_FOR_OWNER_GATE` for the offline candidate; `NO_LIVE_AUTHORIZATION`. PR #17 merged as offline evidence at `0190319c757e800507d61896a34b318cbf38dfbf`. **Dispatcher NO-GO.**
+- **VALIDATION:** 21 unit tests and 22 Kilo ELF offline cases passed, with zero real inference requests. Exact Bubblewrap 0.13.1 staged from independently verified upstream source. Independent reviewer rechecked serial cases and documented fail-closed behavior under overlap.
+- **OWNER GATE:** One future Kilo-only POST to the reviewed anonymous free model at 0 VND, conditional on exact separately reviewed activation SHA, durable one-use authorization, current price and runtime controls. No live transport or token is present in this candidate.
+- **HEAD/BRANCH/PR:** technical `f480575fcad5d32dde5846ae9a740e76af21a989`, `evidence/kilo-owner-gate`, [PR #19](https://github.com/kha997/ai-chatbot/pull/19). [Approval packet, risks, results and rollback](KILO_LIVE_OWNER_GATE.md).
+
 ## Gate 1.5 offline SSE diagnosis — Issue #16
 
 - **STATE:** Reproduced Kilo exit 1 offline when the original relay labelled an HTTP 200 JSON error as SSE. Fixed response validation, multi-line parsing, bounded wire framing and sanitized CLI diagnostics. Historical live root cause remains **UNKNOWN**.
