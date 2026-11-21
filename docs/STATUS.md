@@ -2,11 +2,12 @@
 
 ## New Owner authorization — existing agent accounts (2026-11-21)
 
-- **STATE:** OWNER_CONSENT_PENDING. Official CLI sign-in commands started in dedicated visible Windows consoles. Account confirmation and provider/quota checks are pending. Zero model prompts.
+- **STATE:** Qoder sign-in verified. Qoder model test `BLOCKED_COST_OR_AUTH` and native isolation unqualified. Kilo free catalog verified, model test `BLOCKED_ISOLATION`. OpenCode Beam Free `FAIL_RATE_LIMIT`: one upstream prompt received HTTP 429 and no retry was sent.
 - **OWNER-REPORTED ACCOUNTS:** Qoder Pro (paid existing subscription); OpenCode/Kilo free use (reported 200,000 tokens/day, **not provider verified**).
 - **NEW SCOPE:** Codex may initiate official interactive login to existing CLI accounts; Owner must personally approve browser/device/MFA steps. No passwords/tokens in logs or GitHub. [Issue #8](https://github.com/kha997/ai-chatbot/issues/8).
 - **SPEND/GATE:** 0 VND incremental purchase, at most one read-only synthetic model prompt per CLI only after individual allowance and enforceable billing controls have been verified. No scheduled model calls, dispatcher activation or Gate 2 product PoC.
-- **PR:** [Governance PR #12](https://github.com/kha997/ai-chatbot/pull/12) reviewed and merged at `3a2b0687db88b79ef8be673df3b2dd3d468e3edc`. See [connection checkpoint](GATE_1_5_ACCOUNT_CONNECTION.md). [Ollama fallback issue #11](https://github.com/kha997/ai-chatbot/issues/11) is closed.
+- **DECISION:** NO-GO for an autonomous dispatcher. One free route reached the provider within the enforced budget and request envelope, but produced no task output. [Qualification evidence and next step](GATE_1_5_ACCOUNT_CONNECTION.md).
+- **PR:** [Governance PR #12](https://github.com/kha997/ai-chatbot/pull/12) merged at `3a2b0687db88b79ef8be673df3b2dd3d468e3edc`. [Evidence PR #13](https://github.com/kha997/ai-chatbot/pull/13), branch `evidence/gate-15-existing-account-auth`. [Ollama fallback issue #11](https://github.com/kha997/ai-chatbot/issues/11) is closed.
 
 Date: 2026-11-21 (Asia/Saigon).
 
