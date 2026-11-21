@@ -116,3 +116,17 @@ This repository is PUBLIC as of initial bootstrap. Never commit secrets, private
 The Owner approves bringing Qoder, OpenCode and Kilo into the project **where technically available and useful**, with **Codex as Lead Engineering Agent for complex and critical work**. The full division of responsibilities, separation-of-duties, independent-review standards, Git worktree/branch ownership and cost bounds are in [docs/MULTI_AGENT_OPERATING_MODEL.md](docs/MULTI_AGENT_OPERATING_MODEL.md).
 
 Codex remains accountable for delivery and technical decisions; it must not escalate ordinary implementation choices to the non-technical Owner. Parallel delegation is optional and outcome-driven, never an excuse to double-charge, duplicate work or lower security. Do not assume a tool is installed/authenticated; check first without creating paid access. Always report on GitHub, not only in chat. This supplement does **not** widen the Gate 0–1 authorization.
+
+
+## 11. Owner-approved local CLI readiness and scheduled GitHub discovery (2026-11-21)
+
+The Owner has separately approved the narrow local-setup task in [Issue #5](https://github.com/kha997/ai-chatbot/issues/5), superseding earlier **inspection-only** constraints **only for that task**:
+
+- Codex may repair user/project PATH and install missing Qoder/OpenCode/Kilo CLIs **from verified official sources**, preferably without administrative privileges. First reuse existing installs (OpenCode was observed under WSL). Do not trigger model usage just to validate installation.
+- Codex may implement and register **one** local, read-only GitHub work watcher, targeting **only this repo** every 30 minutes when the computer is running. Prefer Windows Task Scheduler as the wakeup mechanism for a WSL-dependent workspace; verify actual reliability and provide disable/uninstall instructions.
+- The watcher may discover and locally queue tagged/assigned Issues or PR review requests and record sanitized heartbeat/change summaries. It must use least-privilege credentials, idempotence, rate limiting, non-overlap, bounded runtime and a kill switch.
+- **A scheduled poll is not an authorization to automatically execute AI agent prompts**, spend model quota, create unapproved tasks, approve/merge PRs, modify other repositories, run Gate 2, contact customers or deploy anything. Those activities remain controlled by the existing Reserved Matters.
+- Login, secrets, paid plans, administrator privilege, OS security policy changes, external execution, or production integrations remain separately gated.
+- Publish the implementation and actual evidence via a short-lived branch/PR with an accurate distinction between `INSTALLED`, `RUNNING`, `BLOCKED` and `NOT_TESTED`.
+
+If older Gate 0–1 docs forbid CLI installation or any scheduled service, **Issue #5 + this explicit supplement prevail only for the narrowly approved tasks**. No wider authorization is implied.
