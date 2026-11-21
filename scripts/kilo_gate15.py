@@ -354,8 +354,15 @@ def emit_filter(file):
 
 
 def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
+    streaming = mode == "stream-mock"
     activated = mode == "authorized"
-    if activated:
+    if streaming:
+        from scripts.kilo_sse_stream import StreamingOfflineExchange, require_offline_network
+
+        require_offline_network()
+        if type(exchange) is not StreamingOfflineExchange or not isinstance(sandbox, Path) or fixture is not None:
+            raise ValueError("stream-mock requires pinned sandbox and synthetic fixture data")
+    elif activated:
         from scripts.kilo_activate import AuthorizedExchange
 
         if type(exchange) is not AuthorizedExchange or not exchange.armed:
@@ -366,10 +373,10 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
         # The host accepts only local data, never a transport or staging callback.
         from scripts.kilo_owner_gate import OfflineExchange, stage_sandbox
 
-        if not isinstance(sandbox, Path) or fixture is not None or (
+        if not streaming and (not isinstance(sandbox, Path) or fixture is not None or (
             type(exchange) is not OfflineExchange if mode == "mock" else
             exchange is not None and not activated
-        ):
+        )):
             raise ValueError("candidate requires pinned sandbox and inert fixture data")
     if os.uname().machine != "x86_64":
         raise SystemExit("Requires x86-64 Linux")
@@ -400,7 +407,8 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
                         response = exchange(payload)
                         if activated:
                             stats["forwarded"] = exchange.post_count
-                        answer = relay_response(*response, expected_model=MODEL if activated else None)
+                        answer = response if streaming else relay_response(
+                            *response, expected_model=MODEL if activated else None)
                     elif fixture is not None:
                         answer = relay_response(*fixture)
                     else:
