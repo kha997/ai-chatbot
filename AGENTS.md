@@ -110,3 +110,9 @@ Priority: safety/law/platform policy > direct current Owner instructions > reser
 ## 9. Public repository constraint
 
 This repository is PUBLIC as of initial bootstrap. Never commit secrets, private customer data, private repository code, internal pricing documents or unlicensed materials. Research may cite public links without embedding third-party copyrighted source text. Propose an Owner decision on changing visibility before any sensitive phase.
+
+## 10. Multi-agent delegation (delegated technical operating model)
+
+The Owner approves bringing Qoder, OpenCode and Kilo into the project **where technically available and useful**, with **Codex as Lead Engineering Agent for complex and critical work**. The full division of responsibilities, separation-of-duties, independent-review standards, Git worktree/branch ownership and cost bounds are in [docs/MULTI_AGENT_OPERATING_MODEL.md](docs/MULTI_AGENT_OPERATING_MODEL.md).
+
+Codex remains accountable for delivery and technical decisions; it must not escalate ordinary implementation choices to the non-technical Owner. Parallel delegation is optional and outcome-driven, never an excuse to double-charge, duplicate work or lower security. Do not assume a tool is installed/authenticated; check first without creating paid access. Always report on GitHub, not only in chat. This supplement does **not** widen the Gate 0–1 authorization.
