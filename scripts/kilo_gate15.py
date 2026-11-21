@@ -1,5 +1,6 @@
 """Replay synthetic Kilo HTTP responses offline in a verified Linux sandbox."""
 
+import base64
 import errno
 import hashlib
 import http.client
@@ -22,6 +23,7 @@ PROMPT = "Classify the synthetic records catalog, handoff, catalog. Return only 
 EXPECTED = {"catalog": 2, "handoff": 1, "total": 3}
 RELEASE_SHA = "ab7a008a2c0ca6e035b96cd1dc5712a8466a14a45992291a8f0b4b549b94136e"
 MAX_BYTES = 32768
+MAX_RELAY_FRAME = 4 * ((MAX_BYTES + 2) // 3) + 128
 
 
 class Permit:
@@ -61,6 +63,28 @@ def approved_payload(body, authorization, system):
 def json_reply(status, payload=None):
     return {"status": status, "content_type": "text/event-stream" if status == 200 else "application/json",
             "payload": payload if payload is not None else '{"error":{"message":"one-shot gate closed"}}'}
+
+
+def reply_frame(answer):
+    body = base64.b64encode(answer["payload"].encode("utf-8")).decode("ascii")
+    return json.dumps({"status": answer["status"], "body": body}).encode("ascii") + b"\n"
+
+
+def decode_reply_frame(frame):
+    if len(frame) > MAX_RELAY_FRAME or not frame.endswith(b"\n"):
+        raise ValueError("incomplete relay frame")
+    reply = json.loads(frame)
+    if not isinstance(reply, dict) or reply.get("status") not in (200, 403, 502):
+        raise ValueError("unsupported relay status")
+    encoded = reply.get("body")
+    if not isinstance(encoded, str):
+        raise ValueError("invalid relay body")
+    payload = base64.b64decode(encoded, validate=True)
+    if len(payload) > MAX_BYTES:
+        raise ValueError("relay body exceeds cap")
+    status = reply["status"]
+    content_type = "text/event-stream" if status == 200 else "application/json"
+    return status, content_type, payload
 
 
 def sse_events(text):
@@ -205,10 +229,10 @@ class Bridge(BaseHTTPRequestHandler):
                 conn.settimeout(28)
                 conn.connect("/gate/relay.sock")
                 conn.sendall(json.dumps(req).encode() + b"\n")
-                answer = json.loads(conn.makefile("rb").readline(MAX_BYTES * 4))
-            payload = answer["payload"].encode()
-            self.send_response(answer["status"])
-            self.send_header("Content-Type", answer["content_type"])
+                with conn.makefile("rb") as wire:
+                    status, media, payload = decode_reply_frame(wire.readline(MAX_RELAY_FRAME + 1))
+            self.send_response(status)
+            self.send_header("Content-Type", media)
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
             self.wfile.write(payload)
@@ -339,7 +363,7 @@ def run(archive, mode, fixture=None):
                     stats["relay_status"] = answer["status"]
             except (AttributeError, ValueError, OSError, KeyError, http.client.HTTPException):
                 answer = json_reply(502)
-            self.wfile.write(json.dumps(answer).encode() + b"\n")
+            self.wfile.write(reply_frame(answer))
 
     with tempfile.TemporaryDirectory(prefix="gate15-kilo-", dir="/tmp") as tmp, tempfile.TemporaryFile(dir="/tmp") as bpf:
         folder = Path(tmp)

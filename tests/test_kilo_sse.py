@@ -27,11 +27,13 @@ VALID = b": keep-alive\r\n\r\n" + stream(*DELTAS, USAGE, "[DONE]", sep="\r\n")
 JSON_ERROR = b'{"error":{"message":"synthetic gateway failure","type":"server_error"}}'
 MULTILINE = (": Tiếng Việt\n\ndata: " + DELTAS[0].replace(",", ",\ndata: ", 1)
              + "\n\n").encode() + stream(*DELTAS[1:], "[DONE]")
+FULL_SIZE = b":" + (b"\0" * (MAX_BYTES - len(VALID) - 3)) + b"\n\n" + VALID
 FIXTURES = {
     "crlf_usage": (SSE, VALID, 200),
     "no_usage": (SSE, stream(*DELTAS, "[DONE]"), 200),
     "finish_only": (SSE, stream(*DELTAS), 200),
     "multiline_utf8": (SSE, MULTILINE, 200),
+    "full_size": (SSE, FULL_SIZE, 200),
     "json_error": ("application/json", JSON_ERROR, 502),
     "normal_json": ("application/json", b'{"choices":[{"message":{"content":"synthetic"}}]}', 502),
     "wrong_type": ("text/plain", VALID, 502),
@@ -99,3 +101,18 @@ class KiloSSERelayTests(unittest.TestCase):
     def test_live_mode_rejected_before_reading_an_archive(self):
         with self.assertRaisesRegex(SystemExit, "Only offline"):
             run(None, "live")
+
+    def test_full_size_sse_survives_bounded_relay_frame(self):
+        from scripts.kilo_gate15 import MAX_RELAY_FRAME, decode_reply_frame, reply_frame
+
+        # Control bytes in a comment are ignored by SSE but expand under JSON escaping.
+        raw = FULL_SIZE
+        self.assertEqual(len(raw), MAX_BYTES)
+        response = relay_response(200, SSE, raw)
+        self.assertGreater(len(json.dumps(response).encode()), MAX_BYTES * 4)
+        frame = reply_frame(response)
+        self.assertLessEqual(len(frame), MAX_RELAY_FRAME)
+        status, content_type, payload = decode_reply_frame(frame)
+        self.assertEqual((status, content_type, payload), (200, "text/event-stream", raw))
+        with self.assertRaises(ValueError):
+            decode_reply_frame(frame[:-1])

@@ -21,10 +21,11 @@ def main(archive, name):
     evidence = json.loads(output.getvalue())
     evidence.update(fixture=name, fixture_sha256=hashlib.sha256(raw).hexdigest(), wrapper_exit=code)
     print(json.dumps(evidence))
-    safe = (evidence["boundary_check"] and evidence["streams_closed"] and
-            evidence["forwarded"] == 0 and evidence["admitted"] == 1 and evidence["denied"] >= 2 and
-            evidence["auxiliary_denied"] and evidence["duplicate_denied"] and
-            evidence["relay_status"] == expected)
+    safe = (evidence.get("boundary_check") and evidence.get("streams_closed") and
+            not evidence.get("timeout") and not evidence.get("output_cap") and
+            evidence.get("forwarded") == 0 and evidence.get("admitted") == 1 and
+            evidence.get("denied", 0) >= 2 and evidence.get("auxiliary_denied") and
+            evidence.get("duplicate_denied") and evidence.get("relay_status") == expected)
     if expected == 200:
         return 0 if safe and code == 0 and evidence["exit"] == 0 and evidence["result"] else 1
     return 0 if safe and code == 1 and evidence["exit"] == 1 and not evidence["result"] else 1
