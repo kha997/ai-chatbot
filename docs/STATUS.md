@@ -5,6 +5,7 @@
 - **STATE:** Offline fix validated for synthetic SSE over 32 KiB. Live qualification and Dispatcher remain **NO-GO**. The Issue #20 authorization remains consumed.
 - **CAUSE:** The exact Issue #20 HTTPS capture/relay body cap rejected byte 32,769 before parsing any SSE event. The historic full body and usable completion are unknown.
 - **EVIDENCE:** The offline candidate validates bounded HTTP/SSE input incrementally, and forwards a compact result after terminal checks. [Measurements, synthetic ELF cases and future gate conditions](KILO_BOUNDED_SSE.md).
+- **SHA/BRANCH/PR:** `57e455c59b69f43220ca4d6fea191af8c9c0390d`, `evidence/kilo-bounded-sse`, [PR #23](https://github.com/kha997/ai-chatbot/pull/23).
 
 ## Gate 1.5 one-use Kilo activation — Issue #20
 
