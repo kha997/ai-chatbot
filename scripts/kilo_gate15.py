@@ -71,6 +71,10 @@ def reply_frame(answer):
     return json.dumps({"status": answer["status"], "body": body}).encode("ascii") + b"\n"
 
 
+def send_relay_reply(connection, answer):
+    connection.sendall(reply_frame(answer))
+
+
 def decode_reply_frame(frame):
     if len(frame) > MAX_RELAY_FRAME or not frame.endswith(b"\n"):
         raise ValueError("incomplete relay frame")
@@ -354,9 +358,16 @@ def emit_filter(file):
 
 
 def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
-    streaming = mode == "stream-mock"
+    tls_mock = mode == "tls-mock"
+    streaming = mode == "stream-mock" or tls_mock
     activated = mode == "authorized"
-    if streaming:
+    if tls_mock:
+        from scripts.kilo_tls_offline import LocalTLSExchange, require_loopback
+
+        require_loopback()
+        if type(exchange) is not LocalTLSExchange or not isinstance(sandbox, Path) or fixture is not None:
+            raise ValueError("tls-mock requires pinned sandbox and a loopback fixture")
+    elif streaming:
         from scripts.kilo_sse_stream import StreamingOfflineExchange, require_offline_network
 
         require_offline_network()
@@ -409,6 +420,8 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
                             stats["forwarded"] = exchange.post_count
                         answer = response if streaming else relay_response(
                             *response, expected_model=MODEL if activated else None)
+                        if tls_mock:
+                            stats["tls_worker"] = answer["worker"]
                     elif fixture is not None:
                         answer = relay_response(*fixture)
                     else:
@@ -420,9 +433,17 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
                     stats["relay_status"] = answer["status"]
             except (AttributeError, ValueError, OSError, KeyError, http.client.HTTPException):
                 answer = json_reply(502)
-            self.wfile.write(reply_frame(answer))
+            if tls_mock:
+                try:
+                    send_relay_reply(self.request, answer)
+                except OSError:
+                    return
+            else:
+                self.wfile.write(reply_frame(answer))
 
-    with tempfile.TemporaryDirectory(prefix="gate15-kilo-", dir="/tmp") as tmp, tempfile.TemporaryFile(dir="/tmp") as bpf:
+    scratch = exchange.scratch if tls_mock else None
+    with (tempfile.TemporaryDirectory(prefix="gate15-kilo-", dir=scratch or "/tmp") as tmp,
+          tempfile.TemporaryFile(dir="/tmp") as bpf):
         folder = Path(tmp)
         bwrap = stage_sandbox(sandbox, folder / "bwrap") if sandbox is not None else "/usr/bin/bwrap"
         canary = folder / "host-only" / "canary"
@@ -448,7 +469,8 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
         (folder / "work").mkdir()
         emit_filter(bpf)
         with socketserver.ThreadingUnixStreamServer(str(folder / "relay.sock"), Relay) as relay:
-            relay.daemon_threads = True
+            # Local TLS handlers must be joined after the hard worker and bounded Unix timeout.
+            relay.daemon_threads = not tls_mock
             threading.Thread(target=relay.serve_forever, daemon=True).start()
             args = [str(bwrap),"--unshare-all","--unshare-user","--disable-userns","--die-with-parent","--new-session","--clearenv",
                     "--cap-drop","ALL","--seccomp",str(bpf.fileno()),
