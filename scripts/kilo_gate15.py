@@ -65,6 +65,13 @@ def json_reply(status, payload=None):
             "payload": payload if payload is not None else '{"error":{"message":"one-shot gate closed"}}'}
 
 
+def relay_response(status, content_type, raw):
+    # Legacy HTTP-200 path extracted unchanged so the offline replay can exercise it.
+    if status == 200 and len(raw) <= MAX_BYTES:
+        return json_reply(200, raw.decode())
+    return json_reply(502)
+
+
 class Bridge(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
@@ -192,7 +199,7 @@ def confirm_free_listing():
         conn.close()
 
 
-def run(archive, mode):
+def run(archive, mode, fixture=None):
     if os.uname().machine != "x86_64":
         raise SystemExit("Requires x86-64 Linux")
     with archive.open("rb") as file:
@@ -252,12 +259,14 @@ def run(archive, mode):
                                             stats["usage"] = {k:v for k,v in usage.items()
                                                 if k in ("prompt_tokens","completion_tokens","total_tokens")
                                                 and type(v) is int and v >= 0}
-                                answer = json_reply(200, raw.decode())
+                                answer = relay_response(response.status, response.getheader("Content-Type"), raw)
                             else:
                                 answer = json_reply(502)
                         finally:
                             conn.close()
                             upstream_done.set()
+                    elif fixture is not None:
+                        answer = relay_response(*fixture)
                     else:
                         event = {"id":"mock","object":"chat.completion.chunk","created":1,"model":MODEL,
                                  "choices":[{"index":0,"delta":{"content":json.dumps(EXPECTED)},"finish_reason":"stop"}]}
