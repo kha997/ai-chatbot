@@ -2,6 +2,16 @@
 
 Date: 2026-11-21 (Asia/Saigon).
 
+## Issue #5 local setup
+
+- **CLI installed/reused:** Qoder native 1.1.94 and Kilo native 7.8.32 are installed in project-specific user-local directories. OpenCode 1.18.30 was reused in WSL. Codex informational subprocess probes passed. Authentication, quotas and prompts remain unverified. [CLI evidence and rollback](AGENT_CLI_READINESS.md).
+- **Watcher active:** one limited interactive Windows task, `AIChatBot-GitHubWatcher`, public GET access to this repository, interval PT30M, hard limit PT2M, overlap ignored. Automatic trigger succeeded at 10:03:05 local after restoring the task. [Design and runbook](GITHUB_WATCHER_DESIGN.md).
+- **Live validation:** see the [commissioning record](reviews/ISSUE_5_COMMISSIONING.md) for local task results, duplicate handling, pause, restore and uninstall. Five deterministic tests passed.
+- **Review:** separate Codex `issue5_review` session approved PR #6 and the final watcher permission scope. Reviewed implementation `385079f850a9306b5d5353639b1774c6c25e88c6`, branch `ops/agent-readiness-watcher`, [PR #7](https://github.com/kha997/ai-chatbot/pull/7). Governance merge `8d7949470cf3df4b1f77165f779b80f208085afd`.
+- **Execution authorization:** future real model qualification requires a separate provider/access and cost/quota decision. The Watcher depends on the PC and signed-in user session.
+
+## Gate 0–1 research baseline
+
 - **STATE:** GATE_1_COMPLETE (research and design documentation; no runtime acceptance)
 - **GATE:** 1, research/design only. Runtime NOT_RUN.
 - **RECOMMENDATION:** **CONDITIONAL GO** for separately approved synthetic Gate 2 using LangGraph OSS with application-owned authorization and per-tenant credentials/storage. Optional modules remain gated.
