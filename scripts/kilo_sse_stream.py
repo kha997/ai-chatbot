@@ -7,7 +7,7 @@ from http.client import HTTPException, HTTPResponse
 from pathlib import Path
 from time import monotonic
 
-from scripts.kilo_gate15 import MAX_BYTES, MODEL, Permit, json_reply, sse_events, unique_json_keys
+from scripts.kilo_gate15 import MAX_BYTES, MODEL, Permit, json_reply, unique_json_keys
 
 BODY_LIMIT = 256 * 1024
 FRAME_LIMIT = 8 * 1024
@@ -112,6 +112,7 @@ def frames(parts, info):
     frame = bytearray()
     line_size = 0
     skip_lf = False
+    first = True
     for part in parts:
         cursor = 0
         for match in LINE_BREAK.finditer(part):
@@ -133,8 +134,10 @@ def frames(parts, info):
                 info["frames"] += 1
                 if info["frames"] > FRAME_COUNT_LIMIT:
                     raise Rejected("event_cap")
-                yield frame.decode("utf-8")
+                text = frame.decode("utf-8")
+                yield text.removeprefix("\ufeff") if first else text
             if ended:
+                first = False
                 frame.clear()
         if cursor < len(part):
             skip_lf = False
@@ -146,27 +149,48 @@ def frames(parts, info):
         raise Rejected("truncated_event")
 
 
+def frame_data(frame, done):
+    data = []
+    kind = None
+    for line in frame.split("\n"):
+        if not line or line.startswith(":"):
+            continue
+        if done:
+            raise Rejected("data_after_done")
+        name, _, value = line.partition(":")
+        value = value.removeprefix(" ")
+        if name == "data":
+            data.append(value)
+        elif name == "event":
+            if kind is not None:
+                raise Rejected("duplicate_event_type")
+            kind = value or "message"
+        elif name not in ("id", "retry"):
+            raise Rejected("unframed_data")
+    if kind == "error":
+        raise Rejected("embedded_error")
+    if kind not in (None, "message"):
+        raise Rejected("unexpected_event")
+    return "\n".join(data) if data else None
+
+
+def parse_event_json(data):
+    def invalid_constant(_):
+        raise Rejected("malformed_event")
+
+    return json.loads(data, object_pairs_hook=unique_json_keys, parse_constant=invalid_constant)
+
+
 def sanitized_sse(parts, info):
     text = bytearray()
     for frame in frames(parts, info):
-        fields = [line for line in frame.split("\n") if line and not line.startswith(":")]
-        if info["done"] and fields:
-            raise Rejected("data_after_done")
-        if any(line.partition(":")[0] == "event" and line.partition(":")[2].removeprefix(" ") == "error"
-               for line in fields):
-            raise Rejected("embedded_error")
-        for kind, data in sse_events(frame):
-            if info["done"]:
-                raise Rejected("data_after_done")
+        data = frame_data(frame, info["done"])
+        if data is not None:
             info["events"] += 1
-            if kind == "error":
-                raise Rejected("embedded_error")
-            if kind != "message":
-                raise Rejected("unexpected_event")
             if data == "[DONE]":
                 info["done"] = True
                 continue
-            event = json.loads(data, object_pairs_hook=unique_json_keys)
+            event = parse_event_json(data)
             if not isinstance(event, dict):
                 raise Rejected("invalid_event")
             if "error" in event:
@@ -256,7 +280,7 @@ def inspect_response(stream):
                     if len(error_body) + len(part) > READ_SIZE:
                         raise Rejected("unexpected_media")
                     error_body.extend(part)
-                event = json.loads(error_body, object_pairs_hook=unique_json_keys)
+                event = parse_event_json(error_body)
                 if isinstance(event, dict) and "error" in event:
                     raise Rejected("embedded_error")
                 raise Rejected("unexpected_media")

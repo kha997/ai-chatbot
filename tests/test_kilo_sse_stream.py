@@ -101,6 +101,19 @@ class StreamQualificationTests(unittest.TestCase):
         self.assertEqual(result["protocol"]["bytes"], len(body))
         self.assertEqual(result["protocol"]["text_bytes"], len(ORACLE))
 
+    def test_bom_duplicate_event_and_non_json_numbers(self):
+        bom = bytes.fromhex("efbbbf")
+        ambiguous = b"event: error\nevent: message\n" + stream(DELTAS[0])
+        for body, classification in (
+            (bom + VALID, "complete"),
+            (b"\n" + bom + ambiguous + VALID, "unframed_data"),
+            (ambiguous + VALID, "duplicate_event_type"),
+            (stream(DELTAS[0][:-1] + ', "metadata": NaN}', *DELTAS[1:], "[DONE]"), "malformed_event"),
+        ):
+            with self.subTest(classification=classification):
+                result = self.parse(http_wire(body, chunk_size=1))
+                self.assertEqual(result["protocol"]["classification"], classification)
+
     def test_slow_body_deadline_and_pull_read_bound(self):
         from scripts.kilo_sse_stream import BODY_SECONDS, READ_SIZE, inspect_response
 
