@@ -1,6 +1,20 @@
 # Kilo Free activation decision — Issue #20
 
-**READY_FOR_OWNER_GATE** for one manual Kilo Free qualification. Live approval is pending. Dispatcher **NO-GO**. PR #19 was independently reviewed at `0bd680da0f1680286e8ec88a14bcd67164f42e75` and merged as offline evidence at `307bd2123633c981dc1515bbed4448dbfdab44eb`. Issue #20 preparation sent zero inference requests. The previous Kilo and OpenCode allowances remain exhausted.
+**NO-GO.** The offline candidate reached `READY_FOR_OWNER_GATE`. The Owner separately authorized one live attempt, which was consumed without a qualifying result. Dispatcher remains **NO-GO**. PR #19 was independently reviewed at `0bd680da0f1680286e8ec88a14bcd67164f42e75` and merged as offline evidence at `307bd2123633c981dc1515bbed4448dbfdab44eb`. The previous Kilo and OpenCode allowances remain exhausted.
+
+## Approved live result — 2026-11-21
+
+Codex ran the exact activation commit below through the documented hash-verified WSL bootstrap. The unedited Owner comment matched the commit, manifest, runner and expiry. The runner passed the current zero-price preflight and sent **one** anonymous Kilo Free POST. The single-use reservation and POST claim remain on WSL ext4. [Owner approval](https://github.com/kha997/ai-chatbot/issues/20#issuecomment-7060971663).
+
+| Signal | Observed result |
+| --- | --- |
+| Transport | One POST recorded. Upstream HTTP 200, `text/event-stream`, identity encoding. |
+| Response boundary | `response_cap`. The runner observed 32,769 body bytes against its 32,768-byte cap and returned HTTP 502 to Kilo. The total upstream stream size and contents are unknown. |
+| Task result | Kilo CLI exit 1 with one error event and no valid JSON oracle. No SSE terminal marker was verified. |
+| Usage and cost | Provider-returned model ID, token usage and per-attempt billing receipt are `UNKNOWN`. The approved route was anonymous and priced at zero at preflight. No purchase or funding action occurred. |
+| Containment | Three auxiliary or duplicate local requests denied. Sandbox probe passed, network worker and streams closed, and the WSL process scan found no leftover runner, Kilo CLI or probe process. |
+
+No retry was sent. The evidence establishes why the runner rejected this attempt. It cannot establish what the unparsed stream contained or why upstream sent more than the verified capture window. A follow-up can reproduce this boundary offline and assess a bounded streaming parser before any new request for live approval. Preserve both spent markers.
 
 ## Exact reviewed inputs
 
@@ -36,9 +50,9 @@ A public HTTPS `GET /api/v1/models` at 09:01:56 UTC on 2026-11-21 returned one e
 
 The serial suite found no remaining Kilo or sandbox probe process. Every fixture recorded zero real POSTs. Fixture token counts are synthetic. The only Kilo network access in the preparation was the public catalog GET.
 
-## Owner action and supported invocation
+## Historical Owner action and supported invocation
 
-Authorize **one manual Kilo Free POST**, that exact commit, manifest and runner, this fixed packet and **0 VND incremental spend**. The Owner must personally post an unedited single-line comment on [Issue #20](https://github.com/kha997/ai-chatbot/issues/20) using the following format. Replace the expiry placeholder with a UTC timestamp in `YYYY-MM-DDTHH:MM:SSZ` format. It must expire within 24 hours of publication.
+The consumed approval covered **one manual Kilo Free POST**, that exact commit, manifest and runner, this fixed packet and **0 VND incremental spend**. The Owner personally posted the approval using this single-line format. It required a UTC expiry within 24 hours of publication. [Issue #20](https://github.com/kha997/ai-chatbot/issues/20).
 
 ```text
 APPROVE ONE KILO FREE POST | issue=20 | commit=ace3a4ef35c75e4899f52b5bf1a92b64dcbd0064 | manifest=2073e85f27ed03a4bc2b34eca06744d6eda7a6cee412b825025afea845ec45fd | runner=df5fedd3db3791fa0cc7be3c1babc10c70d4f5e6caebb318c30ba2bff9099ee6 | model=recursive/flint-v1.0:free | max_posts=1 | incremental_vnd=0 | expires=<UTC expiry>
