@@ -474,9 +474,12 @@ def activate(args):
                 with redirect_stdout(evidence):
                     result = run(archive, "authorized", sandbox=sandbox, exchange=exchange)
             receipt = json.loads(evidence.getvalue())
-            usage = receipt.get("protocol", {}).get("usage") or "UNKNOWN"
+            protocol = receipt.get("protocol", {})
+            usage = protocol.get("usage") or "UNKNOWN"
+            model_identity = ("MATCH" if protocol.get("classification") == "complete" else "REJECTED"
+                              ) if protocol.get("model_supplied") else "UNKNOWN"
             print(json.dumps(receipt | {"network_worker_closed": True, "qualification_passed": result == 0,
-                                        "provider_usage": usage}))
+                                        "provider_usage": usage, "provider_model_identity": model_identity}))
             return result
 
 

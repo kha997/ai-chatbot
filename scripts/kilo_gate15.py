@@ -113,6 +113,13 @@ def sse_events(text):
         raise ValueError("truncated_event")
 
 
+def unique_json_keys(pairs):
+    result = dict(pairs)
+    if len(result) != len(pairs):
+        raise ValueError("duplicate_json_key")
+    return result
+
+
 def relay_response(status, content_type, raw, content_encoding=None, *, expected_model=None):
     media = (content_type or "").split(";", 1)[0].strip().lower()
     info = {"http_status": status, "media": (
@@ -132,7 +139,7 @@ def relay_response(status, content_type, raw, content_encoding=None, *, expected
         return reject("unsupported_encoding")
     if info["media"] == "json":
         try:
-            body = json.loads(raw)
+            body = json.loads(raw, object_pairs_hook=unique_json_keys)
             if isinstance(body, dict) and body.get("error") is not None:
                 return reject("embedded_error")
         except (ValueError, UnicodeError):
@@ -150,7 +157,7 @@ def relay_response(status, content_type, raw, content_encoding=None, *, expected
             if data == "[DONE]":
                 info["done"] = True
                 continue
-            event = json.loads(data)
+            event = json.loads(data, object_pairs_hook=unique_json_keys)
             if not isinstance(event, dict):
                 return reject("invalid_event")
             if event.get("error") is not None:
@@ -203,8 +210,9 @@ def cli_evidence(stdout):
     parts = []
     for line in stdout.splitlines():
         try:
-            event = json.loads(line)
-        except (ValueError, UnicodeError):
+            event = json.loads(line, object_pairs_hook=unique_json_keys)
+        except (ValueError, UnicodeError, RecursionError):
+            info["invalid_text"] += 1
             continue
         if not isinstance(event, dict) or not isinstance(event.get("type"), str):
             continue
@@ -219,14 +227,8 @@ def cli_evidence(stdout):
                 parts.append(text)
             else:
                 info["invalid_text"] += 1
-    def reject_duplicate_keys(pairs):
-        result = dict(pairs)
-        if len(result) != len(pairs):
-            raise ValueError("duplicate oracle key")
-        return result
-
     try:
-        result = json.loads("".join(parts), object_pairs_hook=reject_duplicate_keys)
+        result = json.loads("".join(parts), object_pairs_hook=unique_json_keys)
         match = isinstance(result, dict) and result == EXPECTED and all(type(v) is int for v in result.values())
     except (ValueError, RecursionError):
         match = False

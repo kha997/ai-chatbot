@@ -69,6 +69,9 @@ class KiloSSERelayTests(unittest.TestCase):
                          ("complete", 5, 2))
         self.assertTrue(good["done"] and good["usage_present"])
         self.assertEqual(good["finish"], "stop")
+        ambiguous = VALID.replace(b'"model": ', b'"model": "other/model", "model": ', 1)
+        self.assertEqual(relay_response(200, SSE, ambiguous, expected_model=MODEL)["protocol"]["classification"],
+                         "duplicate_json_key")
         without_usage = relay_response(200, SSE, stream(*DELTAS))["protocol"]
         self.assertFalse(without_usage["usage_present"] or without_usage["done"])
         for status, media, raw, encoding, reason in (
