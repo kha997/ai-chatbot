@@ -202,6 +202,7 @@ def run(directory, discover=None):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 1 or not os.environ.get("LOCALAPPDATA"):
-        raise SystemExit("Run without arguments under the registered Windows user.")
-    raise SystemExit(run(Path(os.environ["LOCALAPPDATA"]) / "AIChatBotWatcher"))
+    installed = Path(__file__).resolve()
+    if len(sys.argv) != 1 or installed.parent.name != "github-watcher" or installed.parent.parent.name != "local-data":
+        raise SystemExit("Run the installed snapshot without arguments.")
+    raise SystemExit(run(installed.parent))
