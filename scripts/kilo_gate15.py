@@ -1,4 +1,4 @@
-"""Manually qualify one Kilo Free task from a verified Linux release archive."""
+"""Replay synthetic Kilo HTTP responses offline in a verified Linux sandbox."""
 
 import errno
 import hashlib
@@ -21,8 +21,6 @@ MODEL = "recursive/flint-v1.0:free"
 PROMPT = "Classify the synthetic records catalog, handoff, catalog. Return only JSON with integer fields catalog, handoff, total."
 EXPECTED = {"catalog": 2, "handoff": 1, "total": 3}
 RELEASE_SHA = "ab7a008a2c0ca6e035b96cd1dc5712a8466a14a45992291a8f0b4b549b94136e"
-HOST = "ai-gateway.kilo.ai"
-ENDPOINT = "/api/v1/chat/completions"
 MAX_BYTES = 32768
 
 
@@ -65,11 +63,131 @@ def json_reply(status, payload=None):
             "payload": payload if payload is not None else '{"error":{"message":"one-shot gate closed"}}'}
 
 
-def relay_response(status, content_type, raw):
-    # Legacy HTTP-200 path extracted unchanged so the offline replay can exercise it.
-    if status == 200 and len(raw) <= MAX_BYTES:
-        return json_reply(200, raw.decode())
-    return json_reply(502)
+def sse_events(text):
+    # Split only on SSE line endings. Unicode line separators are valid JSON text.
+    lines = text.removeprefix("\ufeff").replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    if lines[-1] == "":
+        lines.pop()
+    data, kind = [], "message"
+    for line in lines:
+        if not line:
+            if data:
+                yield kind, "\n".join(data)
+            data, kind = [], "message"
+        elif not line.startswith(":"):
+            field, _, value = line.partition(":")
+            value = value.removeprefix(" ")
+            if field == "data":
+                data.append(value)
+            elif field == "event":
+                kind = value or "message"
+            elif field not in ("id", "retry"):
+                # Intentionally strict for this fixed OpenAI-compatible route.
+                raise ValueError("unframed_data")
+    if data:
+        raise ValueError("truncated_event")
+
+
+def relay_response(status, content_type, raw, content_encoding=None):
+    media = (content_type or "").split(";", 1)[0].strip().lower()
+    info = {"http_status": status, "media": (
+        "sse" if media == "text/event-stream" else "json" if media == "application/json" else "other"
+    ), "encoding": "identity" if content_encoding in (None, "", "identity") else "unsupported",
+            "bytes": len(raw), "events": 0, "text_deltas": 0, "done": False,
+            "finish": "absent", "usage_present": False}
+
+    def reject(reason):
+        return json_reply(502) | {"protocol": info | {"classification": reason}}
+
+    if status != 200:
+        return reject("http_status")
+    if len(raw) > MAX_BYTES:
+        return reject("response_cap")
+    if info["encoding"] != "identity":
+        return reject("unsupported_encoding")
+    if info["media"] == "json":
+        try:
+            body = json.loads(raw)
+            if isinstance(body, dict) and body.get("error") is not None:
+                return reject("embedded_error")
+        except (ValueError, UnicodeError):
+            return reject("malformed_json")
+    if info["media"] != "sse":
+        return reject("unexpected_media")
+    try:
+        text = raw.decode("utf-8")
+        for kind, data in sse_events(text):
+            info["events"] += 1
+            if info["done"]:
+                return reject("data_after_done")
+            if kind == "error":
+                return reject("embedded_error")
+            if data == "[DONE]":
+                info["done"] = True
+                continue
+            event = json.loads(data)
+            if not isinstance(event, dict):
+                return reject("invalid_event")
+            if event.get("error") is not None:
+                return reject("embedded_error")
+            info["usage_present"] |= isinstance(event.get("usage"), dict)
+            choices = event.get("choices")
+            if not isinstance(choices, list) or len(choices) > 1:
+                return reject("invalid_choices")
+            for choice in choices:
+                if not isinstance(choice, dict) or choice.get("index", 0) != 0 or info["finish"] != "absent":
+                    return reject("invalid_choices")
+                delta = choice.get("delta") or {}
+                if not isinstance(delta, dict) or delta.get("tool_calls") or delta.get("function_call"):
+                    return reject("unexpected_delta")
+                content = delta.get("content")
+                if content is not None and not isinstance(content, str):
+                    return reject("unexpected_delta")
+                info["text_deltas"] += bool(content)
+                finish = choice.get("finish_reason")
+                if finish is not None:
+                    info["finish"] = finish if finish in ("stop", "length", "content_filter", "tool_calls") else "other"
+                    if finish != "stop":
+                        return reject("unfinished_task")
+    except UnicodeDecodeError:
+        return reject("invalid_utf8")
+    except json.JSONDecodeError:
+        return reject("malformed_json")
+    except ValueError as exc:
+        return reject(str(exc))
+    if not info["text_deltas"] or info["finish"] != "stop":
+        return reject("missing_completion")
+    # Buffering and size caps are intentional. Preserve native SSE bytes and delimiters.
+    return json_reply(200, text) | {"protocol": info | {"classification": "complete"}}
+
+
+def cli_evidence(stdout):
+    info = {"events": 0, "text": 0, "step_finish": 0, "error": 0, "invalid_text": 0}
+    parts = []
+    for line in stdout.splitlines():
+        try:
+            event = json.loads(line)
+        except (ValueError, UnicodeError):
+            continue
+        if not isinstance(event, dict) or not isinstance(event.get("type"), str):
+            continue
+        info["events"] += 1
+        kind = event["type"]
+        if kind in ("text", "step_finish", "error"):
+            info[kind] += 1
+        if kind == "text":
+            part = event.get("part")
+            text = part.get("text") if isinstance(part, dict) else None
+            if isinstance(text, str):
+                parts.append(text)
+            else:
+                info["invalid_text"] += 1
+    try:
+        result = json.loads("".join(parts))
+        match = isinstance(result, dict) and result == EXPECTED and all(type(v) is int for v in result.values())
+    except ValueError:
+        match = False
+    return info, bool(match and not info["error"] and not info["invalid_text"])
 
 
 class Bridge(BaseHTTPRequestHandler):
@@ -128,7 +246,23 @@ def check_boundary():
         pass
 
 
-def inner(hang, mock):
+def probe_refusal(system):
+    conn = http.client.HTTPConnection("127.0.0.1", 18746, timeout=5)
+    try:
+        conn.request("POST", "/chat/completions", json.dumps({
+            "model": MODEL, "stream": True, "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": PROMPT},
+            ]}), {"Content-Type": "application/json"})
+        response = conn.getresponse()
+        response.read(MAX_BYTES)
+        if response.status != 403:
+            raise RuntimeError("expected local request refusal")
+    finally:
+        conn.close()
+
+
+def inner(hang):
     check_boundary()
     print('{"boundary_check":true}', flush=True)
     if hang:
@@ -137,23 +271,13 @@ def inner(hang, mock):
     with ThreadingHTTPServer(("127.0.0.1", 18746), Bridge) as server:
         threading.Thread(target=server.serve_forever, daemon=True).start()
         try:
+            probe_refusal("You are a title generator.")
+            print('{"auxiliary_denied":true}', flush=True)
             code = subprocess.run(
                 ["/gate/kilo", "run", "--pure", "--format", "json", "--model", "kilo/" + MODEL, PROMPT],
                 timeout=40).returncode
-            if mock and code == 0:
-                dupe = http.client.HTTPConnection("127.0.0.1", 18746, timeout=5)
-                try:
-                    dupe.request("POST", "/chat/completions", json.dumps({
-                        "model": MODEL, "stream": True, "messages": [
-                            {"role":"system", "content":"You are Kilo, a CLI coding assistant."},
-                            {"role":"user", "content":PROMPT},
-                        ]}), {"Content-Type":"application/json"})
-                    response = dupe.getresponse()
-                    if response.status != 403:
-                        raise RuntimeError("duplicate admitted")
-                    print('{"duplicate_denied":true}', flush=True)
-                finally:
-                    dupe.close()
+            probe_refusal("You are Kilo, a CLI coding assistant.")
+            print('{"duplicate_denied":true}', flush=True)
             raise SystemExit(code)
         finally:
             server.shutdown()
@@ -176,47 +300,18 @@ def emit_filter(file):
     file.seek(0)
 
 
-def confirm_free_listing():
-    from decimal import Decimal, InvalidOperation
-
-    conn = http.client.HTTPSConnection(HOST, timeout=8)
-    try:
-        conn.request("GET", "/api/v1/models", headers={"Accept":"application/json"})
-        response = conn.getresponse()
-        limit = 2 * 1024 * 1024
-        data = response.read(limit + 1)
-        if response.status != 200 or len(data) > limit:
-            return False
-        matches = [m for m in json.loads(data)["data"] if m.get("id") == MODEL]
-        if len(matches) != 1 or not MODEL.endswith(":free"):
-            return False
-        prices = matches[0]["pricing"]
-        return all(key in prices for key in ("prompt", "completion")) and all(
-            Decimal(str(value)) == 0 for key, value in prices.items() if key != "discount")
-    except (KeyError, TypeError, ValueError, OSError, http.client.HTTPException, InvalidOperation):
-        return False
-    finally:
-        conn.close()
-
-
 def run(archive, mode, fixture=None):
+    if mode not in ("mock", "timeout"):
+        raise SystemExit("Only offline mock and timeout modes are enabled")
     if os.uname().machine != "x86_64":
         raise SystemExit("Requires x86-64 Linux")
     with archive.open("rb") as file:
         archive_bytes = file.read(128 * 1024 * 1024 + 1)
     if len(archive_bytes) > 128 * 1024 * 1024 or hashlib.sha256(archive_bytes).hexdigest() != RELEASE_SHA:
         raise SystemExit("Release archive hash mismatch")
-    if mode == "live":
-        if not confirm_free_listing():
-            raise SystemExit("Free catalog verification failed; no attempt reserved")
-        import pwd
-        marker = Path(pwd.getpwuid(os.geteuid()).pw_dir) / ".aichatbot-gate15-kilo-issue8-attempt"
-        with marker.open("x", encoding="utf-8") as file:
-            file.write("Issue #8 Kilo attempt reserved\n")
-    stats = dict(forwarded=0, denied=0, admitted=0, result=None, http_status=None)
+    stats = dict(forwarded=0, denied=0, admitted=0, result=None)
     permit = Permit()
-    evidence = []
-    upstream_done = threading.Event()
+    counters = threading.Lock()
 
     class Relay(socketserver.StreamRequestHandler):
         def handle(self):
@@ -229,48 +324,19 @@ def run(archive, mode, fixture=None):
                                if m.get("role") == "system"), "")
                 payload = approved_payload(body, req.get("auth"), str(system))
                 if payload is None or not permit.take():
-                    stats["denied"] += 1
-                    if mode == "mock":
-                        evidence.append({"system_prefix": str(system)[:90], "model_matches":body.get("model") == MODEL,
-                                         "tools_present":bool(body.get("tools")), "auth_present":req.get("auth") is not None,
-                                         "auth_length":len(req.get("auth") or ""),
-                                         "public_placeholder":req.get("auth") == "Bearer anonymous",
-                                         "undefined_placeholder":req.get("auth") == "Bearer undefined",
-                                         "stream":body.get("stream") is True})
+                    with counters:
+                        stats["denied"] += 1
                 else:
                     stats["admitted"] += 1
-                    if mode == "live":
-                        conn = http.client.HTTPSConnection(HOST, timeout=20)
-                        try:
-                            stats["forwarded"] += 1
-                            conn.request("POST", ENDPOINT, json.dumps(payload), {"Content-Type":"application/json"})
-                            response = conn.getresponse()
-                            stats["http_status"] = response.status
-                            retry_after = response.getheader("Retry-After", "")
-                            if retry_after.isascii() and retry_after.isdecimal() and len(retry_after) <= 8:
-                                stats["retry_after_seconds"] = int(retry_after)
-                            raw = response.read(MAX_BYTES + 1)
-                            if response.status == 200 and len(raw) <= MAX_BYTES:
-                                for line in raw.splitlines():
-                                    if line.startswith(b"data: {"):
-                                        event = json.loads(line[6:])
-                                        usage = event.get("usage")
-                                        if isinstance(usage, dict):
-                                            stats["usage"] = {k:v for k,v in usage.items()
-                                                if k in ("prompt_tokens","completion_tokens","total_tokens")
-                                                and type(v) is int and v >= 0}
-                                answer = relay_response(response.status, response.getheader("Content-Type"), raw)
-                            else:
-                                answer = json_reply(502)
-                        finally:
-                            conn.close()
-                            upstream_done.set()
-                    elif fixture is not None:
+                    if fixture is not None:
                         answer = relay_response(*fixture)
                     else:
                         event = {"id":"mock","object":"chat.completion.chunk","created":1,"model":MODEL,
                                  "choices":[{"index":0,"delta":{"content":json.dumps(EXPECTED)},"finish_reason":"stop"}]}
-                        answer = json_reply(200, "data: " + json.dumps(event) + "\n\ndata: [DONE]\n\n")
+                        raw = ("data: " + json.dumps(event) + "\n\ndata: [DONE]\n\n").encode()
+                        answer = relay_response(200, "text/event-stream", raw)
+                    stats["protocol"] = answer["protocol"]
+                    stats["relay_status"] = answer["status"]
             except (AttributeError, ValueError, OSError, KeyError, http.client.HTTPException):
                 answer = json_reply(502)
             self.wfile.write(json.dumps(answer).encode() + b"\n")
@@ -314,7 +380,7 @@ def run(archive, mode, fixture=None):
                     "--setenv","OPENCODE_DISABLE_AUTOUPDATE","1",
                     "--setenv","OPENCODE_DISABLE_MODELS_FETCH","1",
                     "--setenv","OPENCODE_DISABLE_SHARE","1","/usr/bin/python3","/gate/probe.py",
-                    {"timeout":"--hang", "mock":"--mock-inner", "live":"--inner"}[mode]]
+                    {"timeout":"--hang", "mock":"--mock-inner"}[mode]]
             proc = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     pass_fds=(bpf.fileno(),), start_new_session=True)
             buffers = [bytearray(), bytearray()]
@@ -354,46 +420,28 @@ def run(archive, mode, fixture=None):
                     reader.join(3)
                 stats["streams_closed"] = not any(reader.is_alive() for reader in readers)
                 relay.shutdown()
-                if mode == "live":
-                    stats["upstream_finished"] = bool(stats["admitted"] and upstream_done.wait(2))
         out, err = buffers
         stats["boundary_check"] = b'{"boundary_check":true}' in out
         if mode == "mock":
             stats["duplicate_denied"] = b'{"duplicate_denied":true}' in out
-        answer = ""
-        for line in out.splitlines():
-            try:
-                data = json.loads(line)
-            except ValueError:
-                continue
-            if data.get("type") == "text":
-                answer += data.get("part", {}).get("text", "")
-        try:
-            value = json.loads(answer)
-            stats["result"] = value == EXPECTED and all(type(v) is int for v in value.values())
-        except (AttributeError, ValueError):
-            stats["result"] = False
-        if mode != "live":
-            stats["mock_denials"] = evidence
-            if not stats["boundary_check"]:
-                stats["sandbox_start_error"] = bytes(err).decode(errors="replace").splitlines()[:2]
-            stats["mock_errors"] = [x for x in ("Traceback","not found","Operation not permitted",
-                "Permission denied","ECONNREFUSED","ProviderModelNotFound","unexpected host path",
-                "ambient credentials","unapproved socket family","work directory is writable")
-                if x.lower().encode() in (out + err).lower()]
+            stats["auxiliary_denied"] = b'{"auxiliary_denied":true}' in out
+        stats["cli"], stats["result"] = cli_evidence(out)
+        stats["exit_class"] = "timeout" if stats.get("timeout") else (
+            "ok" if stats["exit"] == 0 else "cli_nonzero" if stats["exit"] > 0 else "signal")
+        stats["stderr_present"] = bool(err)
     print(json.dumps(stats))
     safe = stats.get("boundary_check") and stats.get("streams_closed") and not stats.get("output_cap")
     if mode == "timeout":
         return 0 if safe and stats.get("timeout") and stats["forwarded"] == 0 and stats["exit"] == -9 else 1
-    expected = (stats["forwarded"] == 0 and stats.get("duplicate_denied")) if mode == "mock" else (
-        stats["forwarded"] == 1 and stats["http_status"] == 200 and stats.get("upstream_finished"))
+    expected = (stats["forwarded"] == 0 and stats["relay_status"] == 200
+                and stats["duplicate_denied"] and stats["auxiliary_denied"]) if "relay_status" in stats else False
     return 0 if safe and expected and stats["admitted"] == 1 and stats["exit"] == 0 and stats["result"] else 1
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] in (["--inner"], ["--mock-inner"], ["--hang"]):
-        inner(sys.argv[1] == "--hang", sys.argv[1] == "--mock-inner")
-    elif len(sys.argv) == 3 and sys.argv[1] in ("mock", "timeout", "live"):
+    if sys.argv[1:] in (["--mock-inner"], ["--hang"]):
+        inner(sys.argv[1] == "--hang")
+    elif len(sys.argv) == 3 and sys.argv[1] in ("mock", "timeout"):
         raise SystemExit(run(Path(sys.argv[2]), sys.argv[1]))
     else:
-        raise SystemExit("usage: kilo_gate15.py mock|timeout|live VERIFIED_RELEASE_ARCHIVE")
+        raise SystemExit("usage: kilo_gate15.py mock|timeout VERIFIED_RELEASE_ARCHIVE")
