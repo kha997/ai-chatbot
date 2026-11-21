@@ -118,7 +118,7 @@ def relay_response(status, content_type, raw, content_encoding=None):
         "sse" if media == "text/event-stream" else "json" if media == "application/json" else "other"
     ), "encoding": "identity" if content_encoding in (None, "", "identity") else "unsupported",
             "bytes": len(raw), "events": 0, "text_deltas": 0, "done": False,
-            "finish": "absent", "usage_present": False}
+            "finish": "absent", "usage_present": False, "usage": None}
 
     def reject(reason):
         return json_reply(502) | {"protocol": info | {"classification": reason}}
@@ -154,7 +154,13 @@ def relay_response(status, content_type, raw, content_encoding=None):
                 return reject("invalid_event")
             if event.get("error") is not None:
                 return reject("embedded_error")
-            info["usage_present"] |= isinstance(event.get("usage"), dict)
+            usage = event.get("usage")
+            if isinstance(usage, dict):
+                info["usage_present"] = True
+                counts = {key: usage[key] for key in ("prompt_tokens", "completion_tokens", "total_tokens")
+                          if type(usage.get(key)) is int and usage[key] >= 0}
+                if counts:
+                    info["usage"] = counts
             choices = event.get("choices")
             if not isinstance(choices, list) or len(choices) > 1:
                 return reject("invalid_choices")
@@ -246,6 +252,14 @@ def check_boundary():
             raise RuntimeError("unexpected host path")
     if any(key in os.environ for key in ("GH_TOKEN", "GITHUB_TOKEN", "KILO_API_KEY", "WSL_INTEROP")):
         raise RuntimeError("ambient credentials or WSL interop")
+    canary = os.environ.get("GATE_HOST_CANARY")
+    if canary:
+        try:
+            Path(canary).read_bytes()
+        except FileNotFoundError:
+            pass
+        else:
+            raise RuntimeError("host canary is readable")
     interfaces = {line.split(":")[0].strip() for line in
                   Path("/proc/net/dev").read_text().splitlines()[2:] if ":" in line}
     if interfaces != {"lo"} or str(Path("/proc/self/ns/net").stat().st_ino) == os.environ["GATE_HOST_NETNS"]:
@@ -324,9 +338,17 @@ def emit_filter(file):
     file.seek(0)
 
 
-def run(archive, mode, fixture=None):
+def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
     if mode not in ("mock", "timeout"):
         raise SystemExit("Only offline mock and timeout modes are enabled")
+    if sandbox is not None or exchange is not None:
+        # The host accepts only local data, never a transport or staging callback.
+        from scripts.kilo_owner_gate import OfflineExchange, stage_sandbox
+
+        if not isinstance(sandbox, Path) or fixture is not None or (
+            type(exchange) is not OfflineExchange if mode == "mock" else exchange is not None
+        ):
+            raise ValueError("candidate requires pinned sandbox and inert fixture data")
     if os.uname().machine != "x86_64":
         raise SystemExit("Requires x86-64 Linux")
     with archive.open("rb") as file:
@@ -352,7 +374,9 @@ def run(archive, mode, fixture=None):
                         stats["denied"] += 1
                 else:
                     stats["admitted"] += 1
-                    if fixture is not None:
+                    if exchange is not None:
+                        answer = relay_response(*exchange(payload))
+                    elif fixture is not None:
                         answer = relay_response(*fixture)
                     else:
                         event = {"id":"mock","object":"chat.completion.chunk","created":1,"model":MODEL,
@@ -367,6 +391,10 @@ def run(archive, mode, fixture=None):
 
     with tempfile.TemporaryDirectory(prefix="gate15-kilo-", dir="/tmp") as tmp, tempfile.TemporaryFile(dir="/tmp") as bpf:
         folder = Path(tmp)
+        bwrap = stage_sandbox(sandbox, folder / "bwrap") if sandbox is not None else "/usr/bin/bwrap"
+        canary = folder / "host-only" / "canary"
+        canary.parent.mkdir()
+        canary.write_text("synthetic outside-namespace fixture")
         with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz") as tar:
             member = tar.getmember("kilo")
             if not member.isfile() or not 0 < member.size <= 256 * 1024 * 1024:
@@ -389,16 +417,21 @@ def run(archive, mode, fixture=None):
         with socketserver.ThreadingUnixStreamServer(str(folder / "relay.sock"), Relay) as relay:
             relay.daemon_threads = True
             threading.Thread(target=relay.serve_forever, daemon=True).start()
-            args = ["/usr/bin/bwrap","--unshare-all","--unshare-user","--disable-userns","--die-with-parent","--new-session","--clearenv",
+            args = [str(bwrap),"--unshare-all","--unshare-user","--disable-userns","--die-with-parent","--new-session","--clearenv",
                     "--cap-drop","ALL","--seccomp",str(bpf.fileno()),
                     "--ro-bind","/usr/bin/python3","/usr/bin/python3",
                     "--ro-bind","/usr/lib/python3.12","/usr/lib/python3.12",
                     "--ro-bind","/usr/lib/x86_64-linux-gnu","/usr/lib/x86_64-linux-gnu",
                     "--ro-bind","/usr/lib64","/usr/lib64","--symlink","usr/lib","/lib","--symlink","usr/lib64","/lib64",
                     "--proc","/proc","--dev","/dev","--tmpfs","/tmp",
-                    "--ro-bind",tmp,"/gate","--chdir","/gate/work",
+                    "--ro-bind",str(folder / "kilo"),"/gate/kilo",
+                    "--ro-bind",str(folder / "probe.py"),"/gate/probe.py",
+                    "--ro-bind",str(folder / "config.json"),"/gate/config.json",
+                    "--ro-bind",str(folder / "work"),"/gate/work",
+                    "--ro-bind",str(folder / "relay.sock"),"/gate/relay.sock","--chdir","/gate/work",
                     "--setenv","PATH","/usr/bin:/bin","--setenv","HOME","/tmp",
                     "--setenv","GATE_HOST_NETNS",str(Path("/proc/self/ns/net").stat().st_ino),
+                    "--setenv","GATE_HOST_CANARY",str(canary),
                     "--setenv","KILO_CONFIG","/gate/config.json",
                     "--setenv","OPENCODE_CONFIG","/gate/config.json",
                     "--setenv","OPENCODE_DISABLE_AUTOUPDATE","1",
@@ -406,7 +439,7 @@ def run(archive, mode, fixture=None):
                     "--setenv","OPENCODE_DISABLE_SHARE","1","/usr/bin/python3","/gate/probe.py",
                     {"timeout":"--hang", "mock":"--mock-inner"}[mode]]
             proc = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    pass_fds=(bpf.fileno(),), start_new_session=True)
+                                    env={}, pass_fds=(bpf.fileno(),), start_new_session=True)
             buffers = [bytearray(), bytearray()]
 
             def kill_group():
