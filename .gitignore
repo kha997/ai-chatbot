@@ -1,0 +1,45 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.jks
+credentials*.json
+secrets*.json
+!.github/renovate.json
+
+# Node / Python / editors / local environments
+node_modules/
+.pnpm-store/
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+dist/
+build/
+.next/
+.cache/
+.idea/
+.vscode/
+*.log
+
+# Local data, DBs, transcripts, private artifacts
+*.sqlite
+*.sqlite3
+*.db
+*.bak
+*.dump
+local-data/
+private-data/
+customer-data/
+recordings/
+transcripts/
+artifacts/local/
+sandbox-output/
