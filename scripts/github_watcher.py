@@ -102,7 +102,8 @@ def classify(issues, pulls):
             explicit = {agent for agent in AGENTS if f"agent:{agent}" in labels}
             routes = explicit or mapped(item["assignees"], "login", USERS)
             if item.get("pull_request") is not None:
-                pull_metadata[number] = routes
+                review_routes = {agent for agent in AGENTS if f"review:{agent}" in labels}
+                pull_metadata[number] = (routes, review_routes)
                 continue
             approved = (item["author_association"] == "OWNER"
                         and "work:approved" in labels)
@@ -115,10 +116,12 @@ def classify(issues, pulls):
                 raise ValueError("PR identity")
             requested = mapped(item["requested_reviewers"], "login", USERS)
             requested |= mapped(item["requested_teams"], "slug", TEAMS)
+            routes, review_routes = pull_metadata.get(number, (set(), set()))
+            requested |= review_routes
             if not item["draft"]:
                 for agent in requested:
                     jobs.add(("review", number, agent, "review-requested", sha))
-            for agent in pull_metadata.get(number, set()) - (requested if not item["draft"] else set()):
+            for agent in routes - (requested if not item["draft"] else set()):
                 jobs.add(("pr", number, agent, "triage", sha))
     except (KeyError, AttributeError, TypeError, ValueError):
         raise PollError("parse") from None

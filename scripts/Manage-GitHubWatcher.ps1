@@ -10,17 +10,36 @@ $description = 'Public GET-only work queue for kha997/ai-chatbot (Issue #5)'
 $folder = Join-Path $env:LOCALAPPDATA 'AIChatBotWatcher'
 $installed = Join-Path $folder 'github_watcher.py'
 $paused = Join-Path $folder 'paused'
+$user = [Security.Principal.WindowsIdentity]::GetCurrent()
+$python = (Get-Command python.exe -CommandType Application).Source
 $task = Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction SilentlyContinue
-if ($task -and ($task.Description -cne $description -or
-    @($task.Actions).Count -ne 1 -or
-    $task.Actions.Arguments -cne ('-I "' + $installed + '"'))) {
-    throw 'Task name already belongs to a different configuration.'
+if ($task) {
+    $taskUser = $task.Principal.UserId
+    if ($taskUser -match '^S-1-') {
+        $taskSid = $taskUser
+    } else {
+        $taskSid = ([Security.Principal.NTAccount]$taskUser).Translate(
+            [Security.Principal.SecurityIdentifier]).Value
+    }
+    if ($task.Description -cne $description -or
+        @($task.Actions).Count -ne 1 -or
+        $task.Actions.Execute -ine $python -or
+        $task.Actions.WorkingDirectory -ine $folder -or
+        $task.Actions.Arguments -cne ('-I "' + $installed + '"') -or
+        $taskSid -ne $user.User.Value -or
+        $task.Principal.LogonType -ne 'Interactive' -or $task.Principal.RunLevel -ne 'Limited' -or
+        @($task.Triggers).Count -ne 1 -or
+        $task.Triggers.CimClass.CimClassName -ne 'MSFT_TaskTimeTrigger' -or
+        $task.Triggers.Repetition.Interval -ne 'PT30M' -or $task.Triggers.Repetition.Duration -or
+        $task.Settings.ExecutionTimeLimit -ne 'PT2M' -or
+        $task.Settings.MultipleInstances -ne 'IgnoreNew' -or $task.Settings.WakeToRun) {
+        throw 'Task name already belongs to a different or modified configuration.'
+    }
 }
 
 switch ($Action) {
     'Install' {
         if ($task) { throw 'Already registered. Use Status or Enable.' }
-        $python = (Get-Command python.exe -CommandType Application).Source
         & $python -I -c 'import sys; raise SystemExit(sys.version_info < (3, 10))'
         if ($LASTEXITCODE -ne 0) { throw 'Python 3.10+ is required.' }
         $source = Join-Path $PSScriptRoot 'github_watcher.py'
@@ -34,9 +53,8 @@ switch ($Action) {
         }
         New-Item -ItemType File -Path $paused -Force | Out-Null
         $job = New-ScheduledTaskAction -Execute $python -Argument ('-I "' + $installed + '"') -WorkingDirectory $folder
-        $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(30) -RepetitionInterval (New-TimeSpan -Minutes 30)
-        $user = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-        $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
+        $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(2) -RepetitionInterval (New-TimeSpan -Minutes 30)
+        $principal = New-ScheduledTaskPrincipal -UserId $user.Name -LogonType Interactive -RunLevel Limited
         $settings = New-ScheduledTaskSettingsSet -Disabled -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
         Register-ScheduledTask -TaskName $name -TaskPath '\' -Action $job -Trigger $trigger -Principal $principal -Settings $settings -Description $description
     }
