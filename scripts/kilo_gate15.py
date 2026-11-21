@@ -22,6 +22,7 @@ MODEL = "recursive/flint-v1.0:free"
 PROMPT = "Classify the synthetic records catalog, handoff, catalog. Return only JSON with integer fields catalog, handoff, total."
 EXPECTED = {"catalog": 2, "handoff": 1, "total": 3}
 RELEASE_SHA = "ab7a008a2c0ca6e035b96cd1dc5712a8466a14a45992291a8f0b4b549b94136e"
+KILO_ELF_SHA = "474675d07e520067440df780a239f05bded6da2ae9b78bb2b5d2c2291ab03046"
 MAX_BYTES = 32768
 MAX_RELAY_FRAME = 4 * ((MAX_BYTES + 2) // 3) + 128
 
@@ -112,13 +113,20 @@ def sse_events(text):
         raise ValueError("truncated_event")
 
 
-def relay_response(status, content_type, raw, content_encoding=None):
+def unique_json_keys(pairs):
+    result = dict(pairs)
+    if len(result) != len(pairs):
+        raise ValueError("duplicate_json_key")
+    return result
+
+
+def relay_response(status, content_type, raw, content_encoding=None, *, expected_model=None):
     media = (content_type or "").split(";", 1)[0].strip().lower()
     info = {"http_status": status, "media": (
         "sse" if media == "text/event-stream" else "json" if media == "application/json" else "other"
     ), "encoding": "identity" if content_encoding in (None, "", "identity") else "unsupported",
             "bytes": len(raw), "events": 0, "text_deltas": 0, "done": False,
-            "finish": "absent", "usage_present": False, "usage": None}
+            "finish": "absent", "usage_present": False, "usage": None, "model_supplied": False}
 
     def reject(reason):
         return json_reply(502) | {"protocol": info | {"classification": reason}}
@@ -131,7 +139,7 @@ def relay_response(status, content_type, raw, content_encoding=None):
         return reject("unsupported_encoding")
     if info["media"] == "json":
         try:
-            body = json.loads(raw)
+            body = json.loads(raw, object_pairs_hook=unique_json_keys)
             if isinstance(body, dict) and body.get("error") is not None:
                 return reject("embedded_error")
         except (ValueError, UnicodeError):
@@ -149,11 +157,15 @@ def relay_response(status, content_type, raw, content_encoding=None):
             if data == "[DONE]":
                 info["done"] = True
                 continue
-            event = json.loads(data)
+            event = json.loads(data, object_pairs_hook=unique_json_keys)
             if not isinstance(event, dict):
                 return reject("invalid_event")
             if event.get("error") is not None:
                 return reject("embedded_error")
+            if "model" in event:
+                info["model_supplied"] = True
+                if expected_model is not None and event["model"] != expected_model:
+                    return reject("model_mismatch")
             usage = event.get("usage")
             if isinstance(usage, dict):
                 info["usage_present"] = True
@@ -183,6 +195,8 @@ def relay_response(status, content_type, raw, content_encoding=None):
         return reject("invalid_utf8")
     except json.JSONDecodeError:
         return reject("malformed_json")
+    except RecursionError:
+        return reject("malformed_json")
     except ValueError as exc:
         return reject(str(exc))
     if not info["text_deltas"] or info["finish"] != "stop":
@@ -196,8 +210,9 @@ def cli_evidence(stdout):
     parts = []
     for line in stdout.splitlines():
         try:
-            event = json.loads(line)
-        except (ValueError, UnicodeError):
+            event = json.loads(line, object_pairs_hook=unique_json_keys)
+        except (ValueError, UnicodeError, RecursionError):
+            info["invalid_text"] += 1
             continue
         if not isinstance(event, dict) or not isinstance(event.get("type"), str):
             continue
@@ -213,9 +228,9 @@ def cli_evidence(stdout):
             else:
                 info["invalid_text"] += 1
     try:
-        result = json.loads("".join(parts))
+        result = json.loads("".join(parts), object_pairs_hook=unique_json_keys)
         match = isinstance(result, dict) and result == EXPECTED and all(type(v) is int for v in result.values())
-    except ValueError:
+    except (ValueError, RecursionError):
         match = False
     return info, bool(match and not info["error"] and not info["invalid_text"])
 
@@ -339,14 +354,21 @@ def emit_filter(file):
 
 
 def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
-    if mode not in ("mock", "timeout"):
+    activated = mode == "authorized"
+    if activated:
+        from scripts.kilo_activate import AuthorizedExchange
+
+        if type(exchange) is not AuthorizedExchange or not exchange.armed:
+            raise ValueError("no verified one-use authorization")
+    elif mode not in ("mock", "timeout"):
         raise SystemExit("Only offline mock and timeout modes are enabled")
     if sandbox is not None or exchange is not None:
         # The host accepts only local data, never a transport or staging callback.
         from scripts.kilo_owner_gate import OfflineExchange, stage_sandbox
 
         if not isinstance(sandbox, Path) or fixture is not None or (
-            type(exchange) is not OfflineExchange if mode == "mock" else exchange is not None
+            type(exchange) is not OfflineExchange if mode == "mock" else
+            exchange is not None and not activated
         ):
             raise ValueError("candidate requires pinned sandbox and inert fixture data")
     if os.uname().machine != "x86_64":
@@ -375,7 +397,10 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
                 else:
                     stats["admitted"] += 1
                     if exchange is not None:
-                        answer = relay_response(*exchange(payload))
+                        response = exchange(payload)
+                        if activated:
+                            stats["forwarded"] = exchange.post_count
+                        answer = relay_response(*response, expected_model=MODEL if activated else None)
                     elif fixture is not None:
                         answer = relay_response(*fixture)
                     else:
@@ -400,7 +425,7 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
             if not member.isfile() or not 0 < member.size <= 256 * 1024 * 1024:
                 raise SystemExit("Unexpected release member")
             binary = tar.extractfile(member).read()
-            if binary[:4] != b"\x7fELF":
+            if binary[:4] != b"\x7fELF" or hashlib.sha256(binary).hexdigest() != KILO_ELF_SHA:
                 raise SystemExit("Release member is not ELF")
         (folder / "kilo").write_bytes(binary)
         (folder / "kilo").chmod(0o500)
@@ -437,7 +462,7 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
                     "--setenv","OPENCODE_DISABLE_AUTOUPDATE","1",
                     "--setenv","OPENCODE_DISABLE_MODELS_FETCH","1",
                     "--setenv","OPENCODE_DISABLE_SHARE","1","/usr/bin/python3","/gate/probe.py",
-                    {"timeout":"--hang", "mock":"--mock-inner"}[mode]]
+                    "--hang" if mode == "timeout" else "--mock-inner"]
             proc = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     env={}, pass_fds=(bpf.fileno(),), start_new_session=True)
             buffers = [bytearray(), bytearray()]
@@ -479,7 +504,7 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
                 relay.shutdown()
         out, err = buffers
         stats["boundary_check"] = b'{"boundary_check":true}' in out
-        if mode == "mock":
+        if mode != "timeout":
             stats["duplicate_denied"] = b'{"duplicate_denied":true}' in out
             stats["auxiliary_denied"] = b'{"auxiliary_denied":true}' in out
         stats["cli"], stats["result"] = cli_evidence(out)
@@ -490,9 +515,10 @@ def run(archive, mode, fixture=None, *, sandbox=None, exchange=None):
     safe = stats.get("boundary_check") and stats.get("streams_closed") and not stats.get("output_cap")
     if mode == "timeout":
         return 0 if safe and stats.get("timeout") and stats["forwarded"] == 0 and stats["exit"] == -9 else 1
-    expected = (stats["forwarded"] == 0 and stats["relay_status"] == 200
+    expected = (stats["forwarded"] == int(activated) and stats["relay_status"] == 200
                 and stats["duplicate_denied"] and stats["auxiliary_denied"]) if "relay_status" in stats else False
-    return 0 if safe and expected and stats["admitted"] == 1 and stats["exit"] == 0 and stats["result"] else 1
+    terminal = not activated or stats["cli"]["step_finish"] == 1
+    return 0 if safe and expected and terminal and stats["admitted"] == 1 and stats["exit"] == 0 and stats["result"] else 1
 
 
 if __name__ == "__main__":

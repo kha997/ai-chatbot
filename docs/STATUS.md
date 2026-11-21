@@ -1,5 +1,11 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 one-use Kilo activation — Issue #20
+
+- **STATE:** **NO-GO.** PR #19 is merged as offline evidence. Issue #20 consumed its separate Owner approval with exactly one live POST and no retry. Dispatcher remains **NO-GO**.
+- **RESULT:** Anonymous Free route passed the zero-price preflight. HTTP 200 SSE exceeded the 32 KiB response cap, so the relay rejected it and Kilo exited 1. No valid oracle, usage receipt or leftover qualification process was observed. Keep the spent markers.
+- **SHA/BRANCH/PR:** `ace3a4ef35c75e4899f52b5bf1a92b64dcbd0064`, `evidence/kilo-final-activation`, [PR #21](https://github.com/kha997/ai-chatbot/pull/21). [Review evidence, Owner decision and invocation](KILO_FINAL_ACTIVATION.md).
+
 ## Gate 1.5 Owner Gate readiness — Issue #18
 
 - **STATE:** `READY_FOR_OWNER_GATE` for the offline candidate; `NO_LIVE_AUTHORIZATION`. PR #17 merged as offline evidence at `0190319c757e800507d61896a34b318cbf38dfbf`. **Dispatcher NO-GO.**
