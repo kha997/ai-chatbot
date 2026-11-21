@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $name = 'AIChatBot-GitHubWatcher'
 $description = 'Public GET-only work queue for kha997/ai-chatbot (Issue #5)'
-$folder = Join-Path (Split-Path -Parent $PSScriptRoot) 'local-data\github-watcher'
+$folder = Join-Path $env:USERPROFILE '.aichatbot-watcher'
 $installed = Join-Path $folder 'github_watcher.py'
 $paused = Join-Path $folder 'paused'
 $user = [Security.Principal.WindowsIdentity]::GetCurrent()

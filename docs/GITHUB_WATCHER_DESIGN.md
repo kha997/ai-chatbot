@@ -1,6 +1,6 @@
 # Local GitHub work watcher
 
-Issue #5 runs one Windows Task Scheduler entry for `kha997/ai-chatbot` under the current signed-in user with limited privileges. The trigger repeats every 30 minutes while Windows and the interactive session are available. A first trigger two minutes after installation supports commissioning. The task can run after a missed start when available. It does not wake the PC. The action uses a copied Python snapshot in the checkout's Git-ignored `local-data/github-watcher` directory and the existing Python executable with isolated mode enabled. Keep the checkout at its installed path.
+Issue #5 runs one Windows Task Scheduler entry for `kha997/ai-chatbot` under the current signed-in user with limited privileges. The trigger repeats every 30 minutes while Windows and the interactive session are available. A first trigger two minutes after installation supports commissioning. The task can run after a missed start when available. It does not wake the PC. The action uses a copied Python snapshot in the private `%USERPROFILE%\.aichatbot-watcher` directory and the existing Python executable with isolated mode enabled. Verify the local profile and snapshot have no write grants for other ordinary users before installation on a new host.
 
 ## What enters the queue
 
@@ -38,6 +38,6 @@ Install registers a disabled task and writes a pause marker. Enable compares the
 
 Health is reported through Task Scheduler last/next run and result plus local last-success time, hash and counters. A zero scheduler result may mean backoff or pause. Check that `last_success` advances on a real poll. The Windows scheduler history channel can be disabled independently of this task. The account and relevant event values should be redacted in published evidence.
 
-If managed controls refuse an unexpected registration, create the empty `local-data/github-watcher/paused` marker in the installed checkout to stop the installed Python snapshot from polling. Inspect the exact task's action in Task Scheduler before disabling a modified registration there.
+If managed controls refuse an unexpected registration, create the empty `%USERPROFILE%\.aichatbot-watcher\paused` marker to stop the installed Python snapshot from polling. Inspect the exact task's action in Task Scheduler before disabling a modified registration there.
 
 Use `python -m unittest discover -s tests -v` for deterministic checks. See [remote status](STATUS.md) for the on-machine observations.

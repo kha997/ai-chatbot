@@ -203,6 +203,6 @@ def run(directory, discover=None):
 
 if __name__ == "__main__":
     installed = Path(__file__).resolve()
-    if len(sys.argv) != 1 or installed.parent.name != "github-watcher" or installed.parent.parent.name != "local-data":
+    if len(sys.argv) != 1 or installed.parent.name != ".aichatbot-watcher":
         raise SystemExit("Run the installed snapshot without arguments.")
     raise SystemExit(run(installed.parent))
