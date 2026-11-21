@@ -54,7 +54,6 @@ class NewScopeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, legacy.lease(Path(tmp) / "state", scope=26) as grant:
             proof = legacy.PostProof(grant, {}, 999, "a" * 40, "b" * 64, "c" * 64)
             connection = MagicMock()
-            connection.__enter__.return_value = connection
             with (patch.object(proof, "claim", return_value=True),
                   patch.object(proof, "valid", return_value=False),
                   patch.object(legacy, "require_tls") as verify,
@@ -64,3 +63,4 @@ class NewScopeTests(unittest.TestCase):
             self.assertEqual(reply["protocol"]["classification"], "approval_expired_before_post")
             verify.assert_called_once_with(connection.sock, legacy.KILO_HOST)
             connection.request.assert_not_called()
+            connection.close.assert_called_once()

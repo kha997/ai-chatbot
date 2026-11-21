@@ -5,12 +5,12 @@ import sys
 
 def bootstrap_fixture():
     import http.client
-    import os
     from pathlib import Path
     import pwd
     import runpy
     import socket
     import ssl
+    from types import SimpleNamespace
     from unittest.mock import patch
 
     launcher, repo, commit, archive, sandbox, home, trust, owner, catalog, post, fault = sys.argv[2:13]
@@ -24,7 +24,7 @@ def bootstrap_fixture():
             or int(capabilities["CapEff"], 16) or int(capabilities["CapBnd"], 16)
             or int(capabilities["NoNewPrivs"]) != 1):
         raise SystemExit("test fixture requires no-egress namespace")
-    account = pwd.getpwuid(os.geteuid())._replace(pw_dir=home)
+    account = SimpleNamespace(pw_dir=home)
     https = http.client.HTTPSConnection
     sendall = socket.socket.sendall
 

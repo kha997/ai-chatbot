@@ -1,7 +1,7 @@
 """Default-inert manual Kilo Free gate for the new Issue #26 authorization scope."""
 
 import argparse
-from contextlib import redirect_stdout
+from contextlib import closing, redirect_stdout
 from datetime import datetime, timezone
 import hashlib
 import http.client
@@ -51,7 +51,7 @@ def post_once(proof):
     headers = dict(request.headers) | {"Connection": "close"}
     count = 0
     try:
-        with http.client.HTTPSConnection(KILO_HOST, 443, context=tls_context(), timeout=None) as connection:
+        with closing(http.client.HTTPSConnection(KILO_HOST, 443, context=tls_context(), timeout=None)) as connection:
             connection.connect()
             require_tls(connection.sock, KILO_HOST)
             connection.auto_open = 0
