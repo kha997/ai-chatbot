@@ -4,6 +4,8 @@
 
 - **STATE:** Offline loopback TLS candidate. No provider inference or use of Issue #20 authorization. Dispatcher, Gate 2 and production remain **NO-GO**.
 - **RESULT:** Bounded SSE parser exercised over TLS and through the pinned Kilo Linux sandbox. Hard deadlines cover blocked reads and deliberate Unix write stalls. [Socket matrix, cleanup and Owner Gate conditions](KILO_LOCAL_TLS.md).
+- **RECOMMENDATION:** Conditional GO to request a new Owner Gate after a separately reviewed activation and fresh zero-price verification. No new live request is authorized by this PR.
+- **SHA/BRANCH/PR:** `48fd2b72e489a84567dea81720d5f5dc038ea166`, `evidence/kilo-local-tls`, [PR #25](https://github.com/kha997/ai-chatbot/pull/25).
 
 ## Gate 1.5 bounded Kilo SSE — Issue #22
 

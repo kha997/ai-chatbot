@@ -34,15 +34,26 @@
 | Full Unix send buffer and peer shutdown | The blocking sender was killed and reaped under a 260 ms cap. Closing the peer released the blocked sender with a closed-peer result. |
 | Unresponsive process group and early leader exit | A blocking worker and a child that ignored `SIGTERM` were both killed and reaped. When the leader failed before its deadline, its remaining child was also killed and reaped. |
 
-The 20 socket cases assert the local POST count from the fixture peer, no replay, worker exit, server reaping and identical parent descriptor, namespace Unix socket and listening/established TCP counts before and after each case. TCP TIME_WAIT records are kernel state and are excluded from the open-listener/connection count. Five consecutive 256 KiB parses peaked at roughly 22–25 KiB of Python parser allocations per worker, with stable descriptor and socket counts and no worker retained. Measurements exclude native OpenSSL, ELF and kernel buffers. This is bounded fixture evidence, with no claim about indefinite live operation.
+The 20 socket cases assert the local POST count from the fixture peer, no replay, worker exit, server reaping and identical parent descriptor, namespace Unix socket and listening/established TCP counts before and after each case. TCP TIME_WAIT records are kernel state and are excluded from the open-listener/connection count. In five consecutive 256 KiB replays, the lead's Python parser allocation peaks ranged from 25,099 to 29,074 bytes per worker. The independent run measured 22,900 to 32,024 bytes. Both runs had stable descriptor and socket counts and no worker retained. Measurements exclude native OpenSSL, ELF and kernel buffers. This is bounded fixture evidence, with no claim about indefinite live operation.
 
 ## Verification and rollback
 
 - RED: the socket cancellation contract failed before the supervisor existed. The initial sandbox run with outer namespace UID 0 failed at Bubblewrap's nested UID map. Keeping the ordinary WSL UID and dropping capabilities after configuring loopback passed without changing Bubblewrap or its security profile.
-- Independent Codex reviewer `tls_review` reproduced a descendant surviving early leader exit. A regression test failed before the change. The updated supervisor terminates the group while its leader PID is still held, then reaps the leader. The regression proves both early-exit and deadline outcomes against real processes.
+- Independent Codex reviewer `tls_review` reproduced a descendant surviving early leader exit. A regression test failed before the change. The updated supervisor terminates the group while its leader PID is still held, then reaps the leader. The regression proves both early-exit and deadline outcomes against real processes. The lead and reviewer each passed **44 tests** on the exact technical commit in the no-egress profile.
 - The suite runs with the pinned `kilo` ELF from release v7.8.32 and the previously verified private Bubblewrap 0.13.1. During TLS cutoff the peer sees only the fixed synthetic POST (or zero with TLS rejection). Per-case observations include sanitized classification, bytes, frames, stop/DONE, worker elapsed time, exit class and cleanup. No provider content, raw secrets or TLS private keys are committed.
 - Exact executable candidate SHA `48fd2b72e489a84567dea81720d5f5dc038ea166`. The real Kilo suite covers six serial cases, including the full Unix write-buffer fault. Every case checks return to the initial Unix socket, TCP and process FD counts and removal of the owned candidate directory.
 - Existing live runner and Issue #20 authorization state are outside the candidate. The two spent markers remain at their historical timestamps. To roll back, revert this offline PR. No network route, credentials, schedule or production deployment need cleanup.
+
+| Exact-SHA Kilo ELF case | Synthetic POSTs | Result |
+| --- | ---: | --- |
+| Valid chunked 256 KiB | 1 | 84 ms TLS worker, 21,118 ms full pipeline, exit 0, exact oracle |
+| Stall between HTTP chunks | 1 | TLS worker killed and reaped at 1,506 ms, zero task bytes, CLI exit 1 |
+| Stall after SSE stop | 1 | TLS worker killed and reaped at 1,506 ms, zero task bytes, CLI exit 1 |
+| Connection closed mid-chunk | 1 | 65,243 bytes observed, `invalid_http_framing`, zero task bytes, CLI exit 1 |
+| Wrong TLS hostname | 0 | `tls_certificate`, zero task bytes, CLI exit 1 |
+| Full Unix write buffer while Kilo waits | 1 | Full watchdog hit at 52,068 ms against 52,000 ms, `SIGKILL`, driver reaped, no surviving runner, Bubblewrap, probe, Kilo or TLS peer |
+
+The final sweep checked the observed process IDs, including Bubblewrap's separate session, and the relevant process names. It also checked that the temporary candidate, peer and CA directories were gone. The fault-injected Unix run tested the actual reply send routine from the live local relay handler using a saturated Unix socket pair. It did not change the normal bridge's framing or timeout.
 
 Reproduce from the project worktree in Ubuntu 24.04 WSL. Set `ARCHIVE` and `BWRAP` to the pinned local artifact paths from PR #23.
 
