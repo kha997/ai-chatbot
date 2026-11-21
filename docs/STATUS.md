@@ -2,6 +2,13 @@
 
 Date: 2026-11-21 (Asia/Saigon).
 
+## Gate 1.5
+
+- **STATE:** `BLOCKED_COST_OR_AUTH` for Qoder, OpenCode and Kilo model execution. Zero prompts of three attempted. No provider usage measured.
+- **WATCHER:** updated from merged [PR #9](https://github.com/kha997/ai-chatbot/pull/9) at `c5c24a481d857571609a8bded9c0677b4808d889`. Actual scheduler poll found Issue #8 approved for Codex and confirmed Issue #5 absent. The 30-minute read-only task remains active.
+- **RECOMMENDATION:** **NO-GO** for a dispatcher. Recommended first follow-up is one OpenCode qualification with verified existing access or a separately approved public zero-price route. Recommended new-purchase ceiling 0 VND, with provider-side enforcement and completed isolation required.
+- **EVIDENCE:** [Gate 1.5 qualification and next authorization](GATE_1_5_QUALIFICATION.md). Separate Codex reviewer `gate15_review` reviewed PR #9. Lead Codex verified Windows scheduling and CLI diagnostics. Branch `evidence/gate-1-5`.
+
 ## Issue #5 local setup
 
 - **CLI installed/reused:** Qoder native 1.1.94 and Kilo native 7.8.32 are installed in project-specific user-local directories. OpenCode 1.18.30 was reused in WSL. Codex informational subprocess probes passed. Authentication, quotas and prompts remain unverified. [CLI evidence and rollback](AGENT_CLI_READINESS.md).
