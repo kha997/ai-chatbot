@@ -76,21 +76,30 @@ class HardJob:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return False
-            pid, status = os.waitpid(self.pid, os.WNOHANG)
-            if pid:
-                self.status = status
+            finished = os.waitid(os.P_PID, self.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+            if finished is not None:
+                # The unreaped leader still owns its PID. Kill remaining group members even
+                # when the operation exited early, before the leader PID can be reused.
+                self.kill_group()
+                _, self.status = os.waitpid(self.pid, 0)
                 break
             time.sleep(min(0.005, remaining))
         return True
 
+    def kill_group(self):
+        try:
+            os.killpg(self.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
     def stop(self):
         if self.status is not None:
             return
-        for send in (os.killpg, os.kill):
-            try:
-                send(self.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+        self.kill_group()
+        try:
+            os.kill(self.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
         if not self.poll_until(time.monotonic() + STOP_SECONDS):
             raise RuntimeError("timed-out process could not be reaped")
 
@@ -142,6 +151,7 @@ def rejected(classification):
 
 
 def tls_reply(port, trust, request):
+    require_loopback()
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     if trust is not None:

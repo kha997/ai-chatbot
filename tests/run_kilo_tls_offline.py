@@ -2,7 +2,6 @@
 
 from pathlib import Path
 import json
-import os
 import socket
 import sys
 from unittest.mock import patch
@@ -13,14 +12,15 @@ from kilo_tls_fixture import EXPECTED, certificates, peer
 from scripts import kilo_gate15
 from scripts.kilo_activate import fixed_body
 from scripts.kilo_tls_offline import require_loopback, run_local_candidate
-from test_kilo_tls_offline import catalogue, live_tcp
+from test_kilo_tls_offline import catalogue, socket_counts
 
 
 def run_case(archive, sandbox, name, cert):
     unix_stall = name == "pipeline-unix-stall"
     expected, posts = EXPECTED["large" if unix_stall else name]
     send = kilo_gate15.send_relay_reply
-    before = (len(os.listdir("/proc/self/fd")), live_tcp())
+    before = socket_counts()
+    scratch_before = set(Path("/tmp").glob("issue24-candidate-*"))
     with peer(cert, "large" if unix_stall else name) as (port, log, server):
         began = log.with_name("unix-blocked")
 
@@ -51,7 +51,7 @@ def run_case(archive, sandbox, name, cert):
         blocked = began.exists()
 
     common = (hits == ["accepted"] + ["post"] * posts and server.poll() is not None and
-              (len(os.listdir("/proc/self/fd")), live_tcp()) == before)
+              socket_counts() == before and set(Path("/tmp").glob("issue24-candidate-*")) == scratch_before)
     if unix_stall:
         print(json.dumps({"fixture": name, "synthetic_posts": posts, "real_posts": 0,
                           "unix_send_queue_full": blocked, "supervisor": result, "socket_cleanup": common}))

@@ -24,6 +24,7 @@ FAULT_SECONDS = 7
 EXPECTED = {
     "large": ("complete", 1), "drip": ("complete", 1), "hold-open": ("complete", 1),
     "oversize": ("response_cap", 1), "oversized-frame": ("frame_cap", 1),
+    "oversize-chunked": ("response_cap", 1),
     "wrong-media": ("unexpected_media", 1), "gzip": ("unsupported_encoding", 1),
     "embedded-error": ("embedded_error", 1), "wrong-model": ("model_mismatch", 1),
     "truncated-done": ("truncated_event", 1), "closed-mid-http": ("invalid_http_framing", 1),
@@ -108,6 +109,8 @@ def response_for(case):
         return http_wire(large_sse(32769), chunk_size=137)
     if case == "oversize":
         return http_wire(large_sse(262145))
+    if case == "oversize-chunked":
+        return http_wire(large_sse(262145), chunk_size=997)
     if case == "oversized-frame":
         return http_wire(stream(event("x" * 8192)) + large_sse(65536))
     if case == "wrong-media":

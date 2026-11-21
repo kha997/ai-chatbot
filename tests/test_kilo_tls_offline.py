@@ -32,6 +32,11 @@ def live_tcp():
                if line.split()[3] in ("01", "0A"))
 
 
+def socket_counts():
+    return (len(os.listdir("/proc/self/fd")), live_tcp(),
+            len(Path("/proc/net/unix").read_text().splitlines()) - 1)
+
+
 class HardCancellationTests(unittest.TestCase):
     def setUp(self):
         require_test_namespace()
@@ -91,31 +96,34 @@ class HardCancellationTests(unittest.TestCase):
         libc = ctypes.CDLL(None)
         self.assertEqual(libc.prctl(36, 1, 0, 0, 0), 0)
         try:
-            with tempfile.TemporaryFile() as record:
-                def group():
-                    pid = os.fork()
-                    if pid == 0:
-                        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-                        while True:
-                            signal.pause()
-                    os.write(record.fileno(), str(pid).encode("ascii"))
-                    os.waitpid(pid, 0)
+            for early_exit in (True, False):
+                with self.subTest(early_exit=early_exit), tempfile.TemporaryFile() as record:
+                    def group():
+                        pid = os.fork()
+                        if pid == 0:
+                            signal.signal(signal.SIGTERM, signal.SIG_IGN)
+                            while True:
+                                signal.pause()
+                        os.write(record.fileno(), str(pid).encode("ascii"))
+                        if early_exit:
+                            os._exit(7)
+                        os.waitpid(pid, 0)
 
-                with HardJob(group) as worker:
-                    receipt = worker.run(0.30)
-                    descendant = int(os.pread(record.fileno(), 32, 0))
-                    self.assertEqual(receipt["signal"], 9)
-                    deadline = time.monotonic() + 1
-                    while time.monotonic() < deadline:
-                        pid, status = os.waitpid(descendant, os.WNOHANG)
-                        if pid:
-                            self.assertEqual(os.waitstatus_to_exitcode(status), -9)
-                            break
-                        time.sleep(0.01)
-                    else:
-                        os.kill(descendant, signal.SIGKILL)
-                        os.waitpid(descendant, 0)
-                        self.fail("process group left a descendant alive")
+                    with HardJob(group) as worker:
+                        receipt = worker.run(0.30)
+                        descendant = int(os.pread(record.fileno(), 32, 0))
+                        self.assertEqual(receipt["outcome"], "worker_failed" if early_exit else "hard_timeout")
+                        deadline = time.monotonic() + 1
+                        while time.monotonic() < deadline:
+                            pid, status = os.waitpid(descendant, os.WNOHANG)
+                            if pid:
+                                self.assertEqual(os.waitstatus_to_exitcode(status), -9)
+                                break
+                            time.sleep(0.01)
+                        else:
+                            os.kill(descendant, signal.SIGKILL)
+                            os.waitpid(descendant, 0)
+                            self.fail("process group left a descendant alive")
         finally:
             libc.prctl(36, 0, 0, 0, 0)
 
@@ -123,7 +131,7 @@ class HardCancellationTests(unittest.TestCase):
 class LocalTLSTests(unittest.TestCase):
     def test_socket_matrix_one_post_and_cleanup(self):
         require_test_namespace()
-        before = (len(os.listdir("/proc/self/fd")), live_tcp())
+        before = socket_counts()
         with certificates() as cert:
             for name, (classification, posts) in EXPECTED.items():
                 with self.subTest(name=name), peer(cert, name) as (port, log, process):
@@ -148,7 +156,7 @@ class LocalTLSTests(unittest.TestCase):
                             self.assertEqual(answer["protocol"]["relay_bytes"], 0)
                     self.assertEqual(log.read_text().splitlines(), ["accepted"] + ["post"] * posts)
                 self.assertIsNotNone(process.poll())
-                self.assertEqual((len(os.listdir("/proc/self/fd")), live_tcp()), before)
+                self.assertEqual(socket_counts(), before)
                 print(json.dumps({"fixture": name, "synthetic_posts": posts, "external_posts": 0,
                                   "protocol": answer["protocol"], "worker": receipt,
                                   "parser_peak_bytes": answer.get("parser_peak_bytes"), "cleanup": True}))
@@ -159,3 +167,22 @@ class LocalTLSTests(unittest.TestCase):
             LocalTLSExchange({"data": []}, fixed_body(), 9999, None)
         with self.assertRaisesRegex(ValueError, "request shape"):
             LocalTLSExchange(catalogue(), fixed_body() | {"model": "different"}, 9999, None)
+
+    def test_repeated_large_tls_does_not_retain_workers_or_descriptors(self):
+        require_test_namespace()
+        before = socket_counts()
+        peaks = []
+        with certificates() as cert:
+            for _ in range(5):
+                with peer(cert, "large") as (port, log, process):
+                    with LocalTLSExchange(catalogue(), fixed_body(), port, cert / "ca.pem") as exchange:
+                        answer = exchange(fixed_body())
+                        self.assertEqual(answer["protocol"]["bytes"], 262144)
+                        self.assertTrue(exchange.receipt["reaped"])
+                        peaks.append(answer["parser_peak_bytes"])
+                    self.assertEqual(log.read_text().splitlines(), ["accepted", "post"])
+                self.assertIsNotNone(process.poll())
+                self.assertEqual(socket_counts(), before)
+        self.assertLess(max(peaks), 128 * 1024)
+        print(json.dumps({"fixture": "repeated-large", "runs": len(peaks), "parser_peak_min": min(peaks),
+                          "parser_peak_max": max(peaks), "same_fd_and_socket_counts": True}))
