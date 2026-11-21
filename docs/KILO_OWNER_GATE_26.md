@@ -1,6 +1,20 @@
 # Kilo Free — Issue #26 Owner decision packet
 
-**READY_FOR_OWNER_GATE is an offline preparation status.** A later explicit Owner comment is required for the single manual run. Issue #20's approval and both spent markers remain consumed. Dispatcher, Gate 2 and production remain **NO-GO**. PR #25 was independently reviewed on exact evidence head `b4819d0b1475852aa3e132bc5f8a5e326ac47e85`, verified with 44 tests and merged as offline evidence at `f61d96f3360aeebd8f1547607dbe2c1fdd171dfd`. [PR #25](https://github.com/kha997/ai-chatbot/pull/25) · [Issue #20 historical receipt](https://github.com/kha997/ai-chatbot/issues/20#issuecomment-7061006163).
+**NO-GO after the approved live run.** The offline candidate reached `READY_FOR_OWNER_GATE`. The Owner authorized one manual run, which consumed the Issue #26 slot without a qualifying result. Further live Kilo runs are stopped pending the Owner's decision. Issue #20's approval and both spent markers remain consumed. Dispatcher, Gate 2 and production remain **NO-GO**. PR #25 was independently reviewed on exact evidence head `b4819d0b1475852aa3e132bc5f8a5e326ac47e85`, verified with 44 tests and merged as offline evidence at `f61d96f3360aeebd8f1547607dbe2c1fdd171dfd`. [PR #25](https://github.com/kha997/ai-chatbot/pull/25) · [Issue #20 historical receipt](https://github.com/kha997/ai-chatbot/issues/20#issuecomment-7061006163).
+
+## Approved live result — 2026-11-22 (Vietnam time)
+
+The unedited Owner comment matched the exact activation SHA, manifest, runner and expiry. The pin checks validated the source, Kilo archive and Bubblewrap, and a fresh Kilo sandbox fixture passed offline with the exact oracle. The real slot started unspent. The public preflight at 06:36:10 confirmed one exact model row with both prices zero. The exact launcher reserved the slot at 06:37:27 and created the separate POST claim at 06:37:46. [Owner approval](https://github.com/kha997/ai-chatbot/issues/26#issuecomment-7070955543).
+
+| Signal | Observed result |
+| --- | --- |
+| Request | **One real anonymous HTTPS POST** to the approved model. No retry, redirect, model change or purchase. Both Issue #26 spent markers remain. |
+| HTTP and SSE | HTTP 200, identity-encoded SSE. At rejection the body reader had observed 50,758 transfer-decoded bytes and the parser had processed 128 frames/events. Zero task-text bytes and zero bytes of SSE relayed to Kilo. Classification `unfinished_task`. Neither the required stop nor terminal `[DONE]` was validated. The full response size is unknown. |
+| Task outcome | Launcher and Kilo exit **1**, one CLI error event, no finish step, and no validated JSON oracle. The relay returned 502 after rejecting the SSE. |
+| Model, usage and cost | Model metadata appeared. The receipt marked model identity `REJECTED` because the stream did not qualify and did not classify a model mismatch. Token usage and per-attempt billing receipt are `UNKNOWN`. The route passed zero-price preflight and no purchase or billing setup was performed. |
+| Time and containment | HTTPS worker exited and was reaped in 2,198 ms. Pipeline exited and was reaped in 25,136 ms. Boundary check passed, three auxiliary/duplicate requests were denied and output streams closed. The final WSL sweep found no runner, worker, Bubblewrap, Kilo or probe process and no staged Unix socket paths. |
+
+The reviewed parser emits `unfinished_task` when it encounters a non-null `finish_reason` other than `stop`. The sanitized receipt does not preserve that value. The exact upstream reason, any later frames and whether a larger token allowance would change the outcome remain unknown. Both Issue #20 markers retained their original timestamps. Preserve both approval records and their consumed state.
 
 ## Exact request and identities
 
@@ -21,7 +35,7 @@ The future request is exactly one `POST https://ai-gateway.kilo.ai:443/api/v1/ch
 
 ## Free route and time limits
 
-A public HTTPS GET to the Kilo model catalog at **15:17:11 UTC on 2026-11-21** returned one exact model row with prompt and completion prices both `"0"`. Kilo documents anonymous use for free models and zero billing for `:free` models. The activation performs a fresh, exact zero-price catalog GET after reservation. Missing, ambiguous or nonzero prices stop the attempt before a POST. Current quota and availability are unknown. No inference request was sent in Issue #26. [Authentication](https://kilo.ai/docs/gateway/authentication) · [Usage and billing](https://kilo.ai/docs/gateway/usage-and-billing).
+A public HTTPS GET to the Kilo model catalog at **15:17:11 UTC on 2026-11-21** returned one exact model row with prompt and completion prices both `"0"`. Kilo documents anonymous use for free models and zero billing for `:free` models. The activation performs a fresh, exact zero-price catalog GET after reservation. Missing, ambiguous or nonzero prices stop the attempt before a POST. Current quota and availability are unknown. Offline preparation sent no inference requests. [Authentication](https://kilo.ai/docs/gateway/authentication) · [Usage and billing](https://kilo.ai/docs/gateway/usage-and-billing).
 
 | Boundary | Budget and rationale |
 | --- | --- |
@@ -52,9 +66,9 @@ The selected 24 s leaves four seconds before the existing 28 s bridge wait and f
 
 All nine exact staged cases achieved their expected outcomes and sent zero external POSTs. The terminal inventory found no test PIDs or temporary paths. The real Issue #26 slot has no reservation or POST claim. Both Issue #20 historical markers retain their original modification times.
 
-## Owner action
+## Historical Owner action
 
-If you choose to proceed, personally post **one unedited line** on Issue #26 with a UTC expiry in `YYYY-MM-DDTHH:MM:SSZ` format within 24 hours of publication. Four hours is sufficient for a coordinated run. This authorizes one manual Kilo Free POST at **0 VND** incremental spend, with no retry. [Issue #26](https://github.com/kha997/ai-chatbot/issues/26).
+The consumed Owner record used this format, with expiry set to 11:00 on 2026-11-22 in Vietnam. It authorized one manual Kilo Free POST at **0 VND** incremental spend, without retry. The slot is spent and the template is retained for audit. [Issue #26](https://github.com/kha997/ai-chatbot/issues/26).
 
 ```text
 APPROVE ONE KILO FREE POST | issue=26 | commit=5f9a05f65701f60c832732550aca9eafd6cb4d80 | manifest=25fa10942ca1d3f5dc1bf3f97377e63b5a4ab0c84aea92e415d7048a957aab18 | runner=f6ba9bcacd248f9eee11c04b17ce6d11b857faa4170f5668dc4a85333856313e | model=recursive/flint-v1.0:free | max_posts=1 | incremental_vnd=0 | expires=<UTC expiry>
