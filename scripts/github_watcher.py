@@ -16,9 +16,10 @@ AGENTS = {"codex", "qoder", "opencode", "kilo"}
 # Mapping applies only to verified GitHub identities. Add others through review.
 USERS = {"kha997": "codex"}
 TEAMS = {}
-# Owner explicitly assigned Issue #5 to Codex. Amend only in a reviewed PR
-# linked to the Owner decision. Labels and GitHub assignments route discovery.
-APPROVALS = {5: {"codex"}}
+# Owner approved Issue #5 (CLI/Watcher) and Issue #8 (bounded Gate 1.5).
+# Exact scope: https://github.com/kha997/ai-chatbot/issues/8
+# This table only marks discovery state; it NEVER executes a task.
+APPROVALS = {5: {"codex"}, 8: {"codex"}}
 LIMIT = 8 * 1024 * 1024
 PAGES = 5
 PAGE_SIZE = 50

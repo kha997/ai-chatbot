@@ -22,6 +22,16 @@ class WatcherTests(unittest.TestCase):
         issue["author_association"] = "NONE"
         self.assertEqual(watcher.classify([issue], [])[0][3], "triage")
 
+    def test_gate_15_approval_cannot_be_spoofed_by_non_owner(self):
+        issue = dict(number=8, labels=[{"name": "agent:codex"}],
+                     author_association="OWNER", assignees=[],
+                     pull_request=None)
+        self.assertEqual(watcher.classify([issue], []),
+                         [["issue", 8, "codex", "approved", ""]])
+        issue["author_association"] = "NONE"
+        self.assertEqual(watcher.classify([issue], []),
+                         [["issue", 8, "codex", "triage", ""]])
+
     def test_review_label_routes_non_draft_pr_without_authorizing_work(self):
         issue = dict(number=6, labels=[{"name": "review:kilo"}],
                      assignees=[], pull_request={})
