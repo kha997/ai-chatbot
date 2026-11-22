@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 isolated local model feasibility — Issue #30
+
+- **STATE:** **BLOCKED** for a real OpenCode/Ollama prompt. Local-only OpenCode configuration and isolated mock loopback passed. The actual inference adapter, project-owned model storage and resource reservation are pending.
+- **EVIDENCE:** PR #29 merged as mock evidence. Existing Ollama services were left alone. No model was copied, loaded or called. Dispatcher, Gate 2 and production remain **NO-GO**. [Resource and isolation findings](OLLAMA_LOCAL_FEASIBILITY_30.md).
+
 ## Gate 1.5 agent pivot — Issue #28
 
 - **STATE:** **BLOCKED for a real qualification.** Kilo live trials are retired. PR #27 was merged as historical NO-GO. Qoder Pro has included credits, with `BLOCKED_COST` and `BLOCKED_ISOLATION` for the native CLI.
