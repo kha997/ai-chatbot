@@ -1,6 +1,6 @@
 # Issue #34 — OpenCode SDK loopback qualification
 
-**SDK_MOCK_PASS / EMPTY_DAEMON_OWNER_APPROVAL_PENDING.** The installed OpenCode 1.18.30 Linux ELF selected the bundled AI SDK for `local-ollama/qwen3:14b`. Technical commit `ac9287fd9ae81d4ecee92ae8893c47a14c1b4036`; ELF SHA-256 `87bd160e053af86b5b409daabf71f8dc05bbc3a2a3a5f563f36011cdf706a999`. [Issue #34](https://github.com/kha997/ai-chatbot/issues/34) · [Bundled SDK source](https://raw.githubusercontent.com/anomalyco/opencode/v1.18.30/packages/opencode/src/provider/provider.ts).
+**SDK_MOCK_PASS.** The installed OpenCode 1.18.30 Linux ELF selected the bundled AI SDK for `local-ollama/qwen3:14b`. Technical commit `ac9287fd9ae81d4ecee92ae8893c47a14c1b4036`; ELF SHA-256 `87bd160e053af86b5b409daabf71f8dc05bbc3a2a3a5f563f36011cdf706a999`. [Issue #34](https://github.com/kha997/ai-chatbot/issues/34) · [Bundled SDK source](https://raw.githubusercontent.com/anomalyco/opencode/v1.18.30/packages/opencode/src/provider/provider.ts).
 
 | Check | Observed |
 | --- | --- |
@@ -26,8 +26,28 @@ unshare --user --map-current-user --net --keep-caps bash -c '
 
 ## Separate Owner decision — one empty Linux Ollama startup
 
-Proposed approval wording. “I approve one supervised startup of the installed Ollama Linux 0.31.1 in the Issue #34 empty-store scope below, for read-only version and model-list checks.”
+The Owner approved one supervised startup of the installed Ollama Linux 0.31.1 for read-only version and model-list checks, conditional on successful preflight. [Owner approval](https://github.com/kha997/ai-chatbot/issues/34#issuecomment-7072288797).
 
 - Use a new private NTFS folder at `D:\ProjectData\AIChatBot\ollama-empty-test`, mapped from `/mnt/d/ProjectData/AIChatBot/ollama-empty-test` and exposed as the only host write mount at `/store` with `OLLAMA_MODELS=/store`. Preflight the fresh path, ownership, absence of reparse points and contents, and owner/SYSTEM ACL. Set `OLLAMA_NO_CLOUD=1` and `OLLAMA_NOPRUNE=1`. Leave the shared Windows and WSL services outside the namespace. [Ollama 0.31.1 environment configuration](https://raw.githubusercontent.com/ollama/ollama/v0.31.1/envconfig/config.go).
 - Preflight available host RAM and enforce CPU quota of one logical CPU, 1 GiB memory, zero swap and a 64-task limit before startup. Require a private no-egress namespace, synthetic home, no host sockets or GPU device mounts, and a bounded way to trace device-open attempts by the daemon and its children. Start once on `127.0.0.1:11436` inside that namespace. Allow one `GET /api/version` and one `GET /api/tags`. Verify version, empty tags and any store directories actually created on D. The probe has a 30 s total hard watchdog. GPU device-open attempts, missing isolation or tracing, budget or path failures, and unexpected activity end the probe as **BLOCKED**.
 - Terminate the private process group, verify listener and children are gone, and remove only that run's verified scratch and D: test folder. This approval scope covers zero POSTs, pulls, copied model bytes, model loads and GPU work. Model copy and inference remain blocked. Agent Dispatcher, Gate 2 and production remain **NO-GO**.
+
+## Follow-up offline preflight
+
+**BLOCKED_GPU_OBSERVABILITY.** The one startup slot remains unused. The GPU denial and 30 s cleanup margin were exercised using inert Python processes. The approved gate still requires a bounded way to observe device-open attempts by Ollama and its children. The available WSL environment has neither a verified syscall tracer nor readable tracefs event lists. [Owner approval](https://github.com/kha997/ai-chatbot/issues/34#issuecomment-7072288797) · [Follow-up directive](https://github.com/kha997/ai-chatbot/issues/34#issuecomment-7072350835).
+
+From the PR worktree in Ubuntu WSL, replay only the Python probes with `/usr/bin/python3 -Bu tests/run_ollama_empty_preflight.py "$HOME/.aichatbot-issue18/bwrap"`. Exact fixture commit `f5ec7eaead715d17047101532e7e0566a7b434d6`. The runner accepts no daemon command. It verifies the pinned Bubblewrap digest and reads the effective cgroup values `cpu.max=100000 100000`, `memory.max=1073741824`, `memory.swap.max=0`, and `pids.max=64`.
+
+The post-exec child verified distinct PID/mount/network namespaces, private tmpfs at `/dev`, no GPU device mounts, no host home/drives, no WSL GPU library path and only stdin/stdout/stderr FDs. The mount inventory showed standard pseudo-devices, the synthetic script, the Python runtime and its read-only library trees. All seven direct open attempts returned `ENOENT` for `/dev/dxg`, both tested DRI nodes, three NVIDIA nodes and `/dev/kfd`. WSL exposed `/dev/dxg` outside the test. Private loopback refused TCP port 11434. The prospective daemon binary, D: store mount and syscall behavior remain to be verified before startup.
+
+| Synthetic case | systemd unit seconds | Monotonic seconds through cleanup |
+| --- | ---: | ---: |
+| Normal exit | 0.637 | 0.7539 |
+| Blocked socket accept | 25.155 | 25.2993 |
+| Busy parent and child holding a listener | 25.109 | 25.2291 |
+
+systemd applies `SIGKILL` to the whole cgroup after 25 seconds. Both stuck cases reported a timeout and SIGKILL. The child TCP socket was confined to an unpinned namespace. The units, cgroups and Linux scratch directories were gone after the run, and port 11436 had no host-side listener. Independent Codex reviewer `empty_preflight_review` reviewed the exact fixture and passed it for synthetic evidence. The `systemd-run` client-timeout exception requests a stop and exits without asserting cleanup. The timings cover the three measured cases. The fixture is solely for offline qualification.
+
+A disposable NTFS directory on D: had only explicit Owner and SYSTEM access and passed a WSL-to-Windows marker write/read. The fixture was removed and the approved store path is still absent. The read-only watcher remained Ready, the Windows Ollama listener kept the same PID and the existing WSL Ollama process was left alone.
+
+Zero Ollama startups, API GET/POST, GPUs accessed, model loads or model copies. Keep the existing one-use approval unconsumed. If device-open tracing remains unavailable, any change to the observation criterion requires a clarification on Issue #34. A later manual instruction is required for execution.
