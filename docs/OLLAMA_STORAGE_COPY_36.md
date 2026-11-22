@@ -26,3 +26,17 @@ pwsh -NoProfile -File scripts/Copy-OllamaStorage.ps1 -ApprovalCommentId <OWNER_C
 Independent Codex reviewer `storage36_review` reran those checks and verified the exact implementation, the pinned allowlist and the Issue #36 Owner text. NTFS requires releasing staging handles briefly for rename. Final identity and full hash checks detect observed changes across that window. The native allocation receipt counts file allocations separately from the metadata allowance.
 
 This proposed approval covers one storage copy only. The shared Ollama listener and read-only watcher were left alone. Model startup, load, GPU use, inference, Agent Dispatcher, Gate 2 and production remain **NO-GO**.
+
+### One-use attempt receipt
+
+**BLOCKED_SOURCE_SPARSE_FILE / ONE_ATTEMPT_CONSUMED.** The Owner’s unedited approval matched the exact Issue #36 scope. PR #37 merged readiness evidence at `7374ec9b7a74417a0f42de4323f2a119efe2d15c`; the executable and pinned plan were unchanged from independently reviewed technical SHA `9943b40143e0365a4eefd3cef2304adc0f138d3c`. Six synthetic groups passed again before execution. [Owner approval](https://github.com/kha997/ai-chatbot/issues/36#issuecomment-7075133334) · [Merged PR #37](https://github.com/kha997/ai-chatbot/pull/37).
+
+| Check | Observed |
+| --- | --- |
+| Start | 2026-11-22 06:09:16 UTC. D: was NTFS, 4,096-byte clusters, 68,427,800,576 bytes free. Project target, stage and one-use flag were initially absent. |
+| Result | Exit 1 at the source file-attribute guard before opening the first blob for content or creating staging. Read-only follow-up inspected metadata for the exact six allowlisted paths. Canonical paths, single link counts and lengths matched. All five blobs were flagged `Archive, SparseFile`. The manifest was `Archive` only. |
+| SHA-256 | Full source SHA-256 verification did not complete during this attempt. The previous Issue #32 digests remain historical evidence. There is no destination and no destination SHA-256 result. The execution performed no source writes. |
+| Allocation and cleanup | Zero model bytes written, no stage created and no target created. Only the new project parent directories and one-use marker remain. Free space at the first post-failure snapshot was 68,427,771,904 bytes. This whole-volume reading includes unrelated activity. |
+| Consumption | `.issue36-copy-attempt` is retained and explicitly marked `CONSUMED: BLOCKED_SOURCE_SPARSE_FILE`. Sanitized error category recorded here. SHA-256 of the unmodified private error log is `db3fcc696948e2bbbf519c96d528284189d1e7349a784e71779631d464a1a95e`. No retry. |
+
+The synthetic files lacked the NTFS sparse attribute. A future candidate would need separate review of sparse files as read-only sources, bounded regular-file allocation on D: and a synthetic sparse-file regression. This attempt supplies no authorization to run that candidate. The Windows Ollama listener retained its PID and the watcher remained Ready. Ollama startup, GPU use, inference, Dispatcher, Gate 2 and production remain **NO-GO**.
