@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import tempfile
 import threading
+import time
 
 from run_ollama_local_mock import (BASE, CONFIG, MODEL, MODEL_REF, ORACLE, require_loopback,
                                   sandbox_run, stage_sandbox, unique_json_keys)
@@ -24,6 +25,10 @@ class RequestAudit:
         self.rows = []
         self.generation = 0
         self.metadata = 0
+        self.phases = {}
+
+    def mark(self, name):
+        self.phases.setdefault(name, time.monotonic_ns())
 
     def has_exact_exchange(self):
         return self.generation == 1 and len(self.rows) == 1 and self.rows[0]["status"] == 200
@@ -93,6 +98,7 @@ def fixture_server(audit):
         protocol_version = "HTTP/1.1"
 
         def setup(self):
+            audit.mark("mock_tcp_accepted")
             self.request.settimeout(1)
             super().setup()
 
@@ -105,6 +111,7 @@ def fixture_server(audit):
             raise AttributeError(name)
 
         def handle_fixture(self):
+            audit.mark("mock_http_headers_parsed")
             length, body = 0, None
             if self.command == "POST":
                 try:
@@ -116,6 +123,7 @@ def fixture_server(audit):
                 except (ValueError, OSError, RecursionError):
                     pass
             status = audit.admit(self.command, self.path, body, length)
+            audit.mark("mock_http_audited")
             is_sse = status == 200 and self.command == "POST"
             if is_sse:
                 response = sse.encode("ascii")
@@ -132,6 +140,8 @@ def fixture_server(audit):
             try:
                 self.wfile.write(response)
                 audit.rows[-1]["response_bytes_written"] = len(response)
+                if is_sse:
+                    audit.mark("mock_sse_terminal_written")
             except OSError:
                 pass
 
@@ -142,6 +152,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("sandbox", type=Path)
     args = parser.parse_args()
+    started = time.monotonic_ns()
     require_loopback()
     opencode = Path("/usr/bin/opencode").resolve(strict=True)
     with opencode.open("rb") as binary:
@@ -164,6 +175,7 @@ def main():
         (inputs / "run.json").write_text(json.dumps({"model": MODEL_REF, "prompt": PROMPT}))
         (inputs / "worker.py").write_bytes(FIXTURE.read_bytes())
         with fixture_server(audit) as server:
+            audit.mark("mock_listening")
             thread = threading.Thread(target=server.serve_forever)
             thread.start()
             try:
@@ -173,6 +185,10 @@ def main():
                 server.shutdown()
                 thread.join(2)
         closed = server.fileno() == -1 and not thread.is_alive()
+        audit.mark("mock_socket_cleanup_checked")
+    audit.mark("scratch_cleanup_checked")
+    phases = {name: round((when - started) / 1_000_000, 3)
+              for name, when in (audit.phases | receipt.pop("phase_ns")).items()}
     stats, exact = cli_evidence(receipt.pop("fixture_stdout").encode("utf-8"))
     passed = (audit.has_exact_exchange()
               and all(row.get("response_bytes_written", 0) > 0 for row in audit.rows)
@@ -182,7 +198,8 @@ def main():
     print(json.dumps({"qualification": "SDK_MOCK_PASS" if passed else "BLOCKED_ADAPTER",
                       "requests": audit.rows, "cli": stats, "oracle": ORACLE if exact else None, "worker": receipt,
                       "endpoint": BASE, "real_model_posts": 0, "socket_closed": closed,
-                      "scratch_removed": not scratch.exists(), "elf_sha256": ELF_SHA}))
+                      "scratch_removed": not scratch.exists(), "elf_sha256": ELF_SHA,
+                      "phase_ms": phases}))
     return 0 if passed else 1
 
 
