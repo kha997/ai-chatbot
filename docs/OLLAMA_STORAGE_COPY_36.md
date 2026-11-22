@@ -1,6 +1,6 @@
 # Issue #36 — one storage-only export
 
-**READY_FOR_STORAGE_OWNER_GATE.** PR #35 merged at `b89497fed8fe070c200c52ff1ced8ffc68cf9a68` as historical evidence. Issue #34 is closed and its Ollama startup approval is consumed. Issue #36 has no copy approval. The implementation has been tested only with synthetic files on D:. [Issue #36](https://github.com/kha997/ai-chatbot/issues/36) · [PR #35](https://github.com/kha997/ai-chatbot/pull/35).
+**READY_FOR_STORAGE_OWNER_GATE at the synthetic review.** PR #35 merged at `b89497fed8fe070c200c52ff1ced8ffc68cf9a68` as historical evidence. Issue #34 is closed and its Ollama startup approval is consumed. The implementation was tested with synthetic files on D:. The Owner subsequently approved one storage-only attempt in Issue #36. The real copy was pending when this PR merged. [Owner approval](https://github.com/kha997/ai-chatbot/issues/36#issuecomment-7075133334) · [PR #35](https://github.com/kha997/ai-chatbot/pull/35).
 
 | Item | Bound or evidence |
 | --- | --- |
