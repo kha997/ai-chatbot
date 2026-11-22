@@ -47,6 +47,8 @@ Open the printed `http://127.0.0.1:PORT/` URL. The operating system picks a free
 
 The preview uses synthetic nonbinding quotes, in-memory tickets and simulated staff identities. It is a local test surface with no authentication for real users, external delivery or model usage. Restarting clears all preview state. [Issue #53](https://github.com/kha997/ai-chatbot/issues/53).
 
+[Issue #55's offline session boundary](docs/SESSION_BOUNDARY_55.md) adds an independently testable adapter for synthetic customers and support staff. The preview remains a curated scenario harness; its tenant selector is not authentication and does not expose session issuance.
+
 ## Public-repository rule
 
 This repository is currently **public**. Commit only synthetic/public/licensed content. No credentials, real customer information, proprietary business documents, or data copied from private repositories. Before expanding into real integrations, reassess repository visibility and data access at an explicit Owner Gate.
