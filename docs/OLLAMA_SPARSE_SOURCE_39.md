@@ -1,6 +1,6 @@
 # Issue #39 — NTFS sparse source compatibility
 
-**READY_FOR_NEW_STORAGE_OWNER_GATE.** Issue #36 closed as not completed after PR #38 merged at `3a59dd97bfb4396696511ac1ceede8b21d509d40`. Its original error log and spent marker remain in place. The new Issue #39 marker and the model destination are absent. [Issue #39](https://github.com/kha997/ai-chatbot/issues/39) · [PR #38](https://github.com/kha997/ai-chatbot/pull/38).
+**STORAGE_COPY_PASS / ONE_ATTEMPT_CONSUMED / INFERENCE_NO_GO.** See the final receipt below. Before this operation, Issue #36 closed as not completed after PR #38 merged at `3a59dd97bfb4396696511ac1ceede8b21d509d40`. The Issue #36 error log and spent marker were preserved. [Issue #39](https://github.com/kha997/ai-chatbot/issues/39) · [PR #38](https://github.com/kha997/ai-chatbot/pull/38).
 
 ## Read-only source receipt
 
@@ -25,12 +25,16 @@ Technical SHA `dd642df26b9dabca35d8cb5bb07306d1f3a4c089`. The sole metadata exce
 
 Independent Codex reviewer `sparse39_review` verified the exact technical SHA and reran all nine groups. The source replacement test held the other checked metadata and full digest equal and changed only the NTFS file ID. The original NTFS rename window remains covered by final identity and full-hash checks. The Owner/SYSTEM ACL does not isolate concurrent code running as the same Windows principal.
 
-The entry point verifies the new Issue #39 comment, immutable Git script blob, exact reviewed commit and pinned allowlist digest. A future authorized attempt uses a new exclusive `.issue39-copy-attempt` record. The Issue #36 record remains spent and is not used by the new script. Live sparse-to-regular transfer and full-size allocation remain untested. No model bytes were written, no Ollama service was started, and no GPU, inference, Dispatcher, Gate 2 or production activity occurred.
+The entry point verifies the new Issue #39 comment, immutable Git script blob, exact reviewed commit and pinned allowlist digest. The planned Issue #39 attempt uses a new exclusive `.issue39-copy-attempt` record. The Issue #36 record remains spent. At the end of the synthetic review, no full-size transfer or service startup had occurred.
 
-### Exact Owner comment for a future storage-only attempt
+### Historical Owner approval wording
 
 ```text
 TÔI PHÊ DUYỆT đúng một lượt sao chép lưu trữ theo Issue #39, commit dd642df26b9dabca35d8cb5bb07306d1f3a4c089, allowlist SHA-256 52debe5e5fa772cc86df634751c505b1b73547cd5fb31e946469cceff442be38. Cho phép đọc logic blob nguồn NTFS sparse của qwen3:14b mà không sửa nguồn. Chỉ sao chép 1 manifest và 5 blob sang D:\ProjectData\AIChatBot\ollama-models, tối đa 12 GiB dữ liệu mới trên D: gồm staging. Không ghi đè, không thử lại, không khởi động Ollama, không nạp model, không dùng GPU và không gửi prompt hoặc POST AI. Agent Dispatcher, Gate 2 và production tiếp tục NO-GO.
 ```
 
-After a new approval, use a Windows checkout at the exact technical SHA and supply the new comment ID to `pwsh -NoProfile -File scripts/Copy-OllamaStorage.ps1 -ApprovalCommentId <NEW_COMMENT_ID> -TechnicalSha dd642df26b9dabca35d8cb5bb07306d1f3a4c089`. The proposal grants no startup or inference authority.
+### Final one-use copy receipt
+
+The Owner posted the exact storage-only approval and PR #40 merged at `f95d2b331c501de45c48b864b2e349ccd48f4ea1`. The only live invocation ran from a detached checkout at technical SHA `dd642df26b9dabca35d8cb5bb07306d1f3a4c089`, from 06:57:59 to 07:11:56 UTC. [Owner approval](https://github.com/kha997/ai-chatbot/issues/39#issuecomment-7075616402) · [PR #40](https://github.com/kha997/ai-chatbot/pull/40).
+
+The six non-sparse files totaled **9,276,199,424 logical bytes** and **9,276,207,712 bytes of measured file allocation**. The before/after D: free-space difference was 9,318,588,416 bytes, including possible unrelated disk activity. Both remained below 12 GiB. All six final SHA-256 values matched, and the read-only post-copy source rehash and metadata checks passed. The protected D: destination remains in place and staging was removed by the same-volume publish. The Issue #39 marker is consumed and the Issue #36 marker is unchanged. Zero Ollama startups, model loads, GPU work or AI POSTs. The shared service PID and read-only watcher state were unchanged. [Immutable Issue receipt with all six final digests](https://github.com/kha997/ai-chatbot/issues/39#issuecomment-7075781476).
