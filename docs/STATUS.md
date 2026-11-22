@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 Ollama storage preflight — Issue #32
+
+- **STATE:** **BLOCKED** for the storage copy. D: DrvFS and protected read-only bind passed a tiny fixture; the original manifest and all five source hashes match. The actual OpenCode SDK-to-mock exchange and Ollama store access by the daemon remain unverified.
+- **SCOPE:** Proposed private D: store, 12 GiB maximum, after explicit approval and preflight. No model copied or loaded, no Ollama startup, no GPU workload and no prompt. Dispatcher, Gate 2 and production remain **NO-GO**. [Evidence and rollback](OLLAMA_STORAGE_PREFLIGHT_32.md).
+
 ## Gate 1.5 isolated local model feasibility — Issue #30
 
 - **STATE:** **BLOCKED** for a real OpenCode/Ollama prompt. Local-only OpenCode configuration and isolated mock loopback passed. The actual inference adapter, project-owned model storage and resource reservation are pending.
