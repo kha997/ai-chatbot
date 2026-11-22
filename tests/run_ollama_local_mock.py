@@ -97,7 +97,7 @@ def mock_server(gate, case):
     return HTTPServer(("127.0.0.1", 11435), Handler)
 
 
-def sandbox_run(argv, verify_bwrap, directory, opencode):
+def sandbox_run(argv, verify_bwrap, directory, opencode, *, timeout=10, scratch_limit=None):
     with tempfile.TemporaryFile(dir="/tmp") as seccomp:
         emit_filter(seccomp)
         options = {"PATH": "/usr/bin", "HOME": "/tmp/home", "XDG_CONFIG_HOME": "/tmp/config",
@@ -116,11 +116,13 @@ def sandbox_run(argv, verify_bwrap, directory, opencode):
                    "--ro-bind", "/usr/lib/x86_64-linux-gnu", "/usr/lib/x86_64-linux-gnu",
                    "--ro-bind", "/usr/lib64", "/usr/lib64", "--ro-bind", str(opencode), "/usr/bin/opencode",
                    "--symlink", "usr/lib", "/lib", "--symlink", "usr/lib64", "/lib64",
-                   "--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp", "--dir", "/work",
+                   "--proc", "/proc", "--dev", "/dev",
+                   *(("--size", str(scratch_limit)) if scratch_limit else ()),
+                   "--tmpfs", "/tmp", "--dir", "/work",
                    "--ro-bind", str(directory / "inputs"), "/fixture", "--chdir", "/work",
                    *flags, *argv]
         result = subprocess.run(command, env={}, pass_fds=(seccomp.fileno(),),
-                                stdin=subprocess.DEVNULL, capture_output=True, timeout=10)
+                                stdin=subprocess.DEVNULL, capture_output=True, timeout=timeout)
     if result.returncode != 0:
         raise ValueError(f"isolated fixture process exited {result.returncode}")
     return json.loads(result.stdout, object_pairs_hook=unique_json_keys)

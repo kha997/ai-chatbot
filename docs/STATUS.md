@@ -1,8 +1,13 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 OpenCode SDK mock — Issue #34
+
+- **STATE:** **SDK_MOCK_PASS.** The installed OpenCode 1.18.30 CLI sent one POST and zero auxiliary requests to the private HTTP mock, returned the exact synthetic JSON and exited 0.
+- **EMPTY DAEMON:** **PASS — one-use approval consumed.** Ollama Linux 0.31.1 returned its version and an empty model list through two isolated GETs. It created only empty D: model directories. Cleanup took 2.5496532 s including setup. Model copy, inference, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Final receipt and Owner scope](OPENCODE_SDK_MOCK_34.md#final-one-use-empty-store-receipt).
+
 ## Gate 1.5 Ollama storage preflight — Issue #32
 
-- **STATE:** **BLOCKED** for the storage copy. D: DrvFS and protected read-only bind passed a tiny fixture; the original manifest and all five source hashes match. The actual OpenCode SDK-to-mock exchange and Ollama store access by the daemon remain unverified.
+- **STATE:** **BLOCKED** for the storage copy. D: DrvFS and protected read-only bind passed a tiny fixture; the original manifest and all five source hashes match. Subsequent Issue #34 verified SDK-to-mock and empty-store daemon access.
 - **SCOPE:** Proposed private D: store, 12 GiB maximum, after explicit approval and preflight. No model copied or loaded, no Ollama startup, no GPU workload and no prompt. Dispatcher, Gate 2 and production remain **NO-GO**. [Evidence and rollback](OLLAMA_STORAGE_PREFLIGHT_32.md).
 
 ## Gate 1.5 isolated local model feasibility — Issue #30
