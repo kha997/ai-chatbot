@@ -158,5 +158,3 @@ Date: 2026-11-21 (Asia/Saigon).
 Governance: [PR #2](https://github.com/kha997/ai-chatbot/pull/2) reviewed/corrected and merged at `919b018045abd88e45a3ca7716643a48d25a5ce8`.
 
 Authorship: lead Codex; source research by oss_research; evaluation design by evaluation_design; independent context review by governance_review. Qoder/Kilo not invoked; OpenCode used only for help/version inspection. Review is a separate built-in Codex session and does not certify runtime safety.
-
-

@@ -46,7 +46,7 @@ class QuoteSessionTests(unittest.TestCase):
         for handle in handles:
             self.assertGreaterEqual(len(handle), 40)
             self.assertNotIn("synthetic-actor", handle)
-            self.assertNotIn("NHD", handle)
+            self.assertRegex(handle, r"\A[A-Za-z0-9_-]{43}\Z")
         restarted = SessionQuotes(SessionAuthority(clock=lambda: self.now))
         self.assertEqual(restarted.quote(self.customer["NHD"], "NHD", self.request()), DENIED)
 
