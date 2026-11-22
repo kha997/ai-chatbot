@@ -1,4 +1,4 @@
-param([long]$ApprovalCommentId = 0)
+param([long]$ApprovalCommentId = 0, [string]$TechnicalSha = '')
 
 if (-not ('OllamaStore36.Native' -as [type])) {
     Add-Type -TypeDefinition @'
@@ -97,8 +97,9 @@ $script:StorageOwner = [System.Security.Principal.WindowsIdentity]::GetCurrent()
 $script:StorageSystem = [System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')
 $script:OrdinaryFlags = [IO.FileAttributes]'ReparsePoint,Device,Offline,SparseFile,Compressed,Encrypted'
 $script:MetadataAllowance = 8MB
+$script:StoragePlanDigest = '52debe5e5fa772cc86df634751c505b1b73547cd5fb31e946469cceff442be38'
 
-function Get-StoragePath([string]$path, [switch]$File) {
+function Get-StoragePath([string]$path, [switch]$File, [switch]$SourceBlob) {
     $path = [IO.Path]::GetFullPath($path)
     for ($part = $path; $part; $part = [IO.Path]::GetDirectoryName($part)) {
         $attr = [IO.File]::GetAttributes($part)
@@ -109,7 +110,7 @@ function Get-StoragePath([string]$path, [switch]$File) {
     }
     $handle = [OllamaStore36.Native]::OpenPath($path)
     try { $meta = [OllamaStore36.Native]::Inspect($handle) } finally { $handle.Dispose() }
-    Assert-StorageMetadata $meta $path -File:$File
+    Assert-StorageMetadata $meta $path -File:$File -SourceBlob:$SourceBlob
     return ,$meta
 }
 
@@ -118,9 +119,11 @@ function Assert-DefaultStream([string]$path) {
     if ($streams.Count -ne 1 -or $streams[0].Stream -ne ':$DATA') { throw 'Unexpected NTFS data stream.' }
 }
 
-function Assert-StorageMetadata($meta, [string]$path, [switch]$File) {
+function Assert-StorageMetadata($meta, [string]$path, [switch]$File, [switch]$SourceBlob) {
     $attr = [IO.FileAttributes][int]$meta[5]
-    if ($meta[0] -ne $path -or ($attr -band $script:OrdinaryFlags) -or
+    $rejected = $script:OrdinaryFlags
+    if ($File -and $SourceBlob) { $rejected = $rejected -band (-bnot [IO.FileAttributes]::SparseFile) }
+    if ($meta[0] -ne $path -or ($attr -band $rejected) -or
         ($File -and (($attr -band [IO.FileAttributes]::Directory) -or [int]$meta[2] -ne 1))) {
         throw 'Unexpected file type, canonical path or link count.'
     }
@@ -269,7 +272,7 @@ function Invoke-OllamaStorageCopy([string]$Source, [string]$Destination, $Entrie
         }
         foreach ($entry in $Entries) {
             $path = Join-Path $Source $entry.path
-            $meta = Get-StoragePath $path -File
+            $meta = Get-StoragePath $path -File -SourceBlob:$entry.path.StartsWith('blobs/')
             Assert-DefaultStream $path
             $reader = [IO.FileStream]::new($path, 'Open', 'Read', 'ReadWrite,Delete')
             $inputs[$entry.path] = $reader
@@ -318,7 +321,9 @@ function Invoke-OllamaStorageCopy([string]$Source, [string]$Destination, $Entrie
         if ($BeforePromote) { & $BeforePromote }
         foreach ($entry in $Entries) {
             $originalPath = Join-Path $Source $entry.path
-            if (((Get-StoragePath $originalPath -File) -join '|') -ne $baseline[$entry.path]) { throw 'Source changed.' }
+            if (((Get-StoragePath $originalPath -File -SourceBlob:$entry.path.StartsWith('blobs/')) -join '|') -ne $baseline[$entry.path]) {
+                throw 'Source changed.'
+            }
             Assert-DefaultStream $originalPath
         }
         foreach ($path in $owned.Keys) {
@@ -364,7 +369,7 @@ function Invoke-OllamaStorageCopy([string]$Source, [string]$Destination, $Entrie
         }
         foreach ($entry in $Entries) {
             Read-StorageFile $inputs[$entry.path] $entry $buffer $null
-            if (((Get-StoragePath (Join-Path $Source $entry.path) -File) -join '|') -ne $baseline[$entry.path]) {
+            if (((Get-StoragePath (Join-Path $Source $entry.path) -File -SourceBlob:$entry.path.StartsWith('blobs/')) -join '|') -ne $baseline[$entry.path]) {
                 throw 'Source changed during final validation.'
             }
         }
@@ -381,25 +386,40 @@ function Invoke-OllamaStorageCopy([string]$Source, [string]$Destination, $Entrie
 }
 
 function Open-StorageAttempt([string]$parent) {
-    return [IO.FileStream]::new((Join-Path $parent '.issue36-copy-attempt'), 'CreateNew', 'Write', 'None')
+    return [IO.FileStream]::new((Join-Path $parent '.issue39-copy-attempt'), 'CreateNew', 'Write', 'None')
+}
+
+function Get-StorageApprovalText([string]$sha) {
+    return "TÔI PHÊ DUYỆT đúng một lượt sao chép lưu trữ theo Issue #39, commit ${sha}, allowlist SHA-256 $script:StoragePlanDigest. Cho phép đọc logic blob nguồn NTFS sparse của qwen3:14b mà không sửa nguồn. Chỉ sao chép 1 manifest và 5 blob sang D:\ProjectData\AIChatBot\ollama-models, tối đa 12 GiB dữ liệu mới trên D: gồm staging. Không ghi đè, không thử lại, không khởi động Ollama, không nạp model, không dùng GPU và không gửi prompt hoặc POST AI. Agent Dispatcher, Gate 2 và production tiếp tục NO-GO."
+}
+
+function Assert-StorageApproval($comment, [long]$commentId, [string]$sha) {
+    if ($sha -cnotmatch '^[0-9a-f]{40}$' -or $comment.id -ne $commentId -or
+        $comment.user.node_id -cne 'U_kgDODFyvuQ' -or $comment.author_association -cne 'OWNER' -or
+        $comment.issue_url -cne 'https://api.github.com/repos/kha997/ai-chatbot/issues/39' -or
+        $comment.created_at -ne $comment.updated_at -or $comment.body.Trim() -cne (Get-StorageApprovalText $sha)) {
+        throw 'Owner comment does not match the exact Issue #39 approval.'
+    }
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
     $ErrorActionPreference = 'Stop'
     if ($ApprovalCommentId -le 0) { throw 'Storage Owner approval is required; no model files were opened.' }
-    $expected = 'TÔI PHÊ DUYỆT đúng MỘT LẦN sao chép lưu trữ, không chạy AI, cho model qwen3:14b từ kho Ollama Windows hiện có sang kho RIÊNG D:\ProjectData\AIChatBot\ollama-models, giới hạn tối đa 12 GiB dung lượng mới trên ổ D (bao gồm tệp tạm). Chỉ sao chép đúng 1 manifest và 5 blob đã có và đã xác minh SHA-256. Phải kiểm tra SHA-256 đầy đủ ở nguồn trước khi sao chép và tại đích sau khi sao chép; không ghi đè, không sửa nguồn, không tạo bản sao trên ổ C, không động vào Ollama dùng chung. Nếu thiếu điều kiện an toàn hoặc sao chép thất bại, dừng và báo cáo, không tự thử lại. Quyền này KHÔNG cho phép khởi động Ollama, nạp model, dùng GPU hoặc gửi bất kỳ prompt/POST AI nào. Agent Dispatcher, Gate 2 và production tiếp tục NO-GO.'
     $raw = gh api "repos/kha997/ai-chatbot/issues/comments/$ApprovalCommentId"
-    if ($LASTEXITCODE -ne 0) { throw 'Unable to verify Issue #36 Owner comment.' }
-    $comment = $raw | ConvertFrom-Json
-    if ($comment.id -ne $ApprovalCommentId -or $comment.user.node_id -cne 'U_kgDODFyvuQ' -or
-        $comment.author_association -cne 'OWNER' -or
-        $comment.issue_url -cne 'https://api.github.com/repos/kha997/ai-chatbot/issues/36' -or
-        $comment.created_at -ne $comment.updated_at -or
-        $comment.body.Trim() -cne $expected) { throw 'Owner comment does not match the exact Issue #36 approval.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Unable to verify Issue #39 Owner comment.' }
+    Assert-StorageApproval ($raw | ConvertFrom-Json) $ApprovalCommentId $TechnicalSha
+    $repo = Split-Path $PSScriptRoot
+    $head = git -C $repo rev-parse HEAD
+    if ($LASTEXITCODE -ne 0 -or $head -cne $TechnicalSha) { throw 'Checkout does not match the approved technical commit.' }
+    $pathInGit = 'scripts/Copy-OllamaStorage.ps1'
+    $recorded = git -C $repo rev-parse "${TechnicalSha}:$pathInGit"
+    if ($LASTEXITCODE -ne 0) { throw 'Approved script blob is unavailable.' }
+    $actual = git -C $repo hash-object "--path=$pathInGit" $PSCommandPath
+    if ($LASTEXITCODE -ne 0 -or $recorded -cne $actual) { throw 'Executing script does not match the approved Git blob.' }
     $planPath = Join-Path $PSScriptRoot '../docs/OLLAMA_QWEN3_14B_STORAGE_MANIFEST.json'
     $planText = (Get-Content -LiteralPath $planPath -Raw).Replace("`r`n", "`n")
     $planDigest = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($planText)))
-    if ($planDigest -ine '52debe5e5fa772cc86df634751c505b1b73547cd5fb31e946469cceff442be38') {
+    if ($planDigest -ine $script:StoragePlanDigest) {
         throw 'Immutable model plan digest mismatch.'
     }
     $plan = $planText | ConvertFrom-Json
@@ -424,7 +444,7 @@ if ($MyInvocation.InvocationName -ne '.') {
         Pin-StorageParents $approvedPins $parent
         Assert-PrivateDirectory $parent
         $lock = Open-StorageAttempt $parent
-        $stamp = [Text.Encoding]::UTF8.GetBytes("Issue #36 Owner comment $ApprovalCommentId reserved with no retry.`n")
+        $stamp = [Text.Encoding]::UTF8.GetBytes("Issue #39 Owner comment $ApprovalCommentId at $TechnicalSha reserved with no retry.`n")
         $lock.Write($stamp)
         $lock.Flush($true)
         $entries = @($plan.blobs) + @($plan.source_manifest)
