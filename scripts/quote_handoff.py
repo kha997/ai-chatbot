@@ -1,7 +1,7 @@
 """In-memory synthetic support handoff for the draft quote contract."""
 
 import re
-from collections import deque
+from collections import defaultdict, deque
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from secrets import compare_digest, token_hex
@@ -11,6 +11,14 @@ from scripts.quote_validator import TENANTS, validate_quote
 
 
 REFERENCE = re.compile(r"[A-Za-z0-9_-]{1,128}")
+
+
+def _support_tenant(staff):
+    if isinstance(staff, Mapping) and staff.get("role") == "support":
+        tenant = staff.get("tenant")
+        if isinstance(tenant, str) and tenant in TENANTS:
+            return tenant
+    return None
 
 
 @dataclass
@@ -27,16 +35,17 @@ class MockHandoffQueue:
 
     def __init__(self):
         self.available = True
-        self._pending = deque()
+        self._pending = defaultdict(deque)
 
     def enqueue(self, ticket):
         if not self.available:
             return False
-        self._pending.append(ticket)
+        self._pending[ticket.tenant].append(ticket)
         return True
 
-    def take(self):
-        return self._pending.popleft() if self._pending else None
+    def take(self, tenant):
+        pending = self._pending.get(tenant)
+        return pending.popleft() if pending else None
 
 
 class MockQuoteHandoff:
@@ -73,14 +82,17 @@ class MockQuoteHandoff:
                 return {"status": "conflict"}
             return {"status": "accepted" if ticket.accepted else "queued", "ticket_id": ticket.ticket_id}
 
-    def deliver_next(self):
-        """Move a queued ticket to the tenant's mock inbox, on the support side."""
+    def deliver_next(self, *, staff):
+        """Move the next ticket for the authenticated support tenant to its inbox."""
+        tenant = _support_tenant(staff)
+        if tenant is None:
+            return None
         with self._lock:
-            ticket = self._queue.take()
+            ticket = self._queue.take(tenant)
             if ticket is None:
                 return None
             ticket.confirmation = token_hex(16)
-            self._inboxes[ticket.tenant][ticket.ticket_id] = ticket
+            self._inboxes[tenant][ticket.ticket_id] = ticket
             return {
                 "tenant": ticket.tenant, "ticket_id": ticket.ticket_id,
                 "reason": ticket.reason, "confirmation": ticket.confirmation,
@@ -88,10 +100,8 @@ class MockQuoteHandoff:
 
     def confirm(self, *, staff, ticket_id, confirmation):
         """Accept only a delivered ticket with a valid tenant-scoped receipt."""
-        if not isinstance(staff, Mapping) or staff.get("role") != "support":
-            return {"status": "refused"}
-        tenant = staff.get("tenant")
-        if not isinstance(tenant, str) or tenant not in self._inboxes:
+        tenant = _support_tenant(staff)
+        if tenant is None:
             return {"status": "refused"}
         if (not isinstance(ticket_id, str) or not isinstance(confirmation, str)
                 or len(confirmation) != 32 or not confirmation.isascii()):

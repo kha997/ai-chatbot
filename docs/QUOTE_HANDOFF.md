@@ -8,7 +8,7 @@
 | Quote needs clarification and consent is absent | `consent_required`. No queue entry. |
 | Clarification with explicit consent | `queued` after enqueue succeeds. Only a synthetic ticket ID, tenant and static reason go to the mock inbox. |
 | Queue cannot accept | `unavailable`, with no ticket or automatic retry. The caller may explicitly retry. |
-| Matching support confirmation after delivery | `accepted`. Invalid proof, another ticket or tenant, and non-support roles are refused with no ticket details. |
+| Matching support confirmation after delivery | `accepted`. Both delivery and confirmation require trusted support context for the ticket's tenant. Denied delivery leaves the queue unchanged. Invalid proof or another ticket is refused with no ticket details. |
 
 The in-process adapter trusts the caller to supply independently authenticated tenant/session and support contexts. Session and message IDs are stable synthetic references supplied by that caller. The idempotency key scopes the minimal payload by tenant, session and message. Replays with the same reason return the existing ticket and never enqueue again. A changed reason is a conflict. Plain customer data, claimed prices, raw requests, sources and citations are excluded from the payload. The delivery proof stays on the support side and repeated valid confirmations are idempotent.
 
