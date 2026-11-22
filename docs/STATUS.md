@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Codex và Qoder — đề xuất đợt phát triển
+
+- **STATE:** **CHỜ OWNER QUYẾT ĐỊNH.** Đề xuất bắt đầu bằng kiểm tra báo giá nháp trên ba bộ dữ liệu giả lập, với hai PR có người thực hiện, reviewer độc lập và tiêu chí kiểm thử.
+- **SCOPE:** Chỉ rà soát và lập kế hoạch. Hướng Ollama tiếp tục tạm dừng. Agent Dispatcher, Gate 2 và production vẫn **NO-GO**. [Phân công và đề xuất](CODEX_QODER_DEVELOPMENT_PROPOSAL.md).
+
 ## Gate 1.5 direct Ollama readiness — Issue #46
 
 - **STATE:** **WAITING_RESOURCE_WINDOW_AND_GPU_BOUNDARY.** Windows had 5.10 GiB physical RAM available versus the 14 GiB admission floor. The GPU had 13,772 MiB free but there is no exclusive window or verified GPU-visible sandbox.
