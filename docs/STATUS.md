@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Synthetic support handoff for draft quotes — Issue #51
+
+- **STATE:** Offline handoff checks validate explicit consent, tenant boundaries, duplicate prevention, queue failure and forged confirmation. A refusal produces no ticket, price or citation.
+- **SCOPE:** In-memory queue and mock inbox only. External channels, model calls, deployments, Dispatcher, Gate 2 and production remain **NO-GO**. [Contract and test command](QUOTE_HANDOFF.md).
+
 ## Deterministic draft quote validator — PR #48 development decision
 
 - **STATE:** The offline Python validator passes all **22 synthetic fixture cases**, including **19 refusal or clarification** cases. The three draft totals are NHD **600,000 VND**, HANU **50,000 VND** and ZENA **600,000 VND** with their approved fixture citations.
