@@ -11,6 +11,9 @@ class RequestGateTests(unittest.TestCase):
         for change in ({"tools": [{"type": "function"}]}, {"max_tokens": 129}, {"model": "wrong"}):
             self.assertEqual(RequestAudit().admit("POST", "/v1/chat/completions", task | change, 100), 403)
         self.assertEqual(gate.admit("POST", "/v1/chat/completions", task, 100), 200)
+        self.assertTrue(gate.has_exact_exchange())
+        self.assertEqual(gate.admit("GET", "/v1/models", None, 0), 200)
+        self.assertFalse(gate.has_exact_exchange())
         self.assertEqual(gate.admit("POST", "/v1/chat/completions", task, 100), 409)
 
     def test_unknown_path_and_repeated_catalog(self):

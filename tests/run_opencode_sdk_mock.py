@@ -25,6 +25,9 @@ class RequestAudit:
         self.generation = 0
         self.metadata = 0
 
+    def has_exact_exchange(self):
+        return self.generation == 1 and len(self.rows) == 1 and self.rows[0]["status"] == 200
+
     def admit(self, method, path, body, length):
         row = {"method": method if method in ("GET", "POST") else "other",
                "path": path if path in ("/v1/models", "/v1/chat/completions") else "<unexpected>",
@@ -171,7 +174,7 @@ def main():
                 thread.join(2)
         closed = server.fileno() == -1 and not thread.is_alive()
     stats, exact = cli_evidence(receipt.pop("fixture_stdout").encode("utf-8"))
-    passed = (audit.generation == 1 and all(row["status"] == 200 for row in audit.rows)
+    passed = (audit.has_exact_exchange()
               and all(row.get("response_bytes_written", 0) > 0 for row in audit.rows)
               and receipt["exit"] == 0 and not receipt["timeout"] and not receipt["output_cap"] and receipt["boundary"]
               and receipt["sdk_runtime"] and receipt["tool_events"] == 0 and receipt["reaped"] and closed
