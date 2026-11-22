@@ -35,6 +35,18 @@ All runtime results remain NOT_RUN. Read [status](docs/STATUS.md) for reviewed c
 
 One reusable core, multiple strictly isolated tenants. Retrieval grounded in approved evidence. Memory and learning only through governed promotion. Human takeover when needed. Provider portability, observability, reversible changes and safe defaults.
 
+## Local quote preview
+
+From a Windows checkout containing the preview, start the synthetic browser demo with the installed Python.
+
+```powershell
+py -B -m scripts.quote_preview
+```
+
+Open the printed `http://127.0.0.1:PORT/` URL. The operating system picks a free local port. Choose NHD, HANU or ZENA. Try the valid quote, missing quantity and foreign-source rejection. In the missing-quantity scenario, check consent, submit the mock handoff and confirm it from the matching mock inbox. Try the wrong-tenant and wrong-role buttons before confirming. Use the tenant's reset button to clear its mock state. Press **Ctrl+C** in the terminal to stop. An optional `--port` argument selects a fixed loopback port.
+
+The preview uses synthetic nonbinding quotes, in-memory tickets and simulated staff identities. It is a local test surface with no authentication for real users, external delivery or model usage. Restarting clears all preview state. [Issue #53](https://github.com/kha997/ai-chatbot/issues/53).
+
 ## Public-repository rule
 
 This repository is currently **public**. Commit only synthetic/public/licensed content. No credentials, real customer information, proprietary business documents, or data copied from private repositories. Before expanding into real integrations, reassess repository visibility and data access at an explicit Owner Gate.

@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Local quote developer preview — Issue #53
+
+- **STATE:** The loopback browser demo reuses the existing synthetic quote and support-handoff contracts for NHD, HANU and ZENA.
+- **SCOPE:** Curated scenarios and mock roles only. All preview state stays in memory, and the app serves only its bundled HTML and CSS. No external delivery, model invocation or deployment. Dispatcher, Gate 2 and production remain **NO-GO**. [Windows run command](../README.md#local-quote-preview).
+
 ## Synthetic support handoff for draft quotes — Issue #51
 
 - **STATE:** Offline handoff checks validate explicit consent, tenant boundaries, duplicate prevention, queue failure and forged confirmation. A refusal produces no ticket, price or citation.
