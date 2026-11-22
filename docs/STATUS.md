@@ -1,5 +1,11 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 agent pivot — Issue #28
+
+- **STATE:** **BLOCKED for a real qualification.** Kilo live trials are retired. PR #27 was merged as historical NO-GO. Qoder Pro has included credits, with `BLOCKED_COST` and `BLOCKED_ISOLATION` for the native CLI.
+- **NEXT CANDIDATE:** A separately isolated OpenCode/Ollama instance. The current Ollama listener is shared host infrastructure and a project-owned model and resource reservation are unverified.
+- **EVIDENCE:** No prompts or purchases. Dispatcher subprocess validation ran only a fixed mock, with no production adapter. Dispatcher, Gate 2 and production remain **NO-GO**. [Comparison, verification and future Owner conditions](AGENT_PIVOT_28.md).
+
 ## Gate 1.5 exact Kilo activation — Issue #26
 
 - **STATE:** **NO-GO.** Issue #26 consumed its Owner approval with one live POST and no retry. HTTP 200 SSE reached `unfinished_task` after 128 events, with 50,758 bytes read and zero task bytes delivered. Kilo exit 1, oracle and usage unverified, and no leftover processes. Further live runs are stopped pending the Owner's decision. Issue #20 remains spent. Dispatcher, Gate 2 and production remain **NO-GO**.
