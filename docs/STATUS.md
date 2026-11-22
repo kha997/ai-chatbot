@@ -1,5 +1,16 @@
 # AI ChatBot — remote status
 
+## Issue #55 — local synthetic session boundary
+
+STATE: IN_PROGRESS
+GATE: 1 (narrow development exception: Issue #55)
+RECOMMENDATION: ephemeral server-owned sessions and a narrow fixture-pinned adapter.
+COMPLETED: [baseline and bounded design](SESSION_BOUNDARY_55.md); dedicated worktree from accepted main.
+VALIDATION: `py -B -m unittest discover -s tests -p 'test_quote*.py' -v` — PASS, 43 baseline tests.
+OPEN RISKS: HIGH — synthetic identity only; lead must preserve NO-GO scope and independent review.
+NEXT: adversarial tests; adapter implementation; independent review and CI.
+OWNER DECISION: NONE
+HEAD/BRANCH/PR: baseline `c009f0bb46a74217f45f04f95b05b0fe6a0dea32`; `codex/issue55-session-boundary`; PR pending.
 ## Local quote developer preview — Issue #53
 
 - **STATE:** The loopback browser demo reuses the existing synthetic quote and support-handoff contracts for NHD, HANU and ZENA.
@@ -147,3 +158,4 @@ Date: 2026-11-21 (Asia/Saigon).
 Governance: [PR #2](https://github.com/kha997/ai-chatbot/pull/2) reviewed/corrected and merged at `919b018045abd88e45a3ca7716643a48d25a5ce8`.
 
 Authorship: lead Codex; source research by oss_research; evaluation design by evaluation_design; independent context review by governance_review. Qoder/Kilo not invoked; OpenCode used only for help/version inspection. Review is a separate built-in Codex session and does not certify runtime safety.
+
