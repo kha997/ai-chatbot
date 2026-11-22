@@ -36,8 +36,8 @@ def compact(data):
     return json.dumps(data, sort_keys=True, separators=(",", ":")).encode("ascii")
 
 
-def approval_line(commit, manifest, runner, expires):
-    return (f"APPROVE ONE KILO FREE POST | issue=20 | commit={commit} | manifest={manifest} | runner={runner}"
+def approval_line(commit, manifest, runner, expires, *, scope=20):
+    return (f"APPROVE ONE KILO FREE POST | issue={scope} | commit={commit} | manifest={manifest} | runner={runner}"
             f" | model={MODEL} | max_posts=1 | incremental_vnd=0 | expires={expires}")
 
 
@@ -47,12 +47,12 @@ def parse_utc(stamp):
     return datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
-def verify_approval(record, comment_id, commit, manifest, runner, now):
+def verify_approval(record, comment_id, commit, manifest, runner, now, *, scope=20):
     try:
         if (not re.fullmatch(r"[a-f0-9]{40}", commit) or not re.fullmatch(r"[a-f0-9]{64}", manifest)
                 or not re.fullmatch(r"[a-f0-9]{64}", runner)
                 or type(comment_id) is not int or comment_id < 1
-                or record["id"] != comment_id or record["issue_url"] != ISSUE_URL
+                or record["id"] != comment_id or record["issue_url"] != ISSUE_URL.rsplit("/", 1)[0] + f"/{scope}"
                 or record["author_association"] != "OWNER"
                 or record["user"]["id"] != OWNER_ID or record["user"]["login"] != "kha997"
                 or record["updated_at"] != record["created_at"]):
@@ -60,7 +60,7 @@ def verify_approval(record, comment_id, commit, manifest, runner, now):
         created = parse_utc(record["created_at"])
         expiry_text = record["body"].rsplit(" | expires=", 1)[1]
         expiry = parse_utc(expiry_text)
-        return (record["body"] == approval_line(commit, manifest, runner, expiry_text)
+        return (record["body"] == approval_line(commit, manifest, runner, expiry_text, scope=scope)
                 and created <= now < expiry <= created + timedelta(hours=24))
     except (AttributeError, IndexError, KeyError, TypeError, ValueError):
         return False
@@ -73,17 +73,18 @@ def ensure_regular(fd):
 
 
 class Lease:
-    def __init__(self, directory):
+    def __init__(self, directory, scope=20):
         self.directory = directory
+        self.scope = scope
         self.active = True
         self.reserved = False
 
 
 @contextmanager
-def lease(path):
+def lease(path, *, scope=20):
     import fcntl
 
-    if not LINUX_LOCKS:
+    if not LINUX_LOCKS or scope not in (20, 26):
         raise ValueError("Linux locks required")
     parent = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
@@ -103,7 +104,7 @@ def lease(path):
     finally:
         os.close(parent)
     lock = None
-    grant = Lease(directory)
+    grant = Lease(directory, scope)
     try:
         info = os.fstat(directory)
         if info.st_uid != os.geteuid() or stat.S_IMODE(info.st_mode) != 0o700:
@@ -116,11 +117,11 @@ def lease(path):
         except BlockingIOError as exc:
             raise ValueError("another qualification owns the lock") from exc
         try:
-            os.stat("issue20.spent", dir_fd=directory, follow_symlinks=False)
+            os.stat(f"issue{scope}.spent", dir_fd=directory, follow_symlinks=False)
         except FileNotFoundError:
             yield grant
         else:
-            raise ValueError("Issue #20 already spent")
+            raise ValueError(f"Issue #{scope} already spent")
     finally:
         grant.active = False
         if lock is not None:
@@ -132,10 +133,10 @@ def reserve(grant, commit, manifest, comment_id):
     if type(grant) is not Lease or not grant.active or grant.reserved:
         raise ValueError("reservation unavailable")
     try:
-        fd = os.open("issue20.spent", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+        fd = os.open(f"issue{grant.scope}.spent", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                      0o600, dir_fd=grant.directory)
     except FileExistsError as exc:
-        raise ValueError("Issue #20 already spent") from exc
+        raise ValueError(f"Issue #{grant.scope} already spent") from exc
     with os.fdopen(fd, "wb") as file:
         file.write(compact({"commit": commit, "manifest": manifest, "approval_comment": comment_id}))
         file.flush()
@@ -168,7 +169,7 @@ def runner_binding(grant, *, create=False):
     machine = Path("/etc/machine-id").read_bytes().strip()
     if len(nonce) != 32 or not re.fullmatch(rb"[a-f0-9]{32}", machine):
         raise ValueError("untrusted runner identity")
-    return sha(b"AIChatBot Issue 20\0" + machine + nonce)
+    return sha(f"AIChatBot Issue {grant.scope}\0".encode("ascii") + machine + nonce)
 
 
 def tls_context():
@@ -205,7 +206,7 @@ def network(kind, comment_id=None, proof=None):
         method, body, limit = "GET", None, 2 * 1024 * 1024
         headers = {"Accept": "application/json"}
     elif kind == "post":
-        if type(proof) is not PostProof or not proof.claim():
+        if type(proof) is not PostProof or proof.grant.scope != 20 or not proof.claim():
             raise ValueError("missing verified POST proof")
         request = prepare_request(fixed_body())
         host, path, method, body = request.host, request.path, request.method, request.body
@@ -246,7 +247,7 @@ class PostProof:
             return (type(self.grant) is Lease and self.grant.active and self.grant.reserved
                     and runner_binding(self.grant) == self.runner
                     and verify_approval(self.record, self.comment_id, self.commit, self.manifest,
-                                        self.runner, datetime.now(timezone.utc)))
+                                        self.runner, datetime.now(timezone.utc), scope=self.grant.scope))
         except (ValueError, OSError):
             return False
 
@@ -254,7 +255,7 @@ class PostProof:
         if not self.valid():
             return False
         try:
-            fd = os.open("issue20.post", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            fd = os.open(f"issue{self.grant.scope}.post", os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                          0o600, dir_fd=self.grant.directory)
         except FileExistsError:
             return False
@@ -385,11 +386,11 @@ def git_bytes(root, *args):
                                    env={"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null"})
 
 
-def pin_source(root, commit, stage):
+def pin_source(root, commit, stage, files=SOURCE_FILES):
     if git_bytes(root, "rev-parse", "HEAD").decode().strip() != commit:
         raise ValueError("checkout SHA mismatch")
     sources = {}
-    for item in SOURCE_FILES:
+    for item in files:
         approved = git_bytes(root, "show", f"{commit}:{item}")
         if (root / item).read_bytes() != approved:
             raise ValueError("source digest mismatch")

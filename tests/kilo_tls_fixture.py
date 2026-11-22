@@ -41,35 +41,40 @@ def openssl(*args, cwd):
 
 
 @contextmanager
-def certificates():
+def certificates(*, vendor=False):
     require_loopback()
     with tempfile.TemporaryDirectory(prefix="issue24-ca-", dir="/tmp") as scratch:
         root = Path(scratch)
         openssl("req", "-new", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
                 "-subj", "/CN=Issue 24 ephemeral test root", "-keyout", "ca.key", "-out", "ca.pem",
                 "-addext", "basicConstraints=critical,CA:TRUE", cwd=root)
-        for name, serial in (("localhost", "2"), ("wrong.invalid", "3")):
+        names = ["localhost", "wrong.invalid"]
+        if vendor:
+            names += ["ai-gateway.kilo.ai", "api.github.com"]
+        for serial, name in enumerate(names, start=2):
             openssl("req", "-new", "-newkey", "rsa:2048", "-nodes", "-subj", f"/CN={name}",
                     "-keyout", name + ".key", "-out", name + ".csr", cwd=root)
             ext = root / (name + ".ext")
             ext.write_text(f"subjectAltName=DNS:{name}\nextendedKeyUsage=serverAuth\n")
             openssl("x509", "-req", "-in", name + ".csr", "-CA", "ca.pem", "-CAkey", "ca.key",
-                    "-set_serial", serial, "-days", "1", "-extfile", ext.name, "-out", name + ".pem", cwd=root)
+                    "-set_serial", str(serial), "-days", "1", "-extfile", ext.name, "-out", name + ".pem", cwd=root)
         yield root
 
 
 @contextmanager
-def peer(root, case):
+def peer(root, case, *, vendor=False, payload=None):
     require_loopback()
     with tempfile.TemporaryDirectory(prefix="issue24-peer-", dir="/tmp") as base:
         log = Path(base) / "hits"
+        if payload is not None:
+            (Path(base) / "metadata.json").write_bytes(payload)
         with socket.socket(socket.AF_INET) as listener:
             listener.bind(("127.0.0.1", 0))
             listener.listen(1)
             port = listener.getsockname()[1]
             process = subprocess.Popen(
                 [sys.executable, str(Path(__file__).resolve()), "--serve", str(listener.fileno()),
-                 str(root), str(log), case, str(os.getpid())],
+                 str(root), str(log), case, str(os.getpid()), "vendor" if vendor else "local"],
                 pass_fds=(listener.fileno(),), start_new_session=True, env={},
                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         try:
@@ -80,7 +85,7 @@ def peer(root, case):
             process.wait(timeout=2)
 
 
-def verify_post(conn):
+def verify_post(conn, host):
     request = prepare_request(fixed_body())
     with conn.makefile("rb") as wire:
         if wire.readline(1024) != b"POST /api/v1/chat/completions HTTP/1.1\r\n":
@@ -96,7 +101,7 @@ def verify_post(conn):
             received[key] = value
         else:
             raise ValueError("undelimited headers")
-        expected = {"Host": "localhost", "Content-Length": str(len(request.body)),
+        expected = {"Host": host, "Content-Length": str(len(request.body)),
                     "Connection": "close"} | dict(request.headers)
         if received != expected or wire.read(len(request.body)) != request.body:
             raise ValueError("unexpected synthetic request envelope")
@@ -128,18 +133,24 @@ def response_for(case):
     raise ValueError("unknown response fixture")
 
 
-def send_response(conn, case):
+def send_response(conn, case, fault_seconds):
     if case == "stall-before-headers":
-        time.sleep(FAULT_SECONDS)
+        time.sleep(fault_seconds)
     elif case == "slow-headers":
         for byte in b"HTTP/1.1 200 Fixture\r\nContent-Type: ":
             conn.sendall(bytes([byte]))
-            time.sleep(0.15)
+            time.sleep(fault_seconds / 46)
     elif case in ("stall-between-chunks", "stall-after-stop"):
         part = stream(*DELTAS) if case == "stall-after-stop" else stream(DELTAS[0])
         wire = http_wire(part, chunk_size=len(part))
         conn.sendall(wire[:-5])  # withhold HTTP terminal chunk and remaining SSE
-        time.sleep(FAULT_SECONDS)
+        time.sleep(fault_seconds)
+    elif case == "slow-valid":
+        time.sleep(4)
+        conn.sendall(response_for("large"))
+    elif case in ("rate-limit", "redirect"):
+        status = b"429 Too Many Requests" if case == "rate-limit" else b"302 Found"
+        conn.sendall(b"HTTP/1.1 " + status + b"\r\nContent-Length: 0\r\nLocation: https://example.invalid\r\n\r\n")
     else:
         wire = response_for(case)
         if case == "drip":
@@ -149,40 +160,60 @@ def send_response(conn, case):
         else:
             conn.sendall(wire)
         if case == "hold-open":
-            time.sleep(FAULT_SECONDS)
+            time.sleep(fault_seconds)
 
 
-def serve(fd, root, log, case, parent):
+def send_metadata(conn, log, case):
+    path = ("/repos/kha997/ai-chatbot/issues/comments/2600001" if case == "owner-meta" else "/api/v1/models")
+    with conn.makefile("rb") as wire:
+        if wire.readline(1024) != f"GET {path} HTTP/1.1\r\n".encode("ascii"):
+            raise ValueError("unexpected metadata operation")
+        for _ in range(12):
+            if wire.readline(1024) == b"\r\n":
+                break
+        else:
+            raise ValueError("undelimited headers")
+    with log.open("a") as file:
+        file.write("get\n")
+    conn.sendall(http_wire(log.with_name("metadata.json").read_bytes(), "application/json"))
+
+
+def serve(fd, root, log, case, parent, vendor):
     require_loopback()
     if ctypes.CDLL(None).prctl(1, signal.SIGKILL, 0, 0, 0) or os.getppid() != parent:
         return 2
     with socket.socket(fileno=fd) as listener:
         raw, _ = listener.accept()
     log.write_text("accepted\n")
+    fault_seconds = 35 if vendor else FAULT_SECONDS
     with raw:
         if case == "stall-handshake":
-            time.sleep(FAULT_SECONDS)
+            time.sleep(fault_seconds)
             return 0
         if case == "invalid-tls":
             raw.sendall(b"HTTP/1.0 400 Not TLS\r\n\r\n")
             return 0
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.minimum_version = ssl.TLSVersion.TLSv1_2
-        name = "wrong.invalid" if case == "wrong-hostname" else "localhost"
+        host = ("api.github.com" if case == "owner-meta" else "ai-gateway.kilo.ai") if vendor else "localhost"
+        name = "wrong.invalid" if case == "wrong-hostname" else host
         context.load_cert_chain(root / (name + ".pem"), root / (name + ".key"))
         try:
             with context.wrap_socket(raw, server_side=True) as conn:
-                verify_post(conn)
+                if case in ("owner-meta", "catalog-meta"):
+                    send_metadata(conn, log, case)
+                    return 0
+                verify_post(conn, host)
                 with log.open("a") as file:
                     file.write("post\n")
-                send_response(conn, case)
+                send_response(conn, case, fault_seconds)
         except (ssl.SSLError, BrokenPipeError, ConnectionResetError):
             pass
     return 0
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 7 and sys.argv[1] == "--serve":
+    if len(sys.argv) == 8 and sys.argv[1] == "--serve":
         raise SystemExit(serve(int(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4]),
-                               sys.argv[5], int(sys.argv[6])))
+                               sys.argv[5], int(sys.argv[6]), sys.argv[7] == "vendor"))
     raise SystemExit("fixture server is launched only by the offline harness")
