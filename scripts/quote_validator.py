@@ -3,7 +3,7 @@
 import re
 from collections.abc import Mapping
 from datetime import datetime
-from decimal import Context, Decimal, localcontext
+from decimal import MAX_EMAX, MIN_EMIN, ROUND_HALF_EVEN, Context, Decimal, InvalidOperation, Overflow, localcontext
 
 
 TENANTS = {"NHD", "HANU", "ZENA"}
@@ -112,7 +112,9 @@ def validate_quote(*, context, request, candidate, sources, as_of):
 
     # Operand lengths cover the exact coefficient of a finite decimal product.
     precision = max(len(quantity) + len(unit_price), len(minimum))
-    with localcontext(Context(prec=precision)):
+    arithmetic = Context(prec=precision, rounding=ROUND_HALF_EVEN, Emin=MIN_EMIN, Emax=MAX_EMAX,
+                         capitals=1, clamp=0, flags=[], traps=[InvalidOperation, Overflow])
+    with localcontext(arithmetic):
         total = max(Decimal(quantity) * Decimal(unit_price), Decimal(minimum))
     return {"behavior": "answer", "reason": "quoted", "total": format(total, "f"), "currency": "VND",
             "citation": citation}

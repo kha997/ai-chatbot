@@ -1,6 +1,6 @@
 import unittest
 from copy import deepcopy
-from decimal import localcontext
+from decimal import DefaultContext, Overflow, localcontext
 
 from scripts.quote_validator import validate_quote
 from test_quote_acceptance import read_json
@@ -106,6 +106,16 @@ class QuoteValidatorTests(unittest.TestCase):
         with localcontext() as ctx:
             ctx.prec = 3
             self.assertEqual(validate_quote(**inputs)["total"], "299999999999999999999999999997.3")
+
+    def test_prices_are_exact_when_default_decimal_context_changes(self):
+        inputs = self.inputs()
+        previous_limit, previous_trap = DefaultContext.Emax, DefaultContext.traps[Overflow]
+        try:
+            DefaultContext.Emax = 3
+            DefaultContext.traps[Overflow] = False
+            self.assertEqual(validate_quote(**inputs)["total"], "600000")
+        finally:
+            DefaultContext.Emax, DefaultContext.traps[Overflow] = previous_limit, previous_trap
 
     def test_request_charges_and_candidate_totals_are_ignored(self):
         inputs = self.inputs()
