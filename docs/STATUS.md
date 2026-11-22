@@ -3,7 +3,7 @@
 ## Gate 1.5 OpenCode SDK mock — Issue #34
 
 - **STATE:** **SDK_MOCK_PASS.** The installed OpenCode 1.18.30 CLI sent one POST and zero auxiliary requests to the private HTTP mock, returned the exact synthetic JSON and exited 0.
-- **EMPTY DAEMON:** **BLOCKED_GPU_OBSERVABILITY.** The Owner approved one unused empty-store startup. Synthetic tests verified device-open denials and cleanup under 30 seconds. The approved requirement to observe the daemon's device-open attempts still lacks a verified mechanism. Model copy, inference, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Evidence and Owner scope](OPENCODE_SDK_MOCK_34.md).
+- **EMPTY DAEMON:** **PASS — one-use approval consumed.** Ollama Linux 0.31.1 returned its version and an empty model list through two isolated GETs. It created only empty D: model directories. Cleanup took 2.5496532 s including setup. Model copy, inference, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Final receipt and Owner scope](OPENCODE_SDK_MOCK_34.md#final-one-use-empty-store-receipt).
 
 ## Gate 1.5 Ollama storage preflight — Issue #32
 
