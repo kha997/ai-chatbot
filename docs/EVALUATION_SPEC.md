@@ -43,6 +43,8 @@ Result fields: candidate/config/source/dataset/model/dependency hashes; case/rep
 
 The compact example file demonstrates typed price oracles and source-version links for all three tenants; it is not the full schema implementation. Do not mistake static arithmetic checks against its declared facts for model evaluation.
 
+The [synthetic quote acceptance fixtures](QUOTE_ACCEPTANCE.md) extend those three price examples with a schema and explicit refusal and clarification cases for offline validator evaluation.
+
 ## Additional suite definitions
 
 Configuration IDs `config-{tenant}-{01..06}`: correct tenant binding; unknown/inactive tenant denial; browser tenant override rejection; correct locale/catalog/handoff config; configuration revision rollback; parallel session isolation. Each checks state and responses.

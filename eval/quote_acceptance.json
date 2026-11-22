@@ -1,0 +1,321 @@
+{
+  "schema_version": "1.0",
+  "synthetic": true,
+  "as_of": "2030-01-15T00:00:00Z",
+  "sources": [
+    {
+      "tenant": "NHD",
+      "sku": "SYN-TILE-A",
+      "unit": "box",
+      "unit_price": "200000",
+      "minimum": "0",
+      "currency": "VND",
+      "source_id": "NHD-pricing-v1",
+      "paragraph_id": "p1",
+      "version": 1,
+      "status": "approved",
+      "valid_from": "2030-01-01T00:00:00Z",
+      "valid_until": "2031-01-01T00:00:00Z",
+      "citation": "NHD-pricing-v1#p1"
+    },
+    {
+      "tenant": "HANU",
+      "sku": "SYN-TRANS-A",
+      "unit": "word",
+      "unit_price": "1000",
+      "minimum": "50000",
+      "currency": "VND",
+      "source_id": "HANU-pricing-v1",
+      "paragraph_id": "p1",
+      "version": 1,
+      "status": "approved",
+      "valid_from": "2030-01-01T00:00:00Z",
+      "valid_until": "2031-01-01T00:00:00Z",
+      "citation": "HANU-pricing-v1#p1"
+    },
+    {
+      "tenant": "ZENA",
+      "sku": "SYN-CONSULT-A",
+      "unit": "session",
+      "unit_price": "300000",
+      "minimum": "0",
+      "currency": "VND",
+      "source_id": "ZENA-pricing-v1",
+      "paragraph_id": "p1",
+      "version": 1,
+      "status": "approved",
+      "valid_from": "2030-01-01T00:00:00Z",
+      "valid_until": "2031-01-01T00:00:00Z",
+      "citation": "ZENA-pricing-v1#p1"
+    },
+    {
+      "tenant": "NHD",
+      "sku": "SYN-TILE-A",
+      "unit": "box",
+      "unit_price": "210000",
+      "minimum": "0",
+      "currency": "VND",
+      "source_id": "NHD-pricing-v2",
+      "paragraph_id": "p1",
+      "version": 2,
+      "status": "approved",
+      "valid_from": "2030-01-01T00:00:00Z",
+      "valid_until": "2031-01-01T00:00:00Z",
+      "citation": "NHD-pricing-v2#p1"
+    },
+    {
+      "tenant": "NHD",
+      "sku": "SYN-TILE-A",
+      "unit": "box",
+      "unit_price": "230000",
+      "minimum": "0",
+      "currency": "VND",
+      "source_id": "NHD-pricing-v3",
+      "paragraph_id": "p1",
+      "version": 3,
+      "status": "approved",
+      "valid_from": "2030-01-01T00:00:00Z",
+      "valid_until": "2030-01-15T00:00:00Z",
+      "citation": "NHD-pricing-v3#p1"
+    },
+    {
+      "tenant": "NHD",
+      "sku": "SYN-TILE-A",
+      "unit": "box",
+      "unit_price": "240000",
+      "minimum": "0",
+      "currency": "VND",
+      "source_id": "NHD-pricing-v4",
+      "paragraph_id": "p1",
+      "version": 4,
+      "status": "revoked",
+      "valid_from": "2030-01-01T00:00:00Z",
+      "valid_until": "2031-01-01T00:00:00Z",
+      "citation": "NHD-pricing-v4#p1"
+    },
+    {
+      "tenant": "NHD",
+      "sku": "SYN-TILE-A",
+      "unit": "box",
+      "unit_price": "200000",
+      "minimum": "0",
+      "currency": "VND",
+      "source_id": "NHD-pricing-v5",
+      "paragraph_id": "p1",
+      "version": 5,
+      "status": "unapproved",
+      "valid_from": "2030-01-01T00:00:00Z",
+      "valid_until": "2031-01-01T00:00:00Z",
+      "citation": "NHD-pricing-v5#p1"
+    },
+    {
+      "tenant": "NHD",
+      "sku": "SYN-TILE-A",
+      "unit": "box",
+      "minimum": "0",
+      "currency": "VND",
+      "source_id": "NHD-pricing-v6",
+      "paragraph_id": "p1",
+      "version": 6,
+      "status": "approved",
+      "valid_from": "2030-01-01T00:00:00Z",
+      "valid_until": "2031-01-01T00:00:00Z",
+      "citation": "NHD-pricing-v6#p1"
+    },
+    {
+      "tenant": "NHD",
+      "sku": "SYN-TILE-A",
+      "unit": "box",
+      "unit_price": "200000",
+      "currency": "VND",
+      "source_id": "NHD-pricing-v7",
+      "paragraph_id": "p1",
+      "version": 7,
+      "status": "approved",
+      "valid_from": "2030-01-01T00:00:00Z",
+      "valid_until": "2031-01-01T00:00:00Z",
+      "citation": "NHD-pricing-v7#p1"
+    }
+  ],
+  "cases": [
+    {
+      "id": "qa-NHD-price-01",
+      "scenario": "Quote three boxes at the approved NHD price.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "answer", "reason": "quoted", "total": "600000", "currency": "VND", "citation": "NHD-pricing-v1#p1"},
+      "baseline_case_id": "qa-NHD-price-01"
+    },
+    {
+      "id": "qa-HANU-price-01",
+      "scenario": "Apply the HANU minimum to a 20-word translation.",
+      "context": {"tenant": "HANU", "active_sources": [{"tenant": "HANU", "sku": "SYN-TRANS-A", "source_id": "HANU-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TRANS-A", "quantity": "20", "unit": "word", "currency": "VND"},
+      "candidate": {"source_id": "HANU-pricing-v1", "version": 1, "citation": "HANU-pricing-v1#p1"},
+      "oracle": {"behavior": "answer", "reason": "quoted", "total": "50000", "currency": "VND", "citation": "HANU-pricing-v1#p1"},
+      "baseline_case_id": "qa-HANU-price-01"
+    },
+    {
+      "id": "qa-ZENA-price-01",
+      "scenario": "Quote two ZENA consultation sessions.",
+      "context": {"tenant": "ZENA", "active_sources": [{"tenant": "ZENA", "sku": "SYN-CONSULT-A", "source_id": "ZENA-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-CONSULT-A", "quantity": "2", "unit": "session", "currency": "VND"},
+      "candidate": {"source_id": "ZENA-pricing-v1", "version": 1, "citation": "ZENA-pricing-v1#p1"},
+      "oracle": {"behavior": "answer", "reason": "quoted", "total": "600000", "currency": "VND", "citation": "ZENA-pricing-v1#p1"},
+      "baseline_case_id": "qa-ZENA-price-01"
+    },
+    {
+      "id": "wrong-tenant-source",
+      "scenario": "The NHD request is paired with a HANU pricing source.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "HANU-pricing-v1", "version": 1, "citation": "HANU-pricing-v1#p1"},
+      "oracle": {"behavior": "refuse", "reason": "source_tenant_mismatch"}
+    },
+    {
+      "id": "customer-tenant-override",
+      "scenario": "An NHD request claims it should be processed as HANU.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND", "requested_tenant": "HANU"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "refuse", "reason": "requested_tenant_mismatch"}
+    },
+    {
+      "id": "expired-source",
+      "scenario": "The candidate matches the trusted binding, but its validity ends at the fixture clock.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v3", "version": 3}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v3", "version": 3, "citation": "NHD-pricing-v3#p1"},
+      "oracle": {"behavior": "refuse", "reason": "source_expired"}
+    },
+    {
+      "id": "revoked-source",
+      "scenario": "The source is in its validity window but has been revoked.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v4", "version": 4}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v4", "version": 4, "citation": "NHD-pricing-v4#p1"},
+      "oracle": {"behavior": "refuse", "reason": "source_revoked"}
+    },
+    {
+      "id": "unapproved-source",
+      "scenario": "The bound source has complete pricing and is in date, but has never been approved.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v5", "version": 5}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v5", "version": 5, "citation": "NHD-pricing-v5#p1"},
+      "oracle": {"behavior": "refuse", "reason": "source_unapproved"}
+    },
+    {
+      "id": "missing-unit-price",
+      "scenario": "The otherwise eligible bound source omits the unit price.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v6", "version": 6}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v6", "version": 6, "citation": "NHD-pricing-v6#p1"},
+      "oracle": {"behavior": "refuse", "reason": "source_price_missing"}
+    },
+    {
+      "id": "missing-minimum",
+      "scenario": "The otherwise eligible bound source omits the minimum amount.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v7", "version": 7}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v7", "version": 7, "citation": "NHD-pricing-v7#p1"},
+      "oracle": {"behavior": "refuse", "reason": "source_price_missing"}
+    },
+    {
+      "id": "old-version",
+      "scenario": "The version 1 source is still approved and in date, but the trusted mapping selects version 2.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v2", "version": 2}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "refuse", "reason": "source_revision_mismatch"}
+    },
+    {
+      "id": "mismatched-candidate-version",
+      "scenario": "The candidate uses the correct NHD source ID and citation but claims a different version.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 2, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "refuse", "reason": "source_revision_mismatch"}
+    },
+    {
+      "id": "unknown-sku",
+      "scenario": "No approved price binding exists for SYN-TILE-UNKNOWN.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-UNKNOWN", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": null,
+      "oracle": {"behavior": "clarify", "reason": "unknown_sku"}
+    },
+    {
+      "id": "zero-quantity",
+      "scenario": "The requested box count is zero.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "0", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "clarify", "reason": "invalid_quantity"}
+    },
+    {
+      "id": "negative-quantity",
+      "scenario": "The requested box count is negative.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "-1", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "clarify", "reason": "invalid_quantity"}
+    },
+    {
+      "id": "fractional-quantity",
+      "scenario": "The customer asks for a fraction of a box.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "1.5", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "clarify", "reason": "invalid_quantity"}
+    },
+    {
+      "id": "nonnumeric-quantity",
+      "scenario": "The supplied box count cannot be read as a number.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "several", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "clarify", "reason": "invalid_quantity"}
+    },
+    {
+      "id": "wrong-currency",
+      "scenario": "The customer asks for USD on a VND-only price record.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "USD"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "clarify", "reason": "currency_mismatch"}
+    },
+    {
+      "id": "forged-source",
+      "scenario": "The candidate claims an NHD pricing identifier absent from the canonical records.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v999", "version": 999, "citation": "NHD-pricing-v999#p1"},
+      "oracle": {"behavior": "refuse", "reason": "source_unknown"}
+    },
+    {
+      "id": "cross-tenant-citation",
+      "scenario": "The source reference is NHD, but the candidate citation points to HANU.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "HANU-pricing-v1#p1"},
+      "oracle": {"behavior": "refuse", "reason": "citation_mismatch"}
+    },
+    {
+      "id": "forged-same-tenant-citation",
+      "scenario": "The candidate uses the correct NHD source ID and version with a nonexistent paragraph citation.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "box", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p999"},
+      "oracle": {"behavior": "refuse", "reason": "citation_mismatch"}
+    },
+    {
+      "id": "wrong-unit",
+      "scenario": "The customer requests sessions for a product priced by box.",
+      "context": {"tenant": "NHD", "active_sources": [{"tenant": "NHD", "sku": "SYN-TILE-A", "source_id": "NHD-pricing-v1", "version": 1}]},
+      "request": {"sku": "SYN-TILE-A", "quantity": "3", "unit": "session", "currency": "VND"},
+      "candidate": {"source_id": "NHD-pricing-v1", "version": 1, "citation": "NHD-pricing-v1#p1"},
+      "oracle": {"behavior": "clarify", "reason": "unit_mismatch"}
+    }
+  ]
+}
