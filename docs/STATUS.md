@@ -2,15 +2,15 @@
 
 ## Issue #55 — local synthetic session boundary
 
-STATE: IN_PROGRESS
+STATE: READY_FOR_ARCHITECTURE_REVIEW
 GATE: 1 (narrow development exception: Issue #55)
-RECOMMENDATION: ephemeral server-owned sessions and a narrow fixture-pinned adapter; keep PR unmerged pending independent review.
+RECOMMENDATION: LOCAL_SYNTHETIC_SESSION_BOUNDARY_PASS for the offline adapter only; keep PR unmerged for architecture acceptance.
 COMPLETED: [implementation, threat boundaries and validation evidence](SESSION_BOUNDARY_55.md); [PR #56](https://github.com/kha997/ai-chatbot/pull/56); original checkout preserved.
-VALIDATION: `py -B -m unittest discover -s tests -p 'test_quote*.py'` — PASS, 59 tests on Windows and in a private WSL network namespace; [CI SUCCESS](https://github.com/kha997/ai-chatbot/actions/runs/45044296364/job/137275385517); `git diff --check` PASS.
-OPEN RISKS: HIGH if used as real auth — synthetic identities only; independent Codex review pending after initial reviewer usage-limit interruption. No PASS exit status asserted.
-NEXT: complete independent review; resolve findings; publish final reviewed SHA and CI.
+VALIDATION: `py -B -m unittest discover -s tests -p 'test_quote*.py'` — PASS, 59 tests on Windows and in a private WSL network namespace; independent Codex reviewer reran 59/59 and confirmed both findings fixed; [CI SUCCESS](https://github.com/kha997/ai-chatbot/actions/runs/45085345535/job/137402571523); baseline-to-reviewed-head `git diff --check` PASS.
+OPEN RISKS: HIGH if used as real auth — synthetic identities only; sessions/revocation are ephemeral, and the HTTP preview remains a curated harness outside this adapter. No unresolved independent security findings within Issue #55 scope. Gate 2 and production remain NO-GO.
+NEXT: architecture acceptance of PR #56; merge only after acceptance; close Issue #55 only after accepted merge.
 OWNER DECISION: NONE
-HEAD/BRANCH/PR: technical candidate `6a679b0d8352884e8684bdc8179e8529661dd20b`; `codex/issue55-session-boundary`; [PR #56](https://github.com/kha997/ai-chatbot/pull/56).
+HEAD/BRANCH/PR: exact independently reviewed technical head `db3296fbe37515c76f6d24b1818da6b4dd9e740c`; `codex/issue55-session-boundary`; [PR #56](https://github.com/kha997/ai-chatbot/pull/56). Later receipt-only commit records this result without code/test changes.
 ## Local quote developer preview — Issue #53
 
 - **STATE:** The loopback browser demo reuses the existing synthetic quote and support-handoff contracts for NHD, HANU and ZENA.

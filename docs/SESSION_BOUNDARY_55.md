@@ -10,7 +10,7 @@ Lead decision: add `scripts/quote_sessions.py`, a standard-library ephemeral aut
 - [x] Implement opaque handles, fixed tenant/role/actor/session records, controlled expiry and revocation. Use only trusted Python setup for issuance, never HTTP input.
 - [x] Pin the bundled positive fixture records inside the adapter. Resolve sessions before quote, consent, ticket status, queue delivery, inbox and confirmation. Bind customer ticket access and idempotency to the issuing session. Reject changed replays and all extra authority fields with a uniform denial.
 - [x] Keep the accepted preview usable and label its scenario selector explicitly. No session issuance HTTP endpoint. Retain all 43 accepted tests.
-- [ ] Run current quote CI suite without egress, record exact results, freeze technical SHA, obtain fresh-context independent Codex review, fix findings, publish one PR.
+- [x] Run current quote CI suite without egress, record exact results, freeze technical SHA, obtain fresh-context independent Codex review, fix findings, publish one PR.
 
 Review focus: malformed JSON-like inputs; tenant swaps including valid foreign handles; same-actor different-session replay; expired/revoked staff access after delivery; mutable response data or attempted canonical source replacement.
 
@@ -64,4 +64,19 @@ Technical candidate: [`6a679b0d8352884e8684bdc8179e8529661dd20b`](https://github
 - `git diff --check` — PASS. Comparison against baseline confirms no changes to `scripts/quote_validator.py`, `scripts/quote_handoff.py`, `eval/quote_acceptance.json` or `.github/workflows/quote-acceptance.yml`.
 - Unrelated retired CLI/model/Dispatcher test paths were NOT_RUN under Issue #55's NO-GO scope. Current quote-acceptance CI is the applicable project suite.
 
-Independent review and final CI evidence pending. Exit status not yet asserted.
+## Independent review and final result — 2026-11-23
+
+**Exit status: `LOCAL_SYNTHETIC_SESSION_BOUNDARY_PASS`.** Final independently reviewed technical SHA: [`db3296fbe37515c76f6d24b1818da6b4dd9e740c`](https://github.com/kha997/ai-chatbot/commit/db3296fbe37515c76f6d24b1818da6b4dd9e740c). [Hosted CI SUCCESS for that SHA](https://github.com/kha997/ai-chatbot/actions/runs/45085345535/job/137402571523). Subsequent changes only publish this review receipt and status; they do not alter runtime code or tests.
+
+Reviewer: separate Codex session `/root/session_boundary_review`, created with a fresh context, read-only remit and no implementation participation. The first invocation was interrupted by a usage limit and supplied no review. After the Owner requested continuation, the same independent session completed its review. No paid fallback, Qoder or provider API was invoked.
+
+Initial review of `6a679b0d8352884e8684bdc8179e8529661dd20b`: **BLOCKED pending correction**, despite finding no authorization bypass. Reviewer independently passed 59 tests and 116 inline adversarial assertions (malformed candidates, well-formed unknown/tampered handles, foreign scopes, replay, same-actor session swaps, staff revocation and invalid/expired clocks). A catalog trap verified authorization failures precede catalog access. These inline probes were reviewer-run; the 116 assertions are not an additional committed test suite and are not included in the 59-test count.
+
+| Finding | Correction and observed verification |
+| --- | --- |
+| P2: random token can legitimately contain `NHD`; substring assertion could fail spuriously | Replaced substring ban with full 43-character URL-safe format assertion. Lead forced an `NHD` prefix plus random suffix: original test RED, corrected test GREEN; reviewer independently repeated the corrected probe successfully |
+| P3: extra blank line at EOF in status file | Removed; reviewer and lead confirmed baseline-to-final `git diff --check` exits 0. The earlier working-diff-only check did not validate the full committed range |
+
+Final reviewer addendum for exact SHA `db3296fbe37515c76f6d24b1818da6b4dd9e740c`: **59/59 passed; both findings resolved; no unresolved security findings; `LOCAL_SYNTHETIC_SESSION_BOUNDARY_PASS`**. Reviewer checked all intervening README/evidence changes and confirmed the runtime implementation had not changed. Reviewer did not independently inspect hosted CI or repeat the author's no-egress namespace run; the lead verified both. Lead reran all 59 tests in the private WSL network namespace on the corrected candidate: PASS.
+
+Keeping the HTTP preview as a labeled curated harness meets Issue #55's optional UI-integration scope. This review does **not** establish session protection for that HTTP harness. No manual browser acceptance, real authentication, durability, real-user security, production or Gate 2 approval is claimed. PR remains unmerged for architecture acceptance; Issue #55 remains open until an accepted merge.
