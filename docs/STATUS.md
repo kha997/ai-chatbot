@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 one local coding prompt — Issue #42
+
+- **STATE:** **BLOCKED_ADAPTER / BLOCKED_RESOURCES.** The current SDK mock passed once and timed out once. Windows available RAM was below the proposed floor, and no exclusive GPU window was reserved.
+- **SCOPE:** Offline mock and synthetic Python regression only. No Owner activation requested. Ollama startup, inference, Dispatcher, Gate 2 and production remain **NO-GO**. [Readiness evidence and proposed one-run limits](ONE_LOCAL_PROMPT_READINESS_42.md).
+
 ## Gate 1.5 NTFS sparse-source compatibility — Issue #39
 
 - **STATE:** **STORAGE_COPY_PASS / ONE_ATTEMPT_CONSUMED.** The single approved run published 9,276,199,424 bytes to the private D: store. All six source and destination SHA-256 checks passed. The destination files are non-sparse and staging is absent.
