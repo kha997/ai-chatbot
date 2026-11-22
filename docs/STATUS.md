@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 direct Ollama readiness — Issue #46
+
+- **STATE:** **WAITING_RESOURCE_WINDOW_AND_GPU_BOUNDARY.** Windows had 5.10 GiB physical RAM available versus the 14 GiB admission floor. The GPU had 13,772 MiB free but there is no exclusive window or verified GPU-visible sandbox.
+- **SCOPE:** Planning and read-only evidence only. Issue #44 closed with unresolved OpenCode timeouts. No new Owner Gate requested. Ollama startup, inference, Dispatcher, Gate 2 and production remain **NO-GO**. [One-start/one-POST plan and stop conditions](DIRECT_OLLAMA_READINESS_46.md).
+
 ## Gate 1.5 OpenCode mock timeout diagnosis — Issue #44
 
 - **STATE:** **BLOCKED_ADAPTER_UNRESOLVED / BLOCKED_RESOURCES.** Both bounded instrumented mock runs passed. Neither reproduced the earlier pre-HTTP or post-SSE timeout. The stop-loss is reached and the adapter has no proven fix.
