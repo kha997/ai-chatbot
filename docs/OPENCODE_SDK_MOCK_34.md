@@ -4,7 +4,7 @@
 
 | Check | Observed |
 | --- | --- |
-| HTTP | One `POST /v1/chat/completions` to `127.0.0.1:11435`, 651 request bytes, expected model, streaming, output cap 128 tokens, two messages and zero advertised tools. Zero catalog requests, retries or other requests reached the mock. |
+| HTTP | One `POST /v1/chat/completions` to `127.0.0.1:11435`, 651 request bytes under a 16 KiB body limit, expected model, streaming, output cap 128 tokens, two messages and zero advertised tools. Zero catalog requests, retries or other requests reached the mock. |
 | Response and CLI | HTTP 200, 615 bytes of mock SSE including the terminal event, one text event, one step finish, zero error and tool events. Exact parsed JSON `{"catalog":2,"handoff":1,"total":3}`. OpenCode exited 0. |
 | Isolation and cleanup | WSL private user and network namespaces with loopback only, no external route and no capabilities. Pinned Bubblewrap with private PID/mount namespaces, synthetic read-only fixture, cleared environment, disposable 64 MiB scratch, and no host drives, home, Windows interop or GPU nodes. The CLI PID was reaped, the sandbox exited, the mock socket closed and fixture scratch was removed. Zero real AI requests or dependency downloads. |
 | Limits and regression | 24 s CLI watchdog, 29 s outer sandbox deadline, up to two logical CPUs, 8/10 s soft/hard CPU time, 96 FDs, 128 tasks and 32 KiB per captured stream. Two gate contracts and the earlier three transport-fixture cases passed. |
@@ -17,7 +17,7 @@ For a local replay, supply a reviewed pinned Bubblewrap artifact to the mock run
 
 ```bash
 py=/usr/bin/python3
-bwrap=/home/zen/.aichatbot-issue18/bwrap
+bwrap="$HOME/.aichatbot-issue18/bwrap"
 unshare --user --map-current-user --net --keep-caps bash -c '
   /usr/sbin/ip link set lo up &&
   exec /usr/bin/setpriv --bounding-set=-all --inh-caps=-all --ambient-caps=-all --no-new-privs "$@"
@@ -29,5 +29,5 @@ unshare --user --map-current-user --net --keep-caps bash -c '
 Proposed approval wording. “I approve one supervised startup of the installed Ollama Linux 0.31.1 in the Issue #34 empty-store scope below, for read-only version and model-list checks.”
 
 - Use a new private NTFS folder at `D:\ProjectData\AIChatBot\ollama-empty-test`, mapped from `/mnt/d/ProjectData/AIChatBot/ollama-empty-test` and exposed as the only host write mount at `/store` with `OLLAMA_MODELS=/store`. Preflight the fresh path, ownership, absence of reparse points and contents, and owner/SYSTEM ACL. Set `OLLAMA_NO_CLOUD=1` and `OLLAMA_NOPRUNE=1`. Leave the shared Windows and WSL services outside the namespace. [Ollama 0.31.1 environment configuration](https://raw.githubusercontent.com/ollama/ollama/v0.31.1/envconfig/config.go).
-- Preflight available host RAM and enforce CPU quota of one logical CPU, 1 GiB memory, zero swap and a 64-task limit before startup. Require a private no-egress namespace, synthetic home, no host sockets or GPU device mounts, and a single startup on `127.0.0.1:11436` inside that namespace. Allow one `GET /api/version` and one `GET /api/tags`. Verify version, empty tags and any store directories actually created on D. The probe has a 30 s total hard watchdog. GPU device access, missing isolation, budget or path failures, and unexpected activity end the probe as **BLOCKED**.
+- Preflight available host RAM and enforce CPU quota of one logical CPU, 1 GiB memory, zero swap and a 64-task limit before startup. Require a private no-egress namespace, synthetic home, no host sockets or GPU device mounts, and a bounded way to trace device-open attempts by the daemon and its children. Start once on `127.0.0.1:11436` inside that namespace. Allow one `GET /api/version` and one `GET /api/tags`. Verify version, empty tags and any store directories actually created on D. The probe has a 30 s total hard watchdog. GPU device-open attempts, missing isolation or tracing, budget or path failures, and unexpected activity end the probe as **BLOCKED**.
 - Terminate the private process group, verify listener and children are gone, and remove only that run's verified scratch and D: test folder. This approval scope covers zero POSTs, pulls, copied model bytes, model loads and GPU work. Model copy and inference remain blocked. Agent Dispatcher, Gate 2 and production remain **NO-GO**.
