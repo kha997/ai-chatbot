@@ -1,6 +1,6 @@
 # Synthetic quote acceptance fixtures
 
-These fixtures define expected behavior for a deterministic, offline quote validator. The catalog prices, validity windows, customer inputs, and outcomes are synthetic. The fixture checks provide evidence about the dataset and its arithmetic. Validator execution is pending a separate change. [Owner scope approval](https://github.com/kha997/ai-chatbot/pull/48#issuecomment-7079372954).
+These fixtures define and test the behavior of a deterministic, offline quote validator. The catalog prices, validity windows, customer inputs, and outcomes are synthetic. [Owner scope approval](https://github.com/kha997/ai-chatbot/pull/48#issuecomment-7079372954) · [Accepted fixture PR](https://github.com/kha997/ai-chatbot/pull/49).
 
 ## Baseline
 
@@ -28,7 +28,9 @@ An `answer` returns `total`, `currency`, and `citation`. Compute the total as th
 
 ## Verification
 
-The [fixture unit tests](../tests/test_quote_acceptance.py) check the schema, canonical source references, all three baseline totals and citations, and the declared failure cases. The tests use Python's standard library and a small check for the schema keywords this contract uses. GitHub Actions runs the quote-only test command on pull requests.
+The [validator](../scripts/quote_validator.py) is a standard-library Python function. Call `validate_quote(context=..., request=..., candidate=..., sources=..., as_of=...)`. The caller supplies the trusted context, catalog and clock separately from customer input. An answer is a draft and calculates only the supplied price and minimum. Refusal and clarification return static reason codes without amount, currency or citation. The function performs no I/O or writes. A future gateway must supply authenticated context and authorized catalog data before this can support a real service.
+
+The [fixture tests](../tests/test_quote_acceptance.py) validate the used schema keywords, source references and golden totals. The [validator tests](../tests/test_quote_validator.py) compare all 22 oracles and check that inputs are unchanged. Focused cases exercise foreign-catalog independence, trusted binding ambiguity, boolean versions, malformed amounts, UTC validity boundaries, citation consistency and exact decimal math. GitHub Actions runs only the quote suite.
 
 ```bash
 python3 -B -m unittest discover -s tests -p 'test_quote*.py' -v

@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Deterministic draft quote validator — PR #48 development decision
+
+- **STATE:** The offline Python validator passes all **22 synthetic fixture cases**, including **19 refusal or clarification** cases. The three draft totals are NHD **600,000 VND**, HANU **50,000 VND** and ZENA **600,000 VND** with their approved fixture citations.
+- **SCOPE:** Qoder was not invoked. A Codex fallback authored the independently reviewed fixtures in PR #49. The validator runs on synthetic inputs with caller-supplied trusted context and no external actions. Ollama, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Fixture contract, implementation and tests](QUOTE_ACCEPTANCE.md).
+
 ## Gate 1.5 direct Ollama readiness — Issue #46
 
 - **STATE:** **WAITING_RESOURCE_WINDOW_AND_GPU_BOUNDARY.** Windows had 5.10 GiB physical RAM available versus the 14 GiB admission floor. The GPU had 13,772 MiB free but there is no exclusive window or verified GPU-visible sandbox.
