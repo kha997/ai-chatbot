@@ -2,8 +2,8 @@
 
 ## Gate 1.5 NTFS sparse-source compatibility — Issue #39
 
-- **STATE:** **READY_FOR_NEW_STORAGE_OWNER_GATE.** Full read-only SHA-256 and metadata checks passed for the five sparse blobs and ordinary manifest. The source-only compatibility patch passed a genuine NTFS sparse fixture with an unallocated range.
-- **SCOPE:** Issue #36 remains consumed. Further copy requires a new Issue #39 Owner comment covering the exact technical SHA and allowlist, and a separate one-use record. Ollama startup, inference, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Source evidence and exact approval text](OLLAMA_SPARSE_SOURCE_39.md).
+- **STATE:** **STORAGE_COPY_PASS / ONE_ATTEMPT_CONSUMED.** The single approved run published 9,276,199,424 bytes to the private D: store. All six source and destination SHA-256 checks passed. The destination files are non-sparse and staging is absent.
+- **SCOPE:** Issues #36 and #39 remain consumed. No repeat transfer was authorized. Ollama startup, inference, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Final receipt and six SHA-256 digests](https://github.com/kha997/ai-chatbot/issues/39#issuecomment-7075781476).
 
 ## Gate 1.5 storage-only export — Issue #36
 
