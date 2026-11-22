@@ -50,6 +50,8 @@ class QuotePreviewHttpTests(unittest.TestCase):
         _, headers, body = self.http("GET", "/")
         self.assertIn("default-src 'none'", headers["Content-Security-Policy"])
         self.assertIn('href="/style.css"', body)
+        self.assertIn("Kịch bản demo được dựng sẵn", body)
+        self.assertIn("không phải đăng nhập hay xác thực khách hàng", body)
         self.assertNotIn("https://", body)
         self.assertEqual(self.http("GET", "/style.css")[0], 200)
         self.assertEqual(self.http("GET", "/eval/quote_acceptance.json")[0], 404)
