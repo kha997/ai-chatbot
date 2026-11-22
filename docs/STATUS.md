@@ -2,8 +2,8 @@
 
 ## Gate 1.5 storage-only export — Issue #36
 
-- **STATE:** **STORAGE_OWNER_APPROVED / COPY_PENDING.** The Windows-only copy path and rollback passed tests using six tiny synthetic files on D:. The real target was absent at preflight.
-- **OWNER DECISION:** One storage-only copy of the pinned qwen3:14b manifest and five blobs, capped at 12 GiB. Inference, Ollama startup, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Owner approval](https://github.com/kha997/ai-chatbot/issues/36#issuecomment-7075133334) · [Procedure and tests](OLLAMA_STORAGE_COPY_36.md).
+- **STATE:** **BLOCKED_SOURCE_SPARSE_FILE / ONE_ATTEMPT_CONSUMED.** The one approved qwen3:14b transfer stopped at source metadata validation. NTFS reports all five source blobs as sparse files. No model bytes were written and there is no destination or stage.
+- **SCOPE:** No retry. The attempt record and error receipt were preserved. Inference, Ollama startup, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Owner approval](https://github.com/kha997/ai-chatbot/issues/36#issuecomment-7075133334) · [Attempt receipt](OLLAMA_STORAGE_COPY_36.md#one-use-attempt-receipt).
 
 ## Gate 1.5 OpenCode SDK mock — Issue #34
 
