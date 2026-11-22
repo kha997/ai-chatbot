@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI ChatBot · Developer Preview</title>
+<link rel="stylesheet" href="/style.css">
+<header class="top">
+  <div class="wrap top-inner">
+    <p class="brand">AI ChatBot <span>Developer Preview</span></p>
+    <p class="local">Chỉ trên máy này</p>
+  </div>
+</header>
+<main class="wrap">
+  <p class="disclosure"><strong>SYNTHETIC TEST DATA — NONBINDING DRAFT — NO LIVE DELIVERY / NO AI MODEL</strong>
+    <span>Dữ liệu giả lập · Báo giá không ràng buộc · Không có nhân viên thật tiếp nhận</span>
+  </p>
+  <div class="intro">
+    <div>
+      <h1>Kiểm tra báo giá nháp</h1>
+      <p>Chọn tenant và tình huống để kiểm tra báo giá hoặc luồng hỗ trợ.</p>
+    </div>
+    <form method="post" action="/">
+      $fields
+      <button name="action" value="reset">Đặt lại $tenant</button>
+    </form>
+  </div>
+  <div class="workspace">
+    <nav class="panel controls" aria-label="Điều khiển thử nghiệm">
+      <h2>Tenant</h2>
+      <form method="post" action="/" class="choices tenant-choices">
+        $tenant_fields
+        <input type="hidden" name="action" value="select">
+        $tenants
+      </form>
+      <h2>Tình huống</h2>
+      <form method="post" action="/" class="choices">
+        $fields
+        $scenarios
+      </form>
+    </nav>
+    <div class="details">
+      $notice
+      <div class="results">
+        <section class="panel quote" aria-label="Kết quả báo giá">
+          <p class="section-label">$tenant · $tenant_label</p>
+          $quote
+        </section>
+        <section class="panel inbox">
+          <h2>Hộp thư $tenant</h2>
+          <p class="section-label">Nhân viên giả lập</p>
+          $inbox
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+</html>
