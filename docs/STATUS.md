@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 OpenCode SDK mock — Issue #34
+
+- **STATE:** **SDK_MOCK_PASS / EMPTY_DAEMON_OWNER_APPROVAL_PENDING.** The installed OpenCode 1.18.30 CLI sent one POST and zero auxiliary requests to the private HTTP mock, returned the exact synthetic JSON and exited 0.
+- **SCOPE:** Separate Owner approval is pending for one empty-store Linux Ollama startup on D: and two read-only GETs. Model copy, inference, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Test evidence and Owner approval scope](OPENCODE_SDK_MOCK_34.md).
+
 ## Gate 1.5 Ollama storage preflight — Issue #32
 
 - **STATE:** **BLOCKED** for the storage copy. D: DrvFS and protected read-only bind passed a tiny fixture; the original manifest and all five source hashes match. The actual OpenCode SDK-to-mock exchange and Ollama store access by the daemon remain unverified.
