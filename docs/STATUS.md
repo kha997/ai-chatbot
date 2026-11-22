@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 NTFS sparse-source compatibility — Issue #39
+
+- **STATE:** **READY_FOR_NEW_STORAGE_OWNER_GATE.** Full read-only SHA-256 and metadata checks passed for the five sparse blobs and ordinary manifest. The source-only compatibility patch passed a genuine NTFS sparse fixture with an unallocated range.
+- **SCOPE:** Issue #36 remains consumed. Further copy requires a new Issue #39 Owner comment covering the exact technical SHA and allowlist, and a separate one-use record. Ollama startup, inference, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Source evidence and exact approval text](OLLAMA_SPARSE_SOURCE_39.md).
+
 ## Gate 1.5 storage-only export — Issue #36
 
 - **STATE:** **BLOCKED_SOURCE_SPARSE_FILE / ONE_ATTEMPT_CONSUMED.** The one approved qwen3:14b transfer stopped at source metadata validation. NTFS reports all five source blobs as sparse files. No model bytes were written and there is no destination or stage.
