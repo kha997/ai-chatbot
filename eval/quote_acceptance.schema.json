@@ -61,7 +61,8 @@
     },
     "source": {
       "type": "object",
-      "required": ["tenant", "sku", "unit", "unit_price", "minimum", "currency", "source_id", "paragraph_id", "version", "status", "valid_from", "valid_until", "citation"],
+      "description": "Fixture source record. Dedicated refusal cases may each omit one price field to test incomplete input.",
+      "required": ["tenant", "sku", "unit", "currency", "source_id", "paragraph_id", "version", "status", "valid_from", "valid_until", "citation"],
       "additionalProperties": false,
       "properties": {
         "tenant": {"$ref": "#/$defs/tenant"},
@@ -74,7 +75,7 @@
         "paragraph_id": {"$ref": "#/$defs/token"},
         "version": {"$ref": "#/$defs/version"},
         "status": {
-          "enum": ["approved", "revoked"]
+          "enum": ["approved", "revoked", "unapproved"]
         },
         "valid_from": {"$ref": "#/$defs/utcTimestamp"},
         "valid_until": {"$ref": "#/$defs/utcTimestamp"},
@@ -158,7 +159,7 @@
           "properties": {
             "behavior": {"const": "refuse"},
             "reason": {
-              "enum": ["requested_tenant_mismatch", "source_tenant_mismatch", "source_expired", "source_revoked", "source_revision_mismatch", "source_unknown", "citation_mismatch"]
+              "enum": ["requested_tenant_mismatch", "source_tenant_mismatch", "source_expired", "source_revoked", "source_unapproved", "source_price_missing", "source_revision_mismatch", "source_unknown", "citation_mismatch"]
             }
           }
         }

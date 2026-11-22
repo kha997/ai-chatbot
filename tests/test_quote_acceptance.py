@@ -109,7 +109,8 @@ class QuoteAcceptanceFixtureTests(unittest.TestCase):
                 self.assertEqual(source["source_id"], f'{source["tenant"]}-pricing-v{source["version"]}')
                 self.assertEqual(source["citation"], f'{source["source_id"]}#{source["paragraph_id"]}')
                 self.assertLess(utc_timestamp(source["valid_from"]), utc_timestamp(source["valid_until"]))
-                self.assertGreater(Decimal(source["unit_price"]), 0)
+                if "unit_price" in source:
+                    self.assertGreater(Decimal(source["unit_price"]), 0)
 
     def test_active_source_bindings_identify_exact_canonical_revisions(self):
         for case in self.cases.values():
@@ -161,11 +162,12 @@ class QuoteAcceptanceFixtureTests(unittest.TestCase):
                 self.assertEqual(calculated, Decimal(oracle["total"]))
 
     def test_customer_input_failures_change_the_intended_field(self):
-        baseline_request = self.cases["qa-NHD-price-01"]["request"]
+        baseline = self.cases["qa-NHD-price-01"]
         overrides = {
             "customer-tenant-override": {"requested_tenant": "HANU"},
             "unknown-sku": {"sku": "SYN-TILE-UNKNOWN"},
             "zero-quantity": {"quantity": "0"},
+            "negative-quantity": {"quantity": "-1"},
             "fractional-quantity": {"quantity": "1.5"},
             "nonnumeric-quantity": {"quantity": "several"},
             "wrong-currency": {"currency": "USD"},
@@ -173,7 +175,11 @@ class QuoteAcceptanceFixtureTests(unittest.TestCase):
         }
         for case_id, changed in overrides.items():
             with self.subTest(case=case_id):
-                self.assertEqual(self.cases[case_id]["request"], baseline_request | changed)
+                case = self.cases[case_id]
+                self.assertEqual(case["request"], baseline["request"] | changed)
+                self.assertEqual(case["context"], baseline["context"])
+                if case_id != "unknown-sku":
+                    self.assertEqual(case["candidate"], baseline["candidate"])
         unknown = self.cases["unknown-sku"]
         self.assertIsNone(unknown["candidate"])
         self.assertNotIn(unknown["request"]["sku"], {source["sku"] for source in self.sources.values()})
@@ -184,15 +190,20 @@ class QuoteAcceptanceFixtureTests(unittest.TestCase):
             "customer-tenant-override": ("refuse", "requested_tenant_mismatch"),
             "expired-source": ("refuse", "source_expired"),
             "revoked-source": ("refuse", "source_revoked"),
+            "unapproved-source": ("refuse", "source_unapproved"),
+            "missing-unit-price": ("refuse", "source_price_missing"),
+            "missing-minimum": ("refuse", "source_price_missing"),
             "old-version": ("refuse", "source_revision_mismatch"),
             "mismatched-candidate-version": ("refuse", "source_revision_mismatch"),
             "unknown-sku": ("clarify", "unknown_sku"),
             "zero-quantity": ("clarify", "invalid_quantity"),
+            "negative-quantity": ("clarify", "invalid_quantity"),
             "fractional-quantity": ("clarify", "invalid_quantity"),
             "nonnumeric-quantity": ("clarify", "invalid_quantity"),
             "wrong-currency": ("clarify", "currency_mismatch"),
             "forged-source": ("refuse", "source_unknown"),
             "cross-tenant-citation": ("refuse", "citation_mismatch"),
+            "forged-same-tenant-citation": ("refuse", "citation_mismatch"),
             "wrong-unit": ("clarify", "unit_mismatch"),
         }
         for case_id, (behavior, reason) in expected.items():
@@ -229,6 +240,67 @@ class QuoteAcceptanceFixtureTests(unittest.TestCase):
         cross_source = self.sources[cross_citation.split("#")[0]]
         self.assertEqual(cross_source["citation"], cross_citation)
         self.assertNotEqual(cross_source["tenant"], self.cases["cross-tenant-citation"]["context"]["tenant"])
+
+    def source_bound_to_case(self, case_id, status):
+        case = self.cases[case_id]
+        candidate = case["candidate"]
+        source = self.sources[candidate["source_id"]]
+        at = utc_timestamp(self.fixture["as_of"])
+        self.assertEqual(case["context"]["tenant"], source["tenant"])
+        self.assertIn(
+            {key: source[key] for key in ("tenant", "sku", "source_id", "version")},
+            case["context"]["active_sources"],
+        )
+        for key in ("sku", "unit", "currency"):
+            self.assertEqual(case["request"][key], source[key])
+        self.assertEqual(candidate["version"], source["version"])
+        self.assertEqual(source["status"], status)
+        self.assertLessEqual(utc_timestamp(source["valid_from"]), at)
+        self.assertGreater(utc_timestamp(source["valid_until"]), at)
+        return source
+
+    def test_unapproved_source_has_matching_binding_and_complete_pricing(self):
+        source = self.source_bound_to_case("unapproved-source", "unapproved")
+        self.assertIn("unit_price", source)
+        self.assertIn("minimum", source)
+        self.assertEqual(self.cases["unapproved-source"]["candidate"]["citation"], source["citation"])
+
+    def test_forged_same_tenant_citation_keeps_canonical_source_id_and_version(self):
+        case_id = "forged-same-tenant-citation"
+        source = self.source_bound_to_case(case_id, "approved")
+        self.assertIn("unit_price", source)
+        self.assertIn("minimum", source)
+        candidate_citation = self.cases[case_id]["candidate"]["citation"]
+        self.assertEqual(candidate_citation.split("#")[0], source["source_id"])
+        self.assertNotIn(candidate_citation, {record["citation"] for record in self.sources.values()})
+
+    def test_only_dedicated_refusal_cases_reference_incomplete_prices(self):
+        price_fields = {"unit_price", "minimum"}
+        intentionally_missing = {"missing-unit-price": {"unit_price"}, "missing-minimum": {"minimum"}}
+        observed = {
+            source["source_id"]: price_fields - source.keys()
+            for source in self.sources.values()
+            if not price_fields <= source.keys()
+        }
+        expected = {}
+        for case_id, omitted in intentionally_missing.items():
+            with self.subTest(case=case_id):
+                source = self.source_bound_to_case(case_id, "approved")
+                candidate = self.cases[case_id]["candidate"]
+                self.assertEqual(candidate["citation"], source["citation"])
+                self.assertNotIn(source["source_id"], expected)
+                expected[source["source_id"]] = omitted
+        self.assertEqual(observed, expected)
+
+        for case in self.cases.values():
+            candidate = case["candidate"]
+            source_ids = {binding["source_id"] for binding in case["context"]["active_sources"]}
+            if candidate:
+                source_ids.add(candidate["source_id"])
+            if source_ids & observed.keys():
+                with self.subTest(case=case["id"]):
+                    self.assertIn(case["id"], intentionally_missing)
+                    self.assertEqual(case["oracle"], {"behavior": "refuse", "reason": "source_price_missing"})
 
 
 if __name__ == "__main__":
