@@ -2,6 +2,7 @@
 
 import unittest
 
+from fixtures.ollama_local_client import verify_oracle
 from run_ollama_local_mock import CONFIG, MODEL, PACKET, RequestGate, validate_config
 
 
@@ -17,5 +18,11 @@ class LocalContractTests(unittest.TestCase):
         gate = RequestGate()
         self.assertEqual(gate.admit(PACKET | {"model": MODEL + "-other"}), 403)
         self.assertEqual(gate.admit(PACKET | {"tools": []}), 403)
+        self.assertEqual(gate.admit(PACKET | {"stream": 0}), 403)
+        self.assertEqual(gate.admit(PACKET | {"max_tokens": 128.0}), 403)
         self.assertEqual(gate.admit(PACKET), 200)
         self.assertEqual(gate.admit(PACKET), 409)
+
+    def test_oracle_rejects_duplicate_fields(self):
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            verify_oracle('{"catalog":0,"catalog":2,"handoff":1,"total":3}')

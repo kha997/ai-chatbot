@@ -35,7 +35,7 @@ FIXTURE = Path(__file__).with_name("fixtures") / "ollama_local_client.py"
 
 
 def validate_config(config):
-    if any(key not in config or config[key] != value for key, value in CONFIG.items()):
+    if config.get("autoupdate") is not False or any(config.get(key) != value for key, value in CONFIG.items()):
         raise ValueError("resolved configuration differs from pinned local fixture")
 
 
@@ -45,7 +45,7 @@ class RequestGate:
         self.accepted = 0
 
     def admit(self, body):
-        if body != PACKET:
+        if body != PACKET or type(body["max_tokens"]) is not int or body["stream"] is not False:
             return 403
         if not self.permit.take():
             return 409
@@ -78,11 +78,12 @@ def mock_server(gate, case):
             if self.path != "/v1/chat/completions":
                 return self.reply(404, {})
             try:
+                self.connection.settimeout(1)
                 size = int(self.headers.get("Content-Length", "0"))
                 if not 0 < size <= 4096:
                     return self.reply(413, {})
                 value = json.loads(self.rfile.read(size), object_pairs_hook=unique_json_keys)
-            except ValueError:
+            except (ValueError, OSError):
                 return self.reply(400, {})
             status = gate.admit(value)
             if status != 200:

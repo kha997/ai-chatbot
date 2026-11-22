@@ -9,13 +9,26 @@ import urllib.error
 import urllib.request
 
 
+def verify_oracle(content):
+    def unique(pairs):
+        value = dict(pairs)
+        if len(value) != len(pairs):
+            raise ValueError("duplicate oracle field")
+        return value
+
+    expected = {"catalog": 2, "handoff": 1, "total": 3}
+    value = json.loads(content, object_pairs_hook=unique)
+    if value != expected or not all(type(number) is int for number in value.values()):
+        raise ValueError("wrong integer oracle")
+    return value
+
+
 def main(case):
     config = json.loads(Path("/fixture/opencode.json").read_text())
     provider = config["provider"]["local-ollama"]
     base = provider["options"]["baseURL"]
     model = config["model"].split("/", 1)[1]
     task = json.loads(Path("/fixture/packet.json").read_text())
-    expected = {"catalog": 2, "handoff": 1, "total": 3}
     if (base != "http://127.0.0.1:11435/v1" or Path("/mnt").exists() or Path("/dev/dxg").exists()
             or Path(os.environ["HOST_CANARY"]).exists()
             or str(Path("/proc/self/ns/net").stat().st_ino) != os.environ["FIXTURE_NETNS"]):
@@ -52,11 +65,13 @@ def main(case):
         return {"outcome": "TIMED_OUT", "oracle": None}
     assert case != "timeout" and status == 200 and reply["model"] == model
     assert reply["choices"][0]["finish_reason"] == "stop"
-    value = json.loads(reply["choices"][0]["message"]["content"])
-    exact = value == expected and all(type(number) is int for number in value.values())
+    try:
+        value = verify_oracle(reply["choices"][0]["message"]["content"])
+    except ValueError:
+        value = None
     assert http("/chat/completions", task)[0] == 409
-    assert exact == (case == "ok")
-    return {"outcome": "PASS" if exact else "INVALID_ORACLE", "oracle": expected if exact else None}
+    assert (value is not None) == (case == "ok")
+    return {"outcome": "PASS" if value is not None else "INVALID_ORACLE", "oracle": value}
 
 
 if __name__ == "__main__":
