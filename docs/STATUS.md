@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 storage-only export — Issue #36
+
+- **STATE:** **STORAGE_OWNER_APPROVED / COPY_PENDING.** The Windows-only copy path and rollback passed tests using six tiny synthetic files on D:. The real target was absent at preflight.
+- **OWNER DECISION:** One storage-only copy of the pinned qwen3:14b manifest and five blobs, capped at 12 GiB. Inference, Ollama startup, Agent Dispatcher, Gate 2 and production remain **NO-GO**. [Owner approval](https://github.com/kha997/ai-chatbot/issues/36#issuecomment-7075133334) · [Procedure and tests](OLLAMA_STORAGE_COPY_36.md).
+
 ## Gate 1.5 OpenCode SDK mock — Issue #34
 
 - **STATE:** **SDK_MOCK_PASS.** The installed OpenCode 1.18.30 CLI sent one POST and zero auxiliary requests to the private HTTP mock, returned the exact synthetic JSON and exited 0.
