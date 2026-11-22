@@ -1,5 +1,10 @@
 # AI ChatBot — remote status
 
+## Gate 1.5 OpenCode mock timeout diagnosis — Issue #44
+
+- **STATE:** **BLOCKED_ADAPTER_UNRESOLVED / BLOCKED_RESOURCES.** Both bounded instrumented mock runs passed. Neither reproduced the earlier pre-HTTP or post-SSE timeout. The stop-loss is reached and the adapter has no proven fix.
+- **SCOPE:** Offline evidence only. No model or startup authorization, no change to host admission floors. Ollama startup, inference, Dispatcher, Gate 2 and production remain **NO-GO**. [Prior failures, reviewed hypothesis and phase timings](OPENCODE_TIMEOUT_DIAGNOSIS_44.md).
+
 ## Gate 1.5 one local coding prompt — Issue #42
 
 - **STATE:** **BLOCKED_ADAPTER / BLOCKED_RESOURCES.** The current SDK mock passed once and timed out once. Windows available RAM was below the proposed floor, and no exclusive GPU window was reserved.
