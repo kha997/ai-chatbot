@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 from dataclasses import dataclass, field
 from html import escape
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -32,7 +33,8 @@ SCENARIOS = {
     "clarify": ("Thiếu số lượng", "Xem cách đề nghị hỗ trợ"),
     "refuse": ("Nguồn khác tenant", "Kiểm tra từ chối an toàn"),
 }
-ACTIONS = {*SCENARIOS, "select", "consent", "confirm", "wrong-tenant", "wrong-role", "reset"}
+STAFF_ACTIONS = {"confirm", "wrong-tenant", "wrong-role"}
+ACTIONS = {*SCENARIOS, *STAFF_ACTIONS, "select", "consent", "reset"}
 MAX_FORM = 1024
 CSP = "default-src 'none'; style-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
 
@@ -66,7 +68,7 @@ class Preview:
         return dict(context=case["context"], request=request, candidate=candidate,
                     sources=self.sources, as_of=self.as_of)
 
-    def act(self, action, tenant, consent):
+    def act(self, action, tenant, consent, ticket_id):
         journey = self.journeys[tenant]
         if action in SCENARIOS:
             journey.scenario = action
@@ -83,7 +85,10 @@ class Preview:
                 journey.delivery = journey.handoff.deliver_next(staff={"tenant": tenant, "role": "support"})
             if journey.delivery is None:
                 return "Hộp thư giả lập chưa nhận được phiếu."
-        elif action in {"confirm", "wrong-tenant", "wrong-role"} and journey.scenario != "refuse" and journey.delivery:
+        elif action in STAFF_ACTIONS:
+            if (journey.scenario == "refuse" or journey.delivery is None
+                    or ticket_id != journey.delivery["ticket_id"]):
+                return "Phiếu đã thay đổi. Hãy dùng phiếu đang hiển thị."
             staff = {"tenant": NEXT_TENANT[tenant] if action == "wrong-tenant" else tenant,
                      "role": "customer" if action == "wrong-role" else "support"}
             receipt = journey.handoff.confirm(
@@ -135,11 +140,13 @@ class Preview:
         if journey.delivery is None:
             return '<p>Chưa có phiếu. Thử tình huống thiếu số lượng và đồng ý chuyển hỗ trợ.</p>'
         state = "Đã tiếp nhận giả lập" if journey.accepted else "Chờ tiếp nhận"
+        ticket_id = escape(journey.delivery["ticket_id"])
         return (
             f'<div class="ticket"><p class="state">{state}</p>'
-            f'<p>Mã phiếu <code data-testid="ticket-id">{escape(journey.delivery["ticket_id"])}</code></p>'
+            f'<p>Mã phiếu <code data-testid="ticket-id">{ticket_id}</code></p>'
             '<p>Cần bổ sung số lượng.</p></div>'
             f'<form method="post" action="/" class="staff-actions">{self.hidden(tenant)}'
+            f'<input type="hidden" name="ticket" value="{ticket_id}">'
             '<button class="primary" name="action" value="confirm">Xác nhận đúng tenant</button>'
             '<button name="action" value="wrong-tenant">Thử sai tenant</button>'
             '<button name="action" value="wrong-role">Thử sai vai trò</button></form>'
@@ -240,12 +247,17 @@ class Handler(BaseHTTPRequestHandler):
         expected = {"action", "tenant", "token"}
         if action == "consent" and form.get("consent") == "yes":
             expected.add("consent")
+        ticket = form.get("ticket", "")
+        if action in STAFF_ACTIONS:
+            if not re.fullmatch(r"[0-9a-f]{32}", ticket):
+                return self.reject(400)
+            expected.add("ticket")
         if set(form) != expected or len(form) != len(pairs) or tenant not in TENANTS or action not in ACTIONS:
             return self.reject(400)
         preview = self.server.preview
         if not token.isascii() or not compare_digest(token, preview.token):
             return self.reject(403)
-        notice = preview.act(action, tenant, "consent" in form)
+        notice = preview.act(action, tenant, "consent" in form, ticket)
         self.respond(200, preview.render(tenant, notice), "text/html")
 
 
@@ -258,7 +270,7 @@ def make_server(port):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--port", type=int, default=0, help="loopback port; default is chosen by Windows or Linux")
     args = parser.parse_args()
     try:
         with make_server(args.port) as server:

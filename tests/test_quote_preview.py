@@ -92,15 +92,30 @@ class QuotePreviewHttpTests(unittest.TestCase):
         self.assertEqual(duplicate.count('data-testid="ticket-id"'), 1)
         self.assertNotIn("confirmation", delivered)
         for action in ("wrong-tenant", "wrong-role"):
-            denied = self.page(action)
+            denied = self.page(action, ticket=ticket)
             self.assertIn("Từ chối xác nhận", denied)
             self.assertIn("Chờ tiếp nhận", denied)
             self.assertIn(ticket, denied)
-        confirmed = self.page("confirm")
+        confirmed = self.page("confirm", ticket=ticket)
         self.assertIn("Đã tiếp nhận giả lập", confirmed)
         self.assertIn(ticket, confirmed)
         self.assertNotIn(ticket, self.page("select", "HANU"))
         self.assertNotIn(ticket, self.page("reset"))
+
+    def test_stale_inbox_form_cannot_confirm_a_replacement_ticket(self):
+        self.page("clarify")
+        first = self.page("consent", consent="yes")
+        old_ticket = re.search(r'data-testid="ticket-id">([0-9a-f]+)', first).group(1)
+        self.page("reset")
+        self.page("clarify")
+        second = self.page("consent", consent="yes")
+        new_ticket = re.search(r'data-testid="ticket-id">([0-9a-f]+)', second).group(1)
+        self.assertNotEqual(old_ticket, new_ticket)
+        response = self.page("confirm", ticket=old_ticket)
+        self.assertIn("Phiếu đã thay đổi", response)
+        self.assertIn("Chờ tiếp nhận", response)
+        self.assertNotIn(old_ticket, response)
+        self.assertIn("Đã tiếp nhận giả lập", self.page("confirm", ticket=new_ticket))
 
     def test_refusal_hides_any_price_citation_and_previous_ticket(self):
         self.page("clarify")

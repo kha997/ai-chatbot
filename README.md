@@ -43,7 +43,7 @@ From a Windows checkout containing the preview, start the synthetic browser demo
 py -B -m scripts.quote_preview
 ```
 
-Open [127.0.0.1:8765](http://127.0.0.1:8765/). Choose NHD, HANU or ZENA. Try the valid quote, missing quantity and foreign-source rejection. In the missing-quantity scenario, check consent, submit the mock handoff and confirm it from the matching mock inbox. Try the wrong-tenant and wrong-role buttons before confirming. Use the tenant's reset button to clear its mock state. Press **Ctrl+C** in the terminal to stop. If port 8765 is busy, append `--port 8766` and use the printed URL.
+Open the printed `http://127.0.0.1:PORT/` URL. The operating system picks a free local port. Choose NHD, HANU or ZENA. Try the valid quote, missing quantity and foreign-source rejection. In the missing-quantity scenario, check consent, submit the mock handoff and confirm it from the matching mock inbox. Try the wrong-tenant and wrong-role buttons before confirming. Use the tenant's reset button to clear its mock state. Press **Ctrl+C** in the terminal to stop. An optional `--port` argument selects a fixed loopback port.
 
 The preview uses synthetic nonbinding quotes, in-memory tickets and simulated staff identities. It is a local test surface with no authentication for real users, external delivery or model usage. Restarting clears all preview state. [Issue #53](https://github.com/kha997/ai-chatbot/issues/53).
 
