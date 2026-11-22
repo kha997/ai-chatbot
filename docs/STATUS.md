@@ -7,7 +7,7 @@
 
 ## Gate 1.5 Ollama storage preflight — Issue #32
 
-- **STATE:** **BLOCKED** for the storage copy. D: DrvFS and protected read-only bind passed a tiny fixture; the original manifest and all five source hashes match. The actual OpenCode SDK-to-mock exchange and Ollama store access by the daemon remain unverified.
+- **STATE:** **BLOCKED** for the storage copy. D: DrvFS and protected read-only bind passed a tiny fixture; the original manifest and all five source hashes match. Subsequent Issue #34 verified SDK-to-mock and empty-store daemon access.
 - **SCOPE:** Proposed private D: store, 12 GiB maximum, after explicit approval and preflight. No model copied or loaded, no Ollama startup, no GPU workload and no prompt. Dispatcher, Gate 2 and production remain **NO-GO**. [Evidence and rollback](OLLAMA_STORAGE_PREFLIGHT_32.md).
 
 ## Gate 1.5 isolated local model feasibility — Issue #30
