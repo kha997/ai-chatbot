@@ -1,5 +1,17 @@
 # AI ChatBot — remote status
 
+## Issue #64 — Offline fake gateway (2026-11-23)
+
+- STATE: IN_PROGRESS — BLOCKED_OFFLINE_GATEWAY pending independent review and CI.
+- GATE: 1, offline simulation under [Issue #64](https://github.com/kha997/ai-chatbot/issues/64).
+- RECOMMENDATION: Review the local SQLite safety controls and keep live execution closed.
+- COMPLETED: [design, trust boundary and tests](OFFLINE_GATEWAY_64.md).
+- VALIDATION: New local gateway suite 23 PASS on Windows. Hosted checks and independent review pending. AI and six E2Es NOT_RUN.
+- OPEN RISKS: HIGH — BLOCKED_COST_CONTROL, including provider/account/region/terms/rates/fees and real framing. Offline gateway proof cannot close these.
+- NEXT: Confirm isolated WSL/CI, commission independent review, record findings.
+- OWNER DECISION: NONE while validation is pending. No Gate 2, integration, spend or deployment.
+- HEAD/BRANCH/PR: baseline b213fb560902083ebeb87f3fd3f3aff25c25894d, branch codex/issue64-offline-gateway. PR will record exact review SHA.
+
 ## Issue #61 — Gate A preparation (2026-11-23)
 
 - STATE: READY_FOR_ARCHITECTURE_REVIEW — **GATE_A_PREPARATION_READY_FOR_OWNER**, documents only.
