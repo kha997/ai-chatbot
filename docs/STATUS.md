@@ -2,15 +2,15 @@
 
 ## Issue #59 — NHD MVP architecture review (2026-11-23)
 
-- STATE: IN_PROGRESS
+- STATE: READY_FOR_ARCHITECTURE_REVIEW
 - GATE: 1 — research/docs only under Issue #59; no runtime expansion.
 - RECOMMENDATION: NHD-first Python state machine, approved lexical retrieval and deterministic quote policy; bounded GPT-5.4 mini trial only after separate provider/budget authorization. Proposed ADR-002 awaits Architecture Acceptance.
 - COMPLETED: [Owner memo](NHD_MVP_OWNER_59.md), [inventory, ADR and diagram](NHD_MVP_ARCHITECTURE_59.md), [platform contracts, RTM and six NOT_RUN E2Es](NHD_PLATFORM_CONTRACTS_59.md), [costs and gates](NHD_MVP_COST_ROADMAP_59.md), [dated sources](NHD_MVP_SOURCES_59.md). PRs #56 and #58 are recorded as merged. Historical receipts are intact.
-- VALIDATION: baseline main and merge metadata verified; document/static validation and independent review pending. Runtime/model/legacy qualification tests NOT_RUN in this docs task; historical 73/73 is not an AI benchmark.
+- VALIDATION: eight Markdown paths, 90 local links, 37 RTM rows, six full E2E specifications and cost arithmetic checked. Independent Codex PASS on reviewed technical SHA. Runtime/model tests and the six full E2Es are NOT_RUN. Historical 73/73 covers the synthetic components.
 - OPEN RISKS: HIGH — real identity/recovery, source approval, provider cost/data controls and production operations absent; lead owns technical prerequisites, Owner retains reserved approvals. See dossier risk register.
-- NEXT: validate docs-only scope/links/arithmetic; freeze SHA and obtain fresh-context Codex review; publish corrections and await Architecture Acceptance.
-- OWNER DECISION: Architecture Acceptance after final review; no Gate 2, spending, data or deployment approval implied.
-- HEAD/BRANCH/PR: baseline `6243aa7806b9209e3df810fbe34f1dab7bc51a40`; `docs/issue59-nhd-mvp-architecture`; [PR #60](https://github.com/kha997/ai-chatbot/pull/60). Exact reviewed SHA will be recorded in [review receipt](reviews/ISSUE_59_ARCHITECTURE_REVIEW.md).
+- NEXT: await private source comparison and Architecture Acceptance.
+- OWNER DECISION: Architecture Acceptance for PR #60 after Owner-side comparison with v1.0. A later execution approval is separate.
+- HEAD/BRANCH/PR: independent review of technical SHA `98a90a1676c44480e83a2a78054b5fca292f3081`; `docs/issue59-nhd-mvp-architecture`; [PR #60](https://github.com/kha997/ai-chatbot/pull/60). The subsequent commit records the [review receipt](reviews/ISSUE_59_ARCHITECTURE_REVIEW.md) and status only.
 
 ## Issue #57 — durable synthetic handoff and consent
 
