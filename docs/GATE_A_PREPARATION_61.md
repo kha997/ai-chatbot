@@ -16,7 +16,7 @@ Design choice: retain ADR-002's Python state machine, tenant-scoped lexical retr
 
 The accepted 73/73 component tests and preview 5/5 are historical synthetic evidence, not rerun here. The six business E2Es, all inference, latency, usage and budget-enforcement experiments are **NOT_RUN**. The existing NHD quote corpus has one SKU; repeated versions and paraphrases do not create domain breadth. Core invariant remains **1 Core – N Tenant – N Channel – N Products/Services**; NHD first, HANU/ZENA denial canaries only.
 
-Preparation status: **IN_PROGRESS**. Independent review and the final document checks are pending. Execution status: **NOT_RUN / NOT_AUTHORIZED**. Current approved experiment requests: **0**; approved experiment spending: **0**. The proposed 600 / US$10 envelope is inactive.
+Preparation status: **GATE_A_PREPARATION_READY_FOR_OWNER**. Independent fresh-context Codex review PASS at technical SHA `99babe18fb1306f05d2f0ece1ed74ef0798eebcb`; [validation and review receipt](reviews/ISSUE_61_PREPARATION_REVIEW.md). Await Architecture Acceptance before merge. Execution status: **NOT_RUN / NOT_AUTHORIZED**. Current approved experiment requests: **0**; approved experiment spending: **0**. The proposed600 / US$10 envelope is inactive.
 
 ## Dossier index and acceptance map
 

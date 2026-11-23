@@ -2,15 +2,15 @@
 
 ## Issue #61 — Gate A preparation (2026-11-23)
 
-- STATE: IN_PROGRESS — documents only, independent review pending.
+- STATE: READY_FOR_ARCHITECTURE_REVIEW — **GATE_A_PREPARATION_READY_FOR_OWNER**, documents only.
 - GATE: 1 — Gate A preparation under [Issue #61](https://github.com/kha997/ai-chatbot/issues/61); execution NOT_AUTHORIZED / NOT_RUN.
-- RECOMMENDATION: Accept a bounded synthetic experiment dossier only after independent review; retain GPT-5.4 mini snapshot and deterministic authority; no activation of 600 requests/US$10.
+- RECOMMENDATION: Architecture Acceptance for the independently reviewed preparation dossier; retain GPT-5.4 mini snapshot and deterministic authority; no activation of600 requests/US$10.
 - COMPLETED: [Owner memo](GATE_A_OWNER_61.md), [case/oracle inventory](GATE_A_CORPUS_61.md), [privacy/safety](GATE_A_CONTROLS_61.md), [budget](GATE_A_BUDGET_61.md), [manifest/approval packet](GATE_A_MANIFEST_61.md), [dated sources](GATE_A_SOURCES_61.md). PR #60 is merged and Issue #59 closed; accepted architecture baseline is `24d8fb46f7726e42bcce4bb48904e6f8738250d7`.
-- VALIDATION: `git diff --check` passed on initial plan; complete offline doc/count/arithmetic checks and [review receipt](reviews/ISSUE_61_PREPARATION_REVIEW.md) pending. No runtime/model tests; six business E2Es NOT_RUN. Historical 73/73 is not new inference evidence.
+- VALIDATION: `git diff --check 24d8fb46f7726e42bcce4bb48904e6f8738250d7 HEAD` and independent offline checks PASS:9 Markdown paths,83 relative links,60/12/24/12 unique IDs, T1–T13, fixture provenance/hashes and cost/retry arithmetic. Fresh-context Codex review PASS at exact technical SHA; [receipt](reviews/ISSUE_61_PREPARATION_REVIEW.md). [Existing quote CI](https://github.com/kha997/ai-chatbot/actions/runs/45168990208) success at reviewed SHA. No local runtime/model tests; six business E2Es NOT_RUN. Historical73/73 and hosted quote regression are not AI evidence.
 - OPEN RISKS: HIGH — BLOCKED_CORPUS_BREADTH, BLOCKED_COST_CONTROL, provider/access/terms and runtime prerequisites; lead owns technical qualification, Owner reserved approvals remain separate. No real data used.
-- NEXT: offline document checks; fresh-context review at frozen SHA; resolve findings and publish readiness.
-- OWNER DECISION: NONE for remaining authorized preparation. Architecture Acceptance before merge, separate exact execution approval later.
-- HEAD/BRANCH/PR: baseline `24d8fb46f7726e42bcce4bb48904e6f8738250d7`; `codex/issue61-gate-a-preparation`; [PR #62](https://github.com/kha997/ai-chatbot/pull/62). Exact technical review SHA follows in receipt; final reporting commit HEAD will be recorded in PR to avoid self-hashing.
+- NEXT: wait for Architecture Acceptance; retain the separate fixture/control and execution prerequisites; no automatic implementation or new issue.
+- OWNER DECISION: Architecture Acceptance of PR #62 documents only. Later fixture/control work and exact execution permission remain separate; this acceptance never grants spend/data/API access.
+- HEAD/BRANCH/PR: reviewed technical HEAD `99babe18fb1306f05d2f0ece1ed74ef0798eebcb`; baseline `24d8fb46f7726e42bcce4bb48904e6f8738250d7`; `codex/issue61-gate-a-preparation`; [PR #62](https://github.com/kha997/ai-chatbot/pull/62). Following commit updates reporting only; exact final HEAD is in PR/issue delivery receipt to avoid circular self-hashing. Original worktree remains unchanged.
 
 ## Issue #59 — NHD MVP architecture review (2026-11-23)
 
