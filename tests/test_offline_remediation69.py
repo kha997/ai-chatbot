@@ -1,5 +1,7 @@
 import copy
 from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import Barrier
@@ -68,6 +70,12 @@ def approval(pkg):
     packet, manifest, setup, raw, _ = pkg
     sealed = h.canonical(packet)
     return e.verify(sealed, e.pin(sealed), manifest, DEV, CUSTODY_SCHEMA, setup, [raw])
+
+
+def commit_then_exit(path, app, bundle, obs):
+    journal = Journal.open(path, app, app.genesis)
+    journal.submit(0, bundle, obs, 2, app.genesis)
+    os._exit(17)  # The external anchor store has not been updated.
 
 
 class EvidenceTests(unittest.TestCase):
@@ -190,8 +198,16 @@ class JournalTests(unittest.TestCase):
                 self.submit(observed(), anchor=first.anchor, **change)
 
     def test_crash_after_commit_requires_current_separately_pinned_anchor(self):
-        # Intentionally ignore the returned anchor, as if the process died on return.
-        self.submit(observed())
+        worker = multiprocessing.get_context("spawn").Process(
+            target=commit_then_exit,
+            args=(self.path, self.app, self.pkg[-1], h.canonical(observed())),
+        )
+        worker.start()
+        worker.join(15)
+        if worker.is_alive():
+            worker.terminate()
+            worker.join(5)
+        self.assertEqual(worker.exitcode, 17)
         with self.assertRaises(h.Invalid):
             Journal.open(self.path, self.app, self.anchor)
 
@@ -268,6 +284,31 @@ class JournalTests(unittest.TestCase):
             db.execute(sql)
         with self.assertRaisesRegex(h.Invalid, "anchor-mismatch"):
             Journal.open(self.path, self.app, first.anchor)
+
+    def test_forbidden_typed_claim_and_ungraded_plain_text_cannot_enter_trace(self):
+        source, _, out, _ = fixture()
+        source["safeguards"]["forbidden_fact_ids"] = ["fake-stock"]
+        packet, manifest, setup, _, _ = package()
+        raw = c.canonical(source)
+        packet["cases"][0]["bridge"]["input"] = e.pin(raw)
+        app = approval((packet, manifest, setup, raw, out))
+        invented = {"id": "fake-stock", "kind": "integer", "unit": "each", "value": 5}
+        observations = [
+            observed(facts=[invented], links=[]),
+            observed(answer_text="Unverified free text is outside the closed trace."),
+        ]
+        for i, obs in enumerate(observations):
+            j = Journal.create(Path(self.tmp.name)/f"forbidden{i}.sqlite", app)
+            decision = j.submit(0, out, h.canonical(obs), 2, app.genesis)
+            self.assertEqual(decision.outcome, "STOP")
+            self.assertNotIn("fake-stock", repr(decision))
+
+    def test_expired_mock_approval_stops_and_cannot_be_refreshed_by_open(self):
+        first = self.submit(observed(), tick=self.app.until_tick)
+        self.assertEqual((first.outcome, first.code), ("STOP", "expired-mock-approval"))
+        self.journal = Journal.open(self.path, self.app, first.anchor)
+        with self.assertRaises(h.Invalid):
+            self.submit(None, index=1, anchor=first.anchor, tick=self.app.until_tick+1)
 
 
 if __name__ == "__main__":
