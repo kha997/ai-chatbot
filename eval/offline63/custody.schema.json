@@ -1,0 +1,501 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "access_policy_revision": {
+      "pattern": "^[a-z][a-z0-9-]{0,79}$",
+      "type": "string"
+    },
+    "approval": {
+      "enum": [
+        "draft",
+        "reviewed-private-freeze"
+      ],
+      "type": "string"
+    },
+    "architecture_acceptance_receipt": {
+      "pattern": "^[a-z][a-z0-9-]{0,79}$",
+      "type": "string"
+    },
+    "author": {
+      "pattern": "^[a-z][a-z0-9-]{0,79}$",
+      "type": "string"
+    },
+    "canonicalization": {
+      "const": "utf8-lf-sorted-keys-2spaces-v1"
+    },
+    "case_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "byte_length",
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "cases": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_reads": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9-]{0,79}$",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "allowed_writes": {
+            "maxItems": 0,
+            "type": "array"
+          },
+          "as_of": {
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+            "type": "string"
+          },
+          "author": {
+            "pattern": "^[a-z][a-z0-9-]{0,79}$",
+            "type": "string"
+          },
+          "behavior": {
+            "enum": [
+              "answer",
+              "clarify",
+              "abstain",
+              "refuse"
+            ],
+            "type": "string"
+          },
+          "candidate_setup_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "offering",
+              "scope",
+              "price",
+              "quote",
+              "availability",
+              "policy",
+              "unknown",
+              "ambiguity",
+              "sources",
+              "injection"
+            ],
+            "type": "string"
+          },
+          "decision_condition": {
+            "pattern": "^[a-z][a-z0-9-]{0,79}$",
+            "type": "string"
+          },
+          "egress_policy": {
+            "const": "denied-pending-separate-authorization"
+          },
+          "expected_side_effects": {
+            "maxItems": 0,
+            "type": "array"
+          },
+          "fixture_rights": {
+            "const": "invented-no-third-party-text"
+          },
+          "forbidden_claims": {
+            "items": {
+              "maxLength": 400,
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "forbidden_reads": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9-]{0,79}$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "forbidden_side_effects": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9-]{0,79}$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "hard_gate_assertions": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9-]{0,79}$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^ga61-qa-(?:offering|scope|price|quote|availability|policy|unknown|ambiguity|sources|injection)-0[1-6]$",
+            "type": "string"
+          },
+          "locale": {
+            "const": "vi"
+          },
+          "max_initial_stages": {
+            "maximum": 2,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "opaque_scope": {
+            "additionalProperties": false,
+            "properties": {
+              "actor_synthetic": {
+                "const": true
+              },
+              "role": {
+                "const": "visitor"
+              },
+              "session": {
+                "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                "type": "string"
+              },
+              "tenant": {
+                "const": "NHD"
+              }
+            },
+            "required": [
+              "actor_synthetic",
+              "role",
+              "tenant",
+              "session"
+            ],
+            "type": "object"
+          },
+          "post_state_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "pre_state_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "question": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "type": "string"
+          },
+          "required_claims": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "citation": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "document": {
+                      "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                      "type": "string"
+                    },
+                    "paragraph": {
+                      "pattern": "^p[1-9][0-9]*$",
+                      "type": "string"
+                    },
+                    "source_sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    },
+                    "version": {
+                      "minimum": 1,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "document",
+                    "version",
+                    "paragraph",
+                    "source_sha256"
+                  ],
+                  "type": "object"
+                },
+                "expected_typed_value": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "id": {
+                  "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                  "type": "string"
+                },
+                "statement": {
+                  "maxLength": 400,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "tolerance": {
+                  "const": "exact"
+                },
+                "units": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "statement",
+                "expected_typed_value",
+                "units",
+                "tolerance",
+                "citation"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "retrieval_relevance": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "document": {
+                  "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                  "type": "string"
+                },
+                "paragraph": {
+                  "pattern": "^p[1-9][0-9]*$",
+                  "type": "string"
+                },
+                "source_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "version": {
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "document",
+                "version",
+                "paragraph",
+                "source_sha256"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "reviewer": {
+            "pattern": "^[a-z][a-z0-9-]{0,79}$",
+            "type": "string"
+          },
+          "semantic_family": {
+            "pattern": "^[a-z][a-z0-9-]{0,79}$",
+            "type": "string"
+          },
+          "split": {
+            "const": "private-heldout"
+          },
+          "steps": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "user",
+                    "trusted-fixture"
+                  ],
+                  "type": "string"
+                },
+                "text_or_fixture_id": {
+                  "maxLength": 400,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "text_or_fixture_id"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "synthetic": {
+            "const": true
+          },
+          "tenant": {
+            "const": "NHD"
+          },
+          "zero_egress": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "locale",
+          "synthetic",
+          "tenant",
+          "split",
+          "semantic_family",
+          "decision_condition",
+          "question",
+          "as_of",
+          "candidate_setup_sha256",
+          "steps",
+          "opaque_scope",
+          "behavior",
+          "required_claims",
+          "forbidden_claims",
+          "retrieval_relevance",
+          "allowed_reads",
+          "forbidden_reads",
+          "allowed_writes",
+          "expected_side_effects",
+          "forbidden_side_effects",
+          "hard_gate_assertions",
+          "pre_state_sha256",
+          "post_state_sha256",
+          "max_initial_stages",
+          "zero_egress",
+          "author",
+          "reviewer",
+          "fixture_rights",
+          "egress_policy"
+        ],
+        "type": "object"
+      },
+      "maxItems": 60,
+      "minItems": 60,
+      "type": "array"
+    },
+    "custodian": {
+      "pattern": "^[a-z][a-z0-9-]{0,79}$",
+      "type": "string"
+    },
+    "designation": {
+      "const": "SYNTHETIC—NOT BUSINESS POLICY"
+    },
+    "egress": {
+      "const": "denied-pending-separate-authorization"
+    },
+    "ordered_case_ids": {
+      "items": {
+        "pattern": "^ga61-qa-(?:offering|scope|price|quote|availability|policy|unknown|ambiguity|sources|injection)-0[1-6]$",
+        "type": "string"
+      },
+      "maxItems": 60,
+      "minItems": 60,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "ordered_repetition_seeds": {
+      "items": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+    },
+    "private_oracle_archive": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "byte_length",
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "public_development_bundle": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "byte_length",
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "reviewer": {
+      "pattern": "^[a-z][a-z0-9-]{0,79}$",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "offline63-private-v1"
+    },
+    "source_bundle": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "byte_length",
+        "sha256"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "designation",
+    "source_bundle",
+    "private_oracle_archive",
+    "public_development_bundle",
+    "case_schema",
+    "canonicalization",
+    "ordered_case_ids",
+    "ordered_repetition_seeds",
+    "author",
+    "reviewer",
+    "custodian",
+    "architecture_acceptance_receipt",
+    "access_policy_revision",
+    "egress",
+    "approval",
+    "cases"
+  ],
+  "title": "Future private held-out package contract (schema only)",
+  "type": "object"
+}

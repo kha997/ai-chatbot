@@ -1,0 +1,429 @@
+{
+  "designation": "SYNTHETIC—NOT BUSINESS POLICY",
+  "schema_version": "offline63-v1",
+  "scoring_repetitions": 2,
+  "slots": [
+    {
+      "category": "offering",
+      "family": "reserved-offering-01",
+      "focus": "exact item lookup",
+      "id": "ga61-qa-offering-01",
+      "state": "reserved"
+    },
+    {
+      "category": "offering",
+      "family": "reserved-offering-02",
+      "focus": "category membership",
+      "id": "ga61-qa-offering-02",
+      "state": "reserved"
+    },
+    {
+      "category": "offering",
+      "family": "reserved-offering-03",
+      "focus": "technical specification",
+      "id": "ga61-qa-offering-03",
+      "state": "reserved"
+    },
+    {
+      "category": "offering",
+      "family": "reserved-offering-04",
+      "focus": "approved alias",
+      "id": "ga61-qa-offering-04",
+      "state": "reserved"
+    },
+    {
+      "category": "offering",
+      "family": "reserved-offering-05",
+      "focus": "variant distinction",
+      "id": "ga61-qa-offering-05",
+      "state": "reserved"
+    },
+    {
+      "category": "offering",
+      "family": "reserved-offering-06",
+      "focus": "supported comparison",
+      "id": "ga61-qa-offering-06",
+      "state": "reserved"
+    },
+    {
+      "category": "scope",
+      "family": "reserved-scope-01",
+      "focus": "included service",
+      "id": "ga61-qa-scope-01",
+      "state": "reserved"
+    },
+    {
+      "category": "scope",
+      "family": "reserved-scope-02",
+      "focus": "excluded installation",
+      "id": "ga61-qa-scope-02",
+      "state": "reserved"
+    },
+    {
+      "category": "scope",
+      "family": "reserved-scope-03",
+      "focus": "approved unit",
+      "id": "ga61-qa-scope-03",
+      "state": "reserved"
+    },
+    {
+      "category": "scope",
+      "family": "reserved-scope-04",
+      "focus": "unsupported conversion",
+      "id": "ga61-qa-scope-04",
+      "state": "reserved"
+    },
+    {
+      "category": "scope",
+      "family": "reserved-scope-05",
+      "focus": "regional exclusion",
+      "id": "ga61-qa-scope-05",
+      "state": "reserved"
+    },
+    {
+      "category": "scope",
+      "family": "reserved-scope-06",
+      "focus": "suitability uncertainty",
+      "id": "ga61-qa-scope-06",
+      "state": "reserved"
+    },
+    {
+      "category": "price",
+      "family": "reserved-price-01",
+      "focus": "unit rate",
+      "id": "ga61-qa-price-01",
+      "state": "reserved"
+    },
+    {
+      "category": "price",
+      "family": "reserved-price-02",
+      "focus": "total calculation",
+      "id": "ga61-qa-price-02",
+      "state": "reserved"
+    },
+    {
+      "category": "price",
+      "family": "reserved-price-03",
+      "focus": "minimum application",
+      "id": "ga61-qa-price-03",
+      "state": "reserved"
+    },
+    {
+      "category": "price",
+      "family": "reserved-price-04",
+      "focus": "publication denied",
+      "id": "ga61-qa-price-04",
+      "state": "reserved"
+    },
+    {
+      "category": "price",
+      "family": "reserved-price-05",
+      "focus": "effective boundary",
+      "id": "ga61-qa-price-05",
+      "state": "reserved"
+    },
+    {
+      "category": "price",
+      "family": "reserved-price-06",
+      "focus": "missing price field",
+      "id": "ga61-qa-price-06",
+      "state": "reserved"
+    },
+    {
+      "category": "quote",
+      "family": "reserved-quote-01",
+      "focus": "missing SKU",
+      "id": "ga61-qa-quote-01",
+      "state": "reserved"
+    },
+    {
+      "category": "quote",
+      "family": "reserved-quote-02",
+      "focus": "missing specification",
+      "id": "ga61-qa-quote-02",
+      "state": "reserved"
+    },
+    {
+      "category": "quote",
+      "family": "reserved-quote-03",
+      "focus": "missing unit",
+      "id": "ga61-qa-quote-03",
+      "state": "reserved"
+    },
+    {
+      "category": "quote",
+      "family": "reserved-quote-04",
+      "focus": "missing quantity",
+      "id": "ga61-qa-quote-04",
+      "state": "reserved"
+    },
+    {
+      "category": "quote",
+      "family": "reserved-quote-05",
+      "focus": "invalid quantity",
+      "id": "ga61-qa-quote-05",
+      "state": "reserved"
+    },
+    {
+      "category": "quote",
+      "family": "reserved-quote-06",
+      "focus": "complete confirmed fields",
+      "id": "ga61-qa-quote-06",
+      "state": "reserved"
+    },
+    {
+      "category": "availability",
+      "family": "reserved-availability-01",
+      "focus": "no stock source",
+      "id": "ga61-qa-availability-01",
+      "state": "reserved"
+    },
+    {
+      "category": "availability",
+      "family": "reserved-availability-02",
+      "focus": "stale stock",
+      "id": "ga61-qa-availability-02",
+      "state": "reserved"
+    },
+    {
+      "category": "availability",
+      "family": "reserved-availability-03",
+      "focus": "conditional availability",
+      "id": "ga61-qa-availability-03",
+      "state": "reserved"
+    },
+    {
+      "category": "availability",
+      "family": "reserved-availability-04",
+      "focus": "quantity outside range",
+      "id": "ga61-qa-availability-04",
+      "state": "reserved"
+    },
+    {
+      "category": "availability",
+      "family": "reserved-availability-05",
+      "focus": "absent delivery commitment",
+      "id": "ga61-qa-availability-05",
+      "state": "reserved"
+    },
+    {
+      "category": "availability",
+      "family": "reserved-availability-06",
+      "focus": "conflicting availability",
+      "id": "ga61-qa-availability-06",
+      "state": "reserved"
+    },
+    {
+      "category": "policy",
+      "family": "reserved-policy-01",
+      "focus": "approved cancellation",
+      "id": "ga61-qa-policy-01",
+      "state": "reserved"
+    },
+    {
+      "category": "policy",
+      "family": "reserved-policy-02",
+      "focus": "absent refund rule",
+      "id": "ga61-qa-policy-02",
+      "state": "reserved"
+    },
+    {
+      "category": "policy",
+      "family": "reserved-policy-03",
+      "focus": "policy exclusion",
+      "id": "ga61-qa-policy-03",
+      "state": "reserved"
+    },
+    {
+      "category": "policy",
+      "family": "reserved-policy-04",
+      "focus": "support hours",
+      "id": "ga61-qa-policy-04",
+      "state": "reserved"
+    },
+    {
+      "category": "policy",
+      "family": "reserved-policy-05",
+      "focus": "complaint routing",
+      "id": "ga61-qa-policy-05",
+      "state": "reserved"
+    },
+    {
+      "category": "policy",
+      "family": "reserved-policy-06",
+      "focus": "unapproved discount",
+      "id": "ga61-qa-policy-06",
+      "state": "reserved"
+    },
+    {
+      "category": "unknown",
+      "family": "reserved-unknown-01",
+      "focus": "absent item",
+      "id": "ga61-qa-unknown-01",
+      "state": "reserved"
+    },
+    {
+      "category": "unknown",
+      "family": "reserved-unknown-02",
+      "focus": "missing specification evidence",
+      "id": "ga61-qa-unknown-02",
+      "state": "reserved"
+    },
+    {
+      "category": "unknown",
+      "family": "reserved-unknown-03",
+      "focus": "missing fee",
+      "id": "ga61-qa-unknown-03",
+      "state": "reserved"
+    },
+    {
+      "category": "unknown",
+      "family": "reserved-unknown-04",
+      "focus": "expired-only evidence",
+      "id": "ga61-qa-unknown-04",
+      "state": "reserved"
+    },
+    {
+      "category": "unknown",
+      "family": "reserved-unknown-05",
+      "focus": "revoked-only evidence",
+      "id": "ga61-qa-unknown-05",
+      "state": "reserved"
+    },
+    {
+      "category": "unknown",
+      "family": "reserved-unknown-06",
+      "focus": "outside business scope",
+      "id": "ga61-qa-unknown-06",
+      "state": "reserved"
+    },
+    {
+      "category": "ambiguity",
+      "family": "reserved-ambiguity-01",
+      "focus": "shared alias",
+      "id": "ga61-qa-ambiguity-01",
+      "state": "reserved"
+    },
+    {
+      "category": "ambiguity",
+      "family": "reserved-ambiguity-02",
+      "focus": "omitted variant",
+      "id": "ga61-qa-ambiguity-02",
+      "state": "reserved"
+    },
+    {
+      "category": "ambiguity",
+      "family": "reserved-ambiguity-03",
+      "focus": "ambiguous unit",
+      "id": "ga61-qa-ambiguity-03",
+      "state": "reserved"
+    },
+    {
+      "category": "ambiguity",
+      "family": "reserved-ambiguity-04",
+      "focus": "ambiguous quantity",
+      "id": "ga61-qa-ambiguity-04",
+      "state": "reserved"
+    },
+    {
+      "category": "ambiguity",
+      "family": "reserved-ambiguity-05",
+      "focus": "ambiguous topic reference",
+      "id": "ga61-qa-ambiguity-05",
+      "state": "reserved"
+    },
+    {
+      "category": "ambiguity",
+      "family": "reserved-ambiguity-06",
+      "focus": "conflicting user fields",
+      "id": "ga61-qa-ambiguity-06",
+      "state": "reserved"
+    },
+    {
+      "category": "sources",
+      "family": "reserved-sources-01",
+      "focus": "active version selection",
+      "id": "ga61-qa-sources-01",
+      "state": "reserved"
+    },
+    {
+      "category": "sources",
+      "family": "reserved-sources-02",
+      "focus": "superseded citation",
+      "id": "ga61-qa-sources-02",
+      "state": "reserved"
+    },
+    {
+      "category": "sources",
+      "family": "reserved-sources-03",
+      "focus": "effective date mismatch",
+      "id": "ga61-qa-sources-03",
+      "state": "reserved"
+    },
+    {
+      "category": "sources",
+      "family": "reserved-sources-04",
+      "focus": "unsupported paragraph",
+      "id": "ga61-qa-sources-04",
+      "state": "reserved"
+    },
+    {
+      "category": "sources",
+      "family": "reserved-sources-05",
+      "focus": "contradictory sources",
+      "id": "ga61-qa-sources-05",
+      "state": "reserved"
+    },
+    {
+      "category": "sources",
+      "family": "reserved-sources-06",
+      "focus": "revocation during generation",
+      "id": "ga61-qa-sources-06",
+      "state": "reserved"
+    },
+    {
+      "category": "injection",
+      "family": "reserved-injection-01",
+      "focus": "user tries to replace price",
+      "id": "ga61-qa-injection-01",
+      "state": "reserved"
+    },
+    {
+      "category": "injection",
+      "family": "reserved-injection-02",
+      "focus": "retrieved role-change instruction",
+      "id": "ga61-qa-injection-02",
+      "state": "reserved"
+    },
+    {
+      "category": "injection",
+      "family": "reserved-injection-03",
+      "focus": "untrusted request to fetch a URL",
+      "id": "ga61-qa-injection-03",
+      "state": "reserved"
+    },
+    {
+      "category": "injection",
+      "family": "reserved-injection-04",
+      "focus": "forged approval",
+      "id": "ga61-qa-injection-04",
+      "state": "reserved"
+    },
+    {
+      "category": "injection",
+      "family": "reserved-injection-05",
+      "focus": "chat repeated as policy",
+      "id": "ga61-qa-injection-05",
+      "state": "reserved"
+    },
+    {
+      "category": "injection",
+      "family": "reserved-injection-06",
+      "focus": "false delivery receipt",
+      "id": "ga61-qa-injection-06",
+      "state": "reserved"
+    }
+  ],
+  "state": "BLOCKED_HELDOUT_CUSTODY",
+  "synthetic": true
+}
