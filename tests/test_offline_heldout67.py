@@ -31,9 +31,10 @@ def observed(bundle=None, **updates):
     b = bundle or dummy()
     return dict({"case": b["case"]["id"], "category": b["case"]["category"], "repetition": 1,
                  "status": "complete", "behavior": "answer", "tick": 4, "facts": b["oracle"]["facts"],
-                 "links": b["oracle"]["required"], "reads": [{"ref": b["sources"][0]["ref"], "tick": 2}],
-                 "writes": [], "effects": [], "epoch": 1, "consent": False,
-                 "revocations": []}, **updates)
+                 "links": b["oracle"]["required"],
+                 "reads": [{"ref": b["sources"][0]["ref"], "tick": 2, "epoch": 1}],
+                 "writes": [], "effects": [], "epoch": 1, "authority": "valid", "consent": False,
+                 "revocations": [], "denied_deliveries": []}, **updates)
 
 
 class HarnessTests(unittest.TestCase):
@@ -75,7 +76,7 @@ class HarnessTests(unittest.TestCase):
         for obs in (
             observed(status="incomplete", writes=["order"]),
             observed(effects=["handoff"], consent=False),
-            observed(reads=[{"ref": ["HANU", "SYN-PRISM", 1, "p1"], "tick": 2}]),
+            observed(reads=[{"ref": ["HANU", "SYN-PRISM", 1, "p1"], "tick": 2, "epoch": 1}]),
             observed(links=[["total", ["NHD", "SYN-PRISM", 2, "p1"]]]),
             observed(tick=20),
             observed(epoch=0),
@@ -136,18 +137,24 @@ class HarnessTests(unittest.TestCase):
             h.freeze("heldout", [self.b])
 
     def test_receipt_idempotence_no_best_of_and_stop_blocks_run(self):
-        first = self.score(observed())
-        second = self.score(observed(repetition=2), index=1)
+        run = h.Run(self.m, self.pin)
+        bundle = h.canonical(self.b)
+        obs = h.canonical(observed())
         with self.assertRaises(h.Invalid):
-            h.append_receipt((), second)
-        log = h.append_receipt((), first)
-        self.assertEqual(h.append_receipt(log, first), log)
-        self.assertEqual(len(h.append_receipt(log, second)), 2)
+            run.submit(1, bundle, obs)
+        first = run.submit(0, bundle, obs)
+        self.assertEqual(run.submit(0, bundle, obs), first)
         with self.assertRaises(h.Invalid):
-            h.append_receipt(log, self.score(observed(behavior="clarify", facts=[], links=[])))
-        stopped = h.append_receipt((), self.score(observed(writes=["order"])))
+            run.submit(0, bundle, h.canonical(observed(behavior="clarify", facts=[], links=[])))
+        self.assertEqual(run.submit(1, bundle, h.canonical(observed(repetition=2))).outcome, "PASS")
+        self.assertEqual(len(run.receipts), 2)
         with self.assertRaises(h.Invalid):
-            h.append_receipt(stopped, second)
+            run.submit(2, bundle, obs)
+        stopped = h.Run(self.m, self.pin)
+        self.assertEqual(stopped.submit(0, b"", obs).outcome, "STOP")
+        self.assertEqual(len(stopped.receipts), 1)
+        with self.assertRaises(h.Invalid):
+            stopped.submit(1, bundle, h.canonical(observed(repetition=2)))
 
 
 class RevocationTests(unittest.TestCase):
@@ -175,15 +182,22 @@ class RevocationTests(unittest.TestCase):
         first = g.begin(self.ref, 2)
         g.revoke(self.ref, 1, 3)
         self.assertIsNone(g.deliver(first, 4))
-        obs = observed(b, behavior="abstain",
-                       reads=[{"ref": list(ref), "tick": tick} for ref, tick in g.reads],
-                       revocations=[{"ref": list(self.ref), "tick": tick} for _, tick in g.events])
+        obs = observed(b, behavior="abstain", authority="revoked", epoch=None,
+                       reads=[{"ref": list(ref), "tick": tick, "epoch": epoch}
+                              for ref, tick, epoch in g.reads],
+                       revocations=[{"ref": list(self.ref), "tick": tick} for _, tick in g.events],
+                       denied_deliveries=[{"ref": list(ref), "read": read, "revoked": revoked,
+                                           "tick": tick, "reason": reason}
+                                          for ref, read, revoked, tick, reason in g.denials])
         def score(evidence):
             return h.evaluate(manifest, sha256(manifest).hexdigest(), 0,
                               h.canonical(b), h.canonical(evidence)).outcome
         self.assertEqual(score(obs), "PASS")
         self.assertEqual(score(dict(obs, revocations=[])), "STOP")
-        self.assertEqual(score(dict(obs, reads=[{"ref":list(self.ref),"tick":3}])), "STOP")
+        self.assertEqual(score(dict(obs, denied_deliveries=[])), "STOP")
+        self.assertEqual(score(dict(obs, tick=3)), "STOP")
+        self.assertEqual(score(dict(obs, reads=[{"ref": list(self.ref), "tick": 3, "epoch": 1}])), "STOP")
+        self.assertEqual(score(dict(obs, reads=[{"ref": list(self.ref), "tick": 2, "epoch": 2}])), "STOP")
 
     def test_denial_before_retrieval_and_foreign_ref_has_no_read(self):
         g = self.gate()
