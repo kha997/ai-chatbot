@@ -1,4 +1,5 @@
 from copy import deepcopy
+from decimal import localcontext
 from hashlib import sha256
 from pathlib import Path
 from shutil import copytree
@@ -33,6 +34,12 @@ class OfflineCorpusTests(unittest.TestCase):
         for case in self.package["dev"]["cases"]:
             if case["oracle"]["behavior"] != "answer":
                 self.assertIsNotNone(re.fullmatch(pattern, case["oracle"]["reason"]), case["id"])
+
+    def test_quote_arithmetic_does_not_inherit_ambient_decimal_limits(self):
+        with localcontext() as context:
+            context.Emax = 2
+            draft = corpus.quote_draft(self.sources, "SYN-FOIL-B", "3", "roll", CLOCK)
+        self.assertEqual(draft["amount"], "3901.50")
 
     def test_coverage_and_public_development_registry(self):
         self.assertEqual(len(self.package["coverage"]["slots"]), 60)

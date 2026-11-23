@@ -2,7 +2,7 @@
 
 import argparse
 from datetime import datetime
-from decimal import Decimal, localcontext
+from decimal import Context, Decimal, localcontext
 import hashlib
 import json
 from pathlib import Path
@@ -210,14 +210,14 @@ def read_source(index, trusted_tenant, ref, as_of):
 
 
 def quote_draft(claims, sku, quantity, unit, as_of):
+    """Amount-only oracle for prevalidated selections, without quote-slot resolution."""
     if not match(SYNTHETIC_SKU, sku) or not match(r"[1-9][0-9]{0,5}", quantity):
         return None
     claim = lookup(claims, sku, "price-rule", as_of)
     if claim is None or claim["value"]["unit"] != unit:
         return None
     price = claim["value"]
-    with localcontext() as context:
-        context.prec = 32  # bounded 10 whole + 4 decimal price digits and 6 quantity digits
+    with localcontext(Context(prec=32)):  # bounded fixture digits and independent context
         amount = max(Decimal(quantity) * Decimal(price["unit_price"]), Decimal(price["minimum"]))
     return {"amount": format(amount, "f"), "currency": "VND", "citation": reference(claim),
             "effects": []}
