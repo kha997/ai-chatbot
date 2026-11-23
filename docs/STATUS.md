@@ -1,6 +1,20 @@
 # AI ChatBot — remote status
 
+## Issue #61 — Gate A preparation (2026-11-23)
+
+- STATE: READY_FOR_ARCHITECTURE_REVIEW — **GATE_A_PREPARATION_READY_FOR_OWNER**, documents only.
+- GATE: 1 — Gate A preparation under [Issue #61](https://github.com/kha997/ai-chatbot/issues/61); execution NOT_AUTHORIZED / NOT_RUN.
+- RECOMMENDATION: Architecture Acceptance for the independently reviewed preparation dossier; retain GPT-5.4 mini snapshot and deterministic authority; no activation of600 requests/US$10.
+- COMPLETED: [Owner memo](GATE_A_OWNER_61.md), [case/oracle inventory](GATE_A_CORPUS_61.md), [privacy/safety](GATE_A_CONTROLS_61.md), [budget](GATE_A_BUDGET_61.md), [manifest/approval packet](GATE_A_MANIFEST_61.md), [dated sources](GATE_A_SOURCES_61.md). PR #60 is merged and Issue #59 closed; accepted architecture baseline is `24d8fb46f7726e42bcce4bb48904e6f8738250d7`.
+- VALIDATION: `git diff --check 24d8fb46f7726e42bcce4bb48904e6f8738250d7 HEAD` and independent offline checks PASS:9 Markdown paths,83 relative links,60/12/24/12 unique IDs, T1–T13, fixture provenance/hashes and cost/retry arithmetic. Fresh-context Codex review PASS at exact technical SHA; [receipt](reviews/ISSUE_61_PREPARATION_REVIEW.md). [Existing quote CI](https://github.com/kha997/ai-chatbot/actions/runs/45168990208) success at reviewed SHA. No local runtime/model tests; six business E2Es NOT_RUN. Historical73/73 and hosted quote regression are not AI evidence.
+- OPEN RISKS: HIGH — BLOCKED_CORPUS_BREADTH, BLOCKED_COST_CONTROL, provider/access/terms and runtime prerequisites; lead owns technical qualification, Owner reserved approvals remain separate. No real data used.
+- NEXT: wait for Architecture Acceptance; retain the separate fixture/control and execution prerequisites; no automatic implementation or new issue.
+- OWNER DECISION: Architecture Acceptance of PR #62 documents only. Later fixture/control work and exact execution permission remain separate; this acceptance never grants spend/data/API access.
+- HEAD/BRANCH/PR: reviewed technical HEAD `99babe18fb1306f05d2f0ece1ed74ef0798eebcb`; baseline `24d8fb46f7726e42bcce4bb48904e6f8738250d7`; `codex/issue61-gate-a-preparation`; [PR #62](https://github.com/kha997/ai-chatbot/pull/62). Following commit updates reporting only; exact final HEAD is in PR/issue delivery receipt to avoid circular self-hashing. Original worktree remains unchanged.
+
 ## Issue #59 — NHD MVP architecture review (2026-11-23)
+
+Historical pre-merge receipt below: **superseded status only** by accepted PR #60 merge `24d8fb46f7726e42bcce4bb48904e6f8738250d7` and closed Issue #59, confirmed in Issue #61. This does not waive the retained source/taxonomy or runtime prerequisites. Original validation and review receipt remain unchanged.
 
 - STATE: READY_FOR_ARCHITECTURE_REVIEW
 - GATE: 1 — research/docs only under Issue #59; no runtime expansion.
