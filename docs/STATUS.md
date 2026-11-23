@@ -1,5 +1,17 @@
 # AI ChatBot — remote status
 
+## Issue #57 — durable synthetic handoff and consent
+
+STATE: IN_PROGRESS
+GATE: 1 (Issue #57 local development exception)
+RECOMMENDATION: opt-in SQLite for synthetic handoff and consent, with support-only continuity after full restart.
+COMPLETED: [schema, restart demonstration and limitations](SQLITE_HANDOFF_57.md).
+VALIDATION: quote suite 73/73 on Windows and in an isolated WSL network namespace. Review and hosted CI pending.
+OPEN RISKS: HIGH if used for real identity or data. Customer ownership recovery needs a separate identity design.
+NEXT: independent review of the technical commit, hosted CI, architecture acceptance.
+OWNER DECISION: NONE
+HEAD/BRANCH/PR: baseline 7da8524c5cb674197423a97684601cdafe4946c3 on branch codex/issue57-sqlite-handoff; PR pending.
+
 ## Issue #55 — local synthetic session boundary
 
 STATE: READY_FOR_ARCHITECTURE_REVIEW
