@@ -5,7 +5,7 @@
 - STATE: IN_PROGRESS
 - GATE: 1 — research/docs only under Issue #59; no runtime expansion.
 - RECOMMENDATION: NHD-first Python state machine, approved lexical retrieval and deterministic quote policy; bounded GPT-5.4 mini trial only after separate provider/budget authorization. Proposed ADR-002 awaits Architecture Acceptance.
-- COMPLETED: [Owner memo](NHD_MVP_OWNER_59.md), [accepted-code inventory and architecture](NHD_MVP_ARCHITECTURE_59.md), [costs/roadmap/gates](NHD_MVP_COST_ROADMAP_59.md), [dated sources](NHD_MVP_SOURCES_59.md). Confirmed PRs #56/#58 merged; historical receipts preserved.
+- COMPLETED: [Owner memo](NHD_MVP_OWNER_59.md), [inventory, ADR and diagram](NHD_MVP_ARCHITECTURE_59.md), [platform contracts, RTM and six NOT_RUN E2Es](NHD_PLATFORM_CONTRACTS_59.md), [costs and gates](NHD_MVP_COST_ROADMAP_59.md), [dated sources](NHD_MVP_SOURCES_59.md). PRs #56 and #58 are recorded as merged. Historical receipts are intact.
 - VALIDATION: baseline main and merge metadata verified; document/static validation and independent review pending. Runtime/model/legacy qualification tests NOT_RUN in this docs task; historical 73/73 is not an AI benchmark.
 - OPEN RISKS: HIGH — real identity/recovery, source approval, provider cost/data controls and production operations absent; lead owns technical prerequisites, Owner retains reserved approvals. See dossier risk register.
 - NEXT: validate docs-only scope/links/arithmetic; freeze SHA and obtain fresh-context Codex review; publish corrections and await Architecture Acceptance.

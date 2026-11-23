@@ -45,6 +45,8 @@ Ngưỡng đề xuất cho thử nghiệm: >=54/60 câu đúng mỗi lượt, ng
 
 ## Quyết định cần Owner và dữ liệu còn thiếu
 
+**Sáu ca nghiệm thu toàn hành trình đều chưa chạy.** (1) Cùng tên sản phẩm, trả đúng giá từng tenant. (2) Hỏi giá, dùng đúng nguồn được duyệt. (3) Lạm dụng hoặc ngoài phạm vi, phản hồi an toàn. (4) Quay lại chủ đề A sau B, giữ đúng thông tin của phiên. (5) Lỗi mạng/webhook, đối soát giao dịch và chống trùng. (6) Nhân viên tiếp quản thì bot dừng, chỉ tiếp tục khi được trả quyền hợp lệ. Ca 5–6 cần phê duyệt tích hợp riêng. Bản ma trận giữ nguyên các mục tiêu gốc và ghi rõ các điểm điều chỉnh, gồm Website Widget thay cho Facebook ở đợt đầu. Owner đối chiếu ma trận với tài liệu v1.0 riêng trước khi nghiệm thu kiến trúc. [Sáu ca và ma trận yêu cầu](NHD_PLATFORM_CONTRACTS_59.md#7-six-numbered-business-e2e-requirements--all-not_run)
+
 **Quyết định hiện tại: Architecture Acceptance cho PR #60, nếu đồng ý với phương án mặc định và lộ trình.** Lợi ích là tập trung vào một hành trình NHD có thể kiểm chứng, tận dụng phần đã làm. Rủi ro là chất lượng AI và công chuẩn hóa dữ liệu vẫn chưa đo; hồ sơ giữ các điều kiện dừng rõ ràng. Tác động hiện tại chỉ là tài liệu; có thể sửa hoặc hoàn tác bằng PR tài liệu, không ảnh hưởng dịch vụ chạy.
 
 Các phê duyệt ngân sách, tài khoản/provider, điều khoản/quyền dùng dữ liệu, hạ tầng và go-live sẽ được xin **riêng ở từng giai đoạn**, không gộp vào “accept” này. Owner chỉ cần cung cấp người duyệt nội dung kinh doanh và phạm vi kinh doanh mong muốn khi đến pilot; Codex tự xử lý thiết kế, schemas, tests và lựa chọn kỹ thuật.

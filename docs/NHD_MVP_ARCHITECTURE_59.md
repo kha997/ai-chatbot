@@ -77,23 +77,26 @@ Source authority pipeline: NHD business author prepares records outside this pub
 
 ```mermaid
 flowchart LR
-  V[Untrusted visitor widget] --> G[Gateway: site binding, session, quota]
-  G --> O[NHD Python state machine]
-  O --> R[Approved NHD retrieval]
-  O --> Q[Deterministic quote policy]
-  O --> L[Bounded provider adapter]
-  L --> C[Candidate validation]
-  R --> C
-  Q --> C
-  C --> G
-  O --> H[Consented durable handoff]
-  S[Authenticated NHD operator] --> H
-  A[Separate knowledge approver] --> K[Versioned release and tombstones]
-  K --> R
-  K --> Q
+  V["DESIGN: Website Widget"] --> G["DESIGN: verified tenant, channel and page"]
+  G --> O["DESIGN: tenant-scoped conversation state"]
+  O --> R["DESIGN: approved tenant retrieval"]
+  R --> L["DESIGN: bounded LLM interpretation"]
+  L --> Q["DESIGN: trusted business engine and response validation"]
+  Q --> G
+  Q --> H["DESIGN: consented human handoff and control"]
+  S["DESIGN: authenticated operator"] --> H
+  A["DESIGN: versioned config, approved corpus and policy"] --> G
+  A --> O
+  A --> R
+  A --> Q
+  H --> U["DESIGN: scoped audit, revocation and recovery"]
+  G --> U
+  Q --> U
+  X["IMPLEMENTED: synthetic quote validator"] -. reuse candidate .-> Q
+  Y["IMPLEMENTED: synthetic sessions and SQLite handoff"] -. contract evidence .-> H
 ```
 
-All boxes except the reusable synthetic core are future work. Proposed pilot topology: one NHD application deployment, separate operator authentication, PostgreSQL 18 current security minor (18.7 observed), private database networking, encrypted backup outside the application host, TLS ingress, outbound provider allowlist and secret store. A modest 2-vCPU/4-GiB VM is a **sizing hypothesis**, not proven capacity. Same-host app+DB is acceptable only for an explicitly accepted limited pilot outage risk with tested restore. Production prefers managed PostgreSQL/PITR and redundant app instances after measured demand; no Kubernetes/microservice fleet needed. Region/data-residency, provider account and procurement remain Owner-approved matters. No infrastructure is created here.
+Solid lines show proposed runtime flow. Dotted lines show synthetic component evidence. The [platform contracts and RTM](NHD_PLATFORM_CONTRACTS_59.md) define the reusable tenant, channel and product/service boundaries. Proposed pilot topology: one NHD application deployment, separate operator authentication, PostgreSQL 18 current security minor (18.7 observed), private database networking, encrypted backup outside the application host, TLS ingress, outbound provider allowlist and secret store. A modest 2-vCPU/4-GiB VM is a **sizing hypothesis**, not proven capacity. Same-host app+DB is acceptable only for an explicitly accepted limited pilot outage risk with tested restore. Production prefers managed PostgreSQL/PITR and redundant app instances after measured demand; no Kubernetes/microservice fleet needed. Region/data-residency, provider account and procurement remain Owner-approved matters. No infrastructure is created here.
 
 Later tenants get separate credentials/databases/corpus/queue keys and workers; shared application code is allowed, shared business authority is not. NHD runtime cannot load HANU/ZENA credentials. Shared gateway/admin compromise is a residual high risk; isolation is defense in depth, not a claim of protection against the platform administrator.
 
