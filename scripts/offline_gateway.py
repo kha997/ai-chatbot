@@ -19,6 +19,8 @@ SCENARIOS = frozenset(HARD | TRANSIENT | {
     "missing", "timeout", "partial", "ambiguous", "cancel", "price-action", "tool",
     "foreign-output", "stale-output", "typed-citation", "foreign-manifest", "nonce",
 })
+RESERVE_FAULTS = frozenset({"before-reserve", "after-reserve", "before-write", "after-write"})
+DISPATCH_FAULTS = frozenset({"after-intent", "after-send", "after-observation"})
 SCHEMA = (
     """CREATE TABLE run (id INTEGER PRIMARY KEY CHECK(id=1), manifest TEXT NOT NULL,
     serial TEXT NOT NULL, expiry INTEGER NOT NULL, worker TEXT NOT NULL, session TEXT NOT NULL,
@@ -94,6 +96,11 @@ def number(value, low, high):
 
 def hexhash(value):
     return type(value) is str and re.fullmatch("[a-f0-9]{64}", value) is not None
+
+
+def validate_fault(value, allowed):
+    if value is not None and (type(value) is not str or value not in allowed):
+        raise Rejected("fault")
 
 
 def ceiling(value, unit):
@@ -535,6 +542,7 @@ class Gateway:
 
     def reserve(self, session, suite, execution, stage, payload, *,
                 kind="initial", parent=None, fault=None):
+        validate_fault(fault, RESERVE_FAULTS)
         if fault == "before-reserve":
             raise SimulatedCrash()
         try:
@@ -597,8 +605,8 @@ class Gateway:
         amount = charge(self._rate, receipt["input"], receipt["output"])
         return (result, amount) if amount <= row["worst"] else ("receipt", 0)
 
-    def dispatch(self, permit, payload, *, kind=None, parent=None, fault=None):
-        # kind/parent are admitted solely from the stored permit, never from dispatch hints.
+    def dispatch(self, permit, payload, *, fault=None):
+        validate_fault(fault, DISPATCH_FAULTS)
         try:
             with self._transaction() as db:
                 row = self._consume(db, permit, payload)

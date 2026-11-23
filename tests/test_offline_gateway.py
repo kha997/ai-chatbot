@@ -89,7 +89,7 @@ class OfflineGatewayTests(unittest.TestCase):
 
     def push(self, suite="qa", execution=1, stage=1, **kwargs):
         permit = self.gateway.reserve(self.session, suite, execution, stage, PAYLOAD, **kwargs)
-        result = self.gateway.dispatch(permit, PAYLOAD, **kwargs)
+        result = self.gateway.dispatch(permit, PAYLOAD)
         return permit, result
 
     def test_exact_payload_and_single_use_permit(self):
@@ -425,8 +425,12 @@ class OfflineGatewayTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             fake._calls = Callback()
         self.denial("session", self.gateway.reserve, Callback(), "qa", 1, 1, PAYLOAD)
+        self.denial("fault", self.gateway.reserve, self.session, "qa", 1, 1, PAYLOAD,
+                    fault=Callback())
         permit = self.gateway.reserve(self.session, "qa", 1, 1, PAYLOAD)
         self.denial("permit", self.gateway.dispatch, Permit(permit.attempt, Callback()), PAYLOAD)
+        self.denial("fault", self.gateway.dispatch, permit, PAYLOAD, fault=Callback())
+        self.denial("fault", self.gateway.dispatch, permit, PAYLOAD, fault="unknown")
         self.assertEqual(self.transport.calls, ())
 
     def test_hard_stop_survives_restart_and_new_approval(self):
