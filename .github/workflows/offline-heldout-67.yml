@@ -5,11 +5,28 @@ on:
     paths:
       - 'scripts/offline_heldout67.py'
       - 'scripts/offline_revocation67.py'
+      - 'scripts/offline_evidence69.py'
+      - 'scripts/offline_journal69.py'
       - 'tests/test_offline_heldout67.py'
+      - 'tests/test_offline_remediation69.py'
       - '.github/workflows/offline-heldout-67.yml'
       - 'docs/OFFLINE_HELDOUT_67.md'
+      - 'docs/OFFLINE_REMEDIATION_69.md'
       - 'docs/reviews/ISSUE_67_HELDOUT_REVIEW.md'
       - 'docs/STATUS.md'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/offline_heldout67.py'
+      - 'scripts/offline_revocation67.py'
+      - 'scripts/offline_evidence69.py'
+      - 'scripts/offline_journal69.py'
+      - 'tests/test_offline_heldout67.py'
+      - 'tests/test_offline_remediation69.py'
+      - 'eval/offline63/development.json'
+      - 'eval/offline63/custody.schema.json'
+      - '.github/workflows/offline-heldout-67.yml'
+      - 'docs/OFFLINE_REMEDIATION_69.md'
 
 permissions:
   contents: read
@@ -29,4 +46,5 @@ jobs:
             test -z "$(ip route show)"
             test -z "$(ip -6 route show)"
             python3 -B -m unittest discover -s tests -p "test_offline_heldout67.py" -v
+            python3 -B -m unittest discover -s tests -p "test_offline_remediation69.py" -v
           '
