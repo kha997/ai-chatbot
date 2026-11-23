@@ -32,3 +32,14 @@ PASS/FAIL là kết quả so với oracle của trace đủ. INCONCLUSIVE là tr
 Qoder đọc độc lập trong ngữ cảnh mới, không truy cập dữ liệu riêng, không sửa branch, không chạy model/provider chi phí và không merge. Tại **SHA kỹ thuật ghi trong PR**, đánh giá H1–H6 và các điểm trung bình theo `FIXED / PARTIAL / BLOCKED`. Ghi từng ca tái hiện, lệnh chạy, kết quả, thiếu sót và điểm dừng. Kiểm tra đặc biệt: thay hai định dạng pin, quyền nguồn đổi, câu dev chuẩn hóa, mốc ngoài bị cũ, crash sau commit, và ghi sau STOP. Đề nghị Qoder cung cấp **mã kiểm tra công khai an toàn hoặc mô tả tái hiện** cho 30 ca bên ngoài repo từ lần trước. Bộ PR này chưa tái chạy 30 ca đó.
 
 Giữ các blocker `BLOCKED_PRIVATE_AUDIT`, `BLOCKED_HELDOUT_CUSTODY_WORKFLOW`, `BLOCKED_CORPUS_BREADTH` và `BLOCKED_COST_CONTROL`. AI, sáu E2E, Gate 2, Dispatcher, website/Zalo và production giữ NO-GO. PR chỉ để review, chờ Architecture Acceptance.
+
+## Biên nhận kỹ thuật công khai
+
+SHA kỹ thuật `0e3abff5d5698106b9e5a85ba4a4b9bffec379a3`. [Draft PR #70](https://github.com/kha997/ai-chatbot/pull/70) · [Yêu cầu tái kiểm toán Qoder](https://github.com/kha997/ai-chatbot/pull/70#issuecomment-7112970988).
+
+- Windows `py -B -m unittest discover -s tests -p 'test_offline*.py'`: 74/74 PASS (15 ca mới, 59 hồi quy offline). `py -B -m unittest discover -s tests -p 'test_quote*.py'`: 73/73 PASS. Tổng 15 ca mới và đủ 132 ca hồi quy.
+- Ubuntu-24.04 WSL với `unshare -Urn`: 74/74 offline và 73/73 quote PASS. Xác nhận chỉ có loopback đang down, không có tuyến IPv4/IPv6 trước khi chạy offline. Bật loopback trong namespace riêng chỉ cho bộ quote preview hiện có.
+- `git diff --check 7e2a775acfd542d5d4db0ac4c5b061e2214e37ae HEAD`: PASS tại SHA kỹ thuật. Bốn CI tại SHA kỹ thuật PASS: [held-out và remediation](https://github.com/kha997/ai-chatbot/actions/runs/45258589984/job/137986885429), [corpus](https://github.com/kha997/ai-chatbot/actions/runs/45258589218/job/137986883302), [gateway](https://github.com/kha997/ai-chatbot/actions/runs/45258589706/job/137986886674), [quote](https://github.com/kha997/ai-chatbot/actions/runs/45258590635/job/137986888443). Commit báo cáo sau SHA này chỉ đổi tài liệu.
+- Qoder mới: **PENDING**, đã đăng yêu cầu read-only tại SHA cố định. 30 ca bổ sung ngoài repo: **NOT_RUN / chưa có artifact tái lập**. Chưa có kết luận độc lập FIXED/PARTIAL/BLOCKED từ Qoder. Kiểm tra bộ riêng, provider/model và sáu E2E đều NOT_RUN; 0 chi phí thí nghiệm.
+
+Worktree gốc sạch tại `b84f54ebac829b3d86762b642177c73212b01d05`. Issue #63 vẫn OPEN. Draft PR chưa merge.
