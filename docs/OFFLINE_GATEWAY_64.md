@@ -1,6 +1,6 @@
 # Issue #64 — SQLite and fake-transport qualification
 
-Baseline [b213fb56](https://github.com/kha997/ai-chatbot/commit/b213fb560902083ebeb87f3fd3f3aff25c25894d). Governed by [Issue #64](https://github.com/kha997/ai-chatbot/issues/64). Status **BLOCKED_OFFLINE_GATEWAY** pending independent review and final test evidence. No inference, provider/account access, business data, or expenditure. AI and six business E2Es remain **NOT_RUN**.
+Baseline [b213fb56](https://github.com/kha997/ai-chatbot/commit/b213fb560902083ebeb87f3fd3f3aff25c25894d). Governed by [Issue #64](https://github.com/kha997/ai-chatbot/issues/64). Status **OFFLINE_GATEWAY_QUALIFIED** at the independently reviewed technical SHA. See [review and mock receipts](reviews/ISSUE_64_GATEWAY_REVIEW.md). No inference, provider/account access, business data, or expenditure. AI and six business E2Es remain **NOT_RUN**.
 
 The implementation uses only stdlib and one inert, exact-class scripted fake. There is no executable CLI, network connector, real model response parser, or environment credential lookup. The generic model/revision and published 2026-11-23 rates from the accepted design are fixture values. The simulator deliberately accepts only its one opaque synthetic reference payload plus a version field checked against the approved manifest. It has no access to other tenants' stores or to the accepted quote renderer. A fake output can only describe a proposal with an exact NHD citation. Price/action fields, tool calls, or foreign/stale citations are rejected.
 
