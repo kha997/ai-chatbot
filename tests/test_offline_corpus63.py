@@ -4,6 +4,7 @@ from pathlib import Path
 from shutil import copytree
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+import re
 import unittest
 
 from scripts import offline_corpus63 as corpus
@@ -23,6 +24,15 @@ class OfflineCorpusTests(unittest.TestCase):
     def setUpClass(cls):
         cls.package = corpus.load_public(ROOT, ROOT.parent / "quote_acceptance.json")
         cls.sources = cls.package["sources"]["claims"]
+
+    def test_frozen_development_negative_reasons_fit_public_schema(self):
+        schema = corpus.read_json(ROOT / "public.schema.json")
+        branch = next(item for item in schema["oneOf"] if "cases" in item["properties"])
+        variants = branch["properties"]["cases"]["items"]["properties"]["oracle"]["oneOf"]
+        pattern = variants[1]["properties"]["reason"]["pattern"]
+        for case in self.package["dev"]["cases"]:
+            if case["oracle"]["behavior"] != "answer":
+                self.assertIsNotNone(re.fullmatch(pattern, case["oracle"]["reason"]), case["id"])
 
     def test_coverage_and_public_development_registry(self):
         self.assertEqual(len(self.package["coverage"]["slots"]), 60)

@@ -958,7 +958,7 @@
                         "type": "string"
                       },
                       "reason": {
-                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "pattern": "^[a-z][a-z0-9_]{0,79}$",
                         "type": "string"
                       }
                     },
