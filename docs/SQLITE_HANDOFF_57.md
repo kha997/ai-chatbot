@@ -45,4 +45,13 @@ Local file access and the Python fixture setup are trusted. This is an orderly r
 - Baseline and Windows full suite: py -B -m unittest discover -s tests -p 'test_quote*.py'. Baseline 59/59. With SQLite 73/73 (14 new tests).
 - WSL no-egress: enter an isolated user and network namespace using unshare --user --map-root-user --net, enable only loopback via ip link set lo up, and run python3 -B -m unittest discover -s tests -p 'test_quote*.py' -v from the isolated worktree. 73/73. The preview HTTP regressions use only loopback.
 - New tests use disposable SQLite files, injected clocks, independent SQLite connections for same-key contention, and a separate Python process for restart. No live or unrelated dispatcher/model tests were run.
-- Independent Codex review and final CI pending.
+- Preview entry point check: `py -B -m scripts.quote_preview --help` passed. All seven existing Preview HTTP tests passed unchanged. No new manual browser acceptance was performed.
+- `git diff --check origin/main HEAD` passed. The baseline tests, fixture, validator, in-memory adapter, Preview and CI workflow are unchanged.
+
+## Independent review
+
+**SYNTHETIC_SQLITE_HANDOFF_DURABILITY_PASS** for the offline synthetic scope. Independent Codex session `/root/sqlite_handoff_review` reviewed [technical SHA 8678c4fb36c193775d4486d54acc00d7b60aa785](https://github.com/kha997/ai-chatbot/commit/8678c4fb36c193775d4486d54acc00d7b60aa785) without editing the implementation or tests. It independently ran 73/73 on Windows and in the loopback-only WSL namespace. [Technical SHA CI passed](https://github.com/kha997/ai-chatbot/actions/runs/45087489896).
+
+The reviewer identified that an older withdrawal assertion could pass because reopening the adapter had invalidated the confirmation proof. The author added an assertion using a current, otherwise valid proof against a withdrawn delivered ticket. The reviewer confirmed the fix on the exact technical SHA and separately verified same-adapter proof denial for accepted history and separation of reused message references across tenants and customers. No blocking findings remained.
+
+[PR #58](https://github.com/kha997/ai-chatbot/pull/58) awaits Architecture Acceptance. The receipt commit after the technical SHA only records the review and status. Customer identity recovery and any further data, integration or deployment work require separate approval.

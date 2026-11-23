@@ -2,15 +2,15 @@
 
 ## Issue #57 — durable synthetic handoff and consent
 
-STATE: IN_PROGRESS
-GATE: 1 (Issue #57 local development exception)
-RECOMMENDATION: opt-in SQLite for synthetic handoff and consent, with support-only continuity after full restart.
-COMPLETED: [schema, restart demonstration and limitations](SQLITE_HANDOFF_57.md).
-VALIDATION: quote suite 73/73 on Windows and in an isolated WSL network namespace. Review and hosted CI pending.
-OPEN RISKS: HIGH if used for real identity or data. Customer ownership recovery needs a separate identity design.
-NEXT: independent review of the technical commit, hosted CI, architecture acceptance.
-OWNER DECISION: NONE
-HEAD/BRANCH/PR: baseline 7da8524c5cb674197423a97684601cdafe4946c3 on branch codex/issue57-sqlite-handoff; PR pending.
+- STATE: READY_FOR_ARCHITECTURE_REVIEW
+- GATE: 1 (Issue #57 local development exception)
+- RECOMMENDATION: SYNTHETIC_SQLITE_HANDOFF_DURABILITY_PASS for local synthetic SQLite, with support-only continuity after full restart.
+- COMPLETED: [schema, restart demonstration, review and limitations](SQLITE_HANDOFF_57.md).
+- VALIDATION: `py -B -m unittest discover -s tests -p 'test_quote*.py'` passed 73/73. Also passed with only loopback in WSL. Independent Codex PASS at the technical SHA. [Hosted CI passed](https://github.com/kha997/ai-chatbot/actions/runs/45087489896).
+- OPEN RISKS: HIGH if used for real identity or data. Customer ownership recovery needs a separately approved identity design. Lead limits this to local synthetic fixtures.
+- NEXT: obtain Architecture Acceptance before merge.
+- OWNER DECISION: Architecture Acceptance for PR #58 only.
+- HEAD/BRANCH/PR: reviewed technical SHA `8678c4fb36c193775d4486d54acc00d7b60aa785` on `codex/issue57-sqlite-handoff`. [PR #58](https://github.com/kha997/ai-chatbot/pull/58). Subsequent receipt changes are documentation only.
 
 ## Issue #55 — local synthetic session boundary
 
