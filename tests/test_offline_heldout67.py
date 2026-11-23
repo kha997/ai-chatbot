@@ -1,9 +1,11 @@
 """Invented public fixtures. No private record is needed for any test."""
 import builtins
 import copy
+from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 import io
 import socket
+from threading import Event
 import unittest
 from unittest.mock import patch
 
@@ -156,6 +158,30 @@ class HarnessTests(unittest.TestCase):
         with self.assertRaises(h.Invalid):
             stopped.submit(1, bundle, h.canonical(observed(repetition=2)))
 
+    def test_mock_full_inventory_has_two_frozen_repetitions(self):
+        # Structural stubs exercise private-mode inventory rules with public IDs.
+        # They make no claim of semantic diversity or coverage of private data.
+        stubs = []
+        dev = [f"dev-example-{n}" for n in range(12)]
+        for n, id_ in enumerate(h.expected_ids()):
+            b = dummy()
+            b["case"].update(id=id_, category=id_.split("-")[2],
+                             question=f"Invented schedule stub {n}.", family=f"stub-{n}")
+            if id_ == "ga61-qa-sources-06":
+                b["oracle"].update(behavior="abstain", facts=[], required=[], totals=[],
+                                   revocations=[{"ref": b["sources"][0]["ref"], "tick": 3}])
+            stubs.append(b)
+        for broken in (stubs[:-1], list(reversed(stubs))):
+            with self.assertRaises(h.Invalid):
+                h.freeze("heldout", broken, development_families=dev)
+        manifest = h.freeze("heldout", stubs, development_families=dev)
+        run = h.Run(manifest, sha256(manifest).hexdigest())
+        for i in range(120):
+            self.assertEqual(run.submit(i, h.canonical(stubs[i % 60]), None).outcome, "NOT_RUN")
+        self.assertEqual(len(run.receipts), 120)
+        with self.assertRaises(h.Invalid):
+            run.submit(120, h.canonical(stubs[0]), None)
+
 
 class RevocationTests(unittest.TestCase):
     ref = ("NHD", "SYN-PRISM", 1, "p1")
@@ -213,6 +239,26 @@ class RevocationTests(unittest.TestCase):
         g.revoke(self.ref, 1, 4)
         self.assertIsNone(g.deliver(candidate, 5))
         self.assertEqual(g.outputs, ())
+
+    def test_revocation_between_worker_prepare_and_delivery(self):
+        g = self.gate()
+        ready, continue_ = Event(), Event()
+        def worker():
+            ticket = g.prepare(g.begin(self.ref, 2), 3)
+            ready.set()
+            if not continue_.wait(5):
+                raise AssertionError("test did not release worker")
+            return g.deliver(ticket, 5)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            result = pool.submit(worker)
+            try:
+                self.assertTrue(ready.wait(5))
+                g.revoke(self.ref, 1, 4)
+            finally:
+                continue_.set()
+            self.assertIsNone(result.result(timeout=5))
+        self.assertEqual(g.outputs, ())
+        self.assertEqual(g.denials, ((self.ref, 2, 4, 5, "revoked"),))
 
     def test_duplicate_and_out_of_order_events_are_fail_closed(self):
         g = self.gate()
