@@ -78,10 +78,15 @@ class SQLiteHandoffTests(unittest.TestCase):
         delivery = self.app.deliver_next(self.staff, "NHD")
         queued_id = self.enqueue(message="request-2")["ticket_id"]
         self.app = self.open()
+        fresh_proof = self.app.inbox(self.staff, "NHD")["tickets"][0]["proof"]
+        self.assertNotEqual(fresh_proof, delivery["proof"])
         for ticket in (queued_id, delivered_id):
             result = {"status": "cancelled", "ticket_id": ticket}
             self.assertEqual(self.app.withdraw(self.customer, "NHD", ticket), result)
             self.assertEqual(self.app.withdraw(self.customer, "NHD", ticket), result)
+        # The proof is valid for this adapter and session. Persisted consent and
+        # state must still prevent confirmation before any further restart.
+        self.assertEqual(self.app.confirm(self.staff, "NHD", delivered_id, fresh_proof), DENIED)
         self.assertEqual(self.enqueue(), DENIED)
         self.assertEqual(self.enqueue(message="request-3", consent=False), {"status": "consent_required"})
         self.restart()
