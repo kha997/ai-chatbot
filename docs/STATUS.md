@@ -1,6 +1,20 @@
 # AI ChatBot — remote status
 
+## Issue #61 — Gate A preparation (2026-11-23)
+
+- STATE: IN_PROGRESS — documents only, independent review pending.
+- GATE: 1 — Gate A preparation under [Issue #61](https://github.com/kha997/ai-chatbot/issues/61); execution NOT_AUTHORIZED / NOT_RUN.
+- RECOMMENDATION: Accept a bounded synthetic experiment dossier only after independent review; retain GPT-5.4 mini snapshot and deterministic authority; no activation of 600 requests/US$10.
+- COMPLETED: [Owner memo](GATE_A_OWNER_61.md), [case/oracle inventory](GATE_A_CORPUS_61.md), [privacy/safety](GATE_A_CONTROLS_61.md), [budget](GATE_A_BUDGET_61.md), [manifest/approval packet](GATE_A_MANIFEST_61.md), [dated sources](GATE_A_SOURCES_61.md). PR #60 is merged and Issue #59 closed; accepted architecture baseline is `24d8fb46f7726e42bcce4bb48904e6f8738250d7`.
+- VALIDATION: `git diff --check` passed on initial plan; complete offline doc/count/arithmetic checks and [review receipt](reviews/ISSUE_61_PREPARATION_REVIEW.md) pending. No runtime/model tests; six business E2Es NOT_RUN. Historical 73/73 is not new inference evidence.
+- OPEN RISKS: HIGH — BLOCKED_CORPUS_BREADTH, BLOCKED_COST_CONTROL, provider/access/terms and runtime prerequisites; lead owns technical qualification, Owner reserved approvals remain separate. No real data used.
+- NEXT: offline document checks; fresh-context review at frozen SHA; resolve findings and publish readiness.
+- OWNER DECISION: NONE for remaining authorized preparation. Architecture Acceptance before merge, separate exact execution approval later.
+- HEAD/BRANCH/PR: baseline `24d8fb46f7726e42bcce4bb48904e6f8738250d7`; `codex/issue61-gate-a-preparation`; [PR #62](https://github.com/kha997/ai-chatbot/pull/62). Exact technical review SHA follows in receipt; final reporting commit HEAD will be recorded in PR to avoid self-hashing.
+
 ## Issue #59 — NHD MVP architecture review (2026-11-23)
+
+Historical pre-merge receipt below: **superseded status only** by accepted PR #60 merge `24d8fb46f7726e42bcce4bb48904e6f8738250d7` and closed Issue #59, confirmed in Issue #61. This does not waive the retained source/taxonomy or runtime prerequisites. Original validation and review receipt remain unchanged.
 
 - STATE: READY_FOR_ARCHITECTURE_REVIEW
 - GATE: 1 — research/docs only under Issue #59; no runtime expansion.
