@@ -167,6 +167,9 @@ def parse_manifest(raw):
         if key in permits:
             raise ValueError("duplicate permit")
         permits[key] = row["allow_send"]
+    denied_cases = {key[:2] for key, allowed in permits.items() if not allowed}
+    # Case-level denial dominates any conflicting stage grant.
+    permits = {key: allowed and key[:2] not in denied_cases for key, allowed in permits.items()}
     diagnostics = data["diagnostics"]
     if (type(diagnostics) is not list or len(diagnostics) > CONTINGENCY
             or not all(number(x, 1, CONTINGENCY) for x in diagnostics)

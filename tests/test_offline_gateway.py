@@ -149,6 +149,9 @@ class OfflineGatewayTests(unittest.TestCase):
         record["permits"][0]["allow_send"] = False
         self.build(json.dumps(record, sort_keys=True, separators=(",", ":")).encode())
         self.denial("zero-egress", self.gateway.reserve, self.session, "qa", 1, 1, PAYLOAD)
+        self.denial("zero-egress", self.gateway.reserve, self.session, "qa", 1, 2, PAYLOAD)
+        self.denial("zero-egress", self.gateway.reserve, self.session, "qa", 1, 2, PAYLOAD,
+                    kind="retry", parent=1)
         self.assertEqual(self.gateway.snapshot()["attempts"], 0)
         self.assertEqual(self.transport.calls, ())
 
