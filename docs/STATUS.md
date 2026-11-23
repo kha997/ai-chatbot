@@ -1,5 +1,17 @@
 # AI ChatBot — remote status
 
+## Issue #67 — Offline held-out harness (2026-11-24)
+
+- STATE: IN_PROGRESS — public dummy proof and review pending.
+- GATE: 1, offline only under [Issue #67](https://github.com/kha997/ai-chatbot/issues/67), baseline `d7ada367443051ebe45c7461c2c6330733cad6bd`.
+- RECOMMENDATION: Verify the public harness and keep actual private evaluation with the authorized custodian.
+- COMPLETED: [Vietnamese dossier, revocation and private procedure](OFFLINE_HELDOUT_67.md).
+- VALIDATION: 16 local dummy tests PASS. Full regression, no-egress CI and independent review pending. Actual private audit, AI and six E2Es NOT_RUN.
+- OPEN RISKS: HIGH — BLOCKED_PRIVATE_AUDIT / BLOCKED_HELDOUT_CUSTODY_WORKFLOW. BLOCKED_CORPUS_BREADTH and provider-level BLOCKED_COST_CONTROL remain.
+- NEXT: Offline regression and public exact-SHA review. Separate later custodian-only evidence and Architecture Acceptance.
+- OWNER DECISION: NONE while public validation proceeds. Issue #63 stays open.
+- HEAD/BRANCH/PR: `codex/issue67-heldout-harness`. Exact SHA and PR recorded once frozen.
+
 ## Issue #64 — Offline fake gateway (2026-11-23)
 
 - STATE: GATE_1_COMPLETE — OFFLINE_GATEWAY_QUALIFIED; Architecture Acceptance is offline only.
