@@ -1,5 +1,17 @@
 # AI ChatBot — remote status
 
+## Issue #57 — durable synthetic handoff and consent
+
+- STATE: READY_FOR_ARCHITECTURE_REVIEW
+- GATE: 1 (Issue #57 local development exception)
+- RECOMMENDATION: SYNTHETIC_SQLITE_HANDOFF_DURABILITY_PASS for local synthetic SQLite, with support-only continuity after full restart.
+- COMPLETED: [schema, restart demonstration, review and limitations](SQLITE_HANDOFF_57.md).
+- VALIDATION: `py -B -m unittest discover -s tests -p 'test_quote*.py'` passed 73/73. Also passed with only loopback in WSL. Independent Codex PASS at the technical SHA. [Hosted CI passed](https://github.com/kha997/ai-chatbot/actions/runs/45087489896).
+- OPEN RISKS: HIGH if used for real identity or data. Customer ownership recovery needs a separately approved identity design. Lead limits this to local synthetic fixtures.
+- NEXT: obtain Architecture Acceptance before merge.
+- OWNER DECISION: Architecture Acceptance for PR #58 only.
+- HEAD/BRANCH/PR: reviewed technical SHA `8678c4fb36c193775d4486d54acc00d7b60aa785` on `codex/issue57-sqlite-handoff`. [PR #58](https://github.com/kha997/ai-chatbot/pull/58). Subsequent receipt changes are documentation only.
+
 ## Issue #55 — local synthetic session boundary
 
 STATE: READY_FOR_ARCHITECTURE_REVIEW
