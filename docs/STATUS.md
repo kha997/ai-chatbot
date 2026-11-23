@@ -1,16 +1,28 @@
 # AI ChatBot — remote status
 
+## Issue #64 — Offline fake gateway (2026-11-23)
+
+- STATE: GATE_1_COMPLETE — OFFLINE_GATEWAY_QUALIFIED; Architecture Acceptance is offline only.
+- GATE: 1, offline simulation under [Issue #64](https://github.com/kha997/ai-chatbot/issues/64).
+- RECOMMENDATION: Accept the local SQLite safety controls for offline qualification. Live execution remains NO-GO.
+- COMPLETED: [design, trust boundary and tests](OFFLINE_GATEWAY_64.md).
+- VALIDATION: 26 gateway tests on Windows and route-free WSL, 73 existing regressions, hosted checks and [independent exact-SHA review](reviews/ISSUE_64_GATEWAY_REVIEW.md) PASS. AI and six E2Es NOT_RUN.
+- OPEN RISKS: HIGH — BLOCKED_COST_CONTROL, including provider/account/region/terms/rates/fees and real framing. Offline gateway proof cannot close these.
+- NEXT: Keep provider qualification separate and subject to future authorization.
+- OWNER DECISION: ACCEPT_FOR_MERGE (OFFLINE ONLY) at approved HEAD `efbdce51522d4bd59714c8daf527b49c9e50ef4d`. No Gate 2, integration, spend or deployment.
+- HEAD/BRANCH/PR: Reviewed SHA eaa5600dafaaa2e69924f6de3c78f782b2fdc8e4, branch codex/issue64-offline-gateway, [PR #66](https://github.com/kha997/ai-chatbot/pull/66). PR records the reviewed, approved, synchronized and merged revisions.
+
 ## Issue #63 — Offline synthetic corpus (2026-11-23)
 
-- STATE: READY_FOR_ARCHITECTURE_REVIEW — public preparation only. `PARTIAL_CORPUS_READY / BLOCKED_HELDOUT_CUSTODY`.
+- STATE: BLOCKED — public preparation merged; Issue #63 stays OPEN. `PARTIAL_CORPUS_READY / BLOCKED_HELDOUT_CUSTODY`.
 - GATE: 1 — Issue #63 offline evidence only. The accepted baseline is [b213fb56](https://github.com/kha997/ai-chatbot/commit/b213fb560902083ebeb87f3fd3f3aff25c25894d).
-- RECOMMENDATION: Review the public corpus and reserve the 60 private cases until a permitted custody location and access policy exist.
+- RECOMMENDATION: Keep the 60 private cases pending an authorized custody location and access policy.
 - COMPLETED: [Public sources and separate development evidence](OFFLINE_CORPUS_63.md), [frozen public manifest](../eval/offline63/manifest.json), 60 reserved coverage IDs. Zero actual held-out questions or oracles were authored or published.
 - VALIDATION: 15 corpus tests on Windows and isolated WSL, 73 quote regressions, both hosted checks and [independent exact-SHA review](reviews/ISSUE_63_CORPUS_REVIEW.md) PASS. AI and all six E2E scenarios are NOT_RUN.
 - OPEN RISKS: HIGH — `BLOCKED_HELDOUT_CUSTODY` and umbrella `BLOCKED_CORPUS_BREADTH`. Project Owner designates existing private custody and access roles, then independent corpus team authors/reviews the held-out bundle. No spending or external system approval.
-- NEXT: Await Architecture Acceptance for the public package. Full corpus work requires the separate custody decision below.
+- NEXT: Full corpus work awaits the separate custody decision below.
 - OWNER DECISION: Approve one existing organization-controlled private location and named access roles before authoring exact held-out cases. [Custody decision](OFFLINE_CORPUS_63.md#held-out-custody-decision)
-- HEAD/BRANCH/PR: Reviewed SHA `d0f475f0ebcfa5d2cca6dc2437223bf6dbaa145d`, branch `codex/issue63-offline-corpus`, [PR #65](https://github.com/kha997/ai-chatbot/pull/65). PR records the later reporting-only HEAD.
+- HEAD/BRANCH/PR: Reviewed SHA `d0f475f0ebcfa5d2cca6dc2437223bf6dbaa145d`, branch `codex/issue63-offline-corpus`, [PR #65](https://github.com/kha997/ai-chatbot/pull/65). Owner accepted public preparation at HEAD `33d24cd5efe2f55941cf698efb2785ececd9dd45` (ACCEPT_PARTIAL_FOR_MERGE). Verified merge `7aa7e77b1ad949a425ec2aa1a9265e10e7df0bb9`.
 
 ## Issue #61 — Gate A preparation (2026-11-23)
 

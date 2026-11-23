@@ -1,0 +1,31 @@
+name: Offline gateway qualification 64
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/offline_gateway.py'
+      - 'tests/test_offline_gateway.py'
+      - '.github/workflows/offline-gateway-64.yml'
+      - 'docs/OFFLINE_GATEWAY_64.md'
+      - 'docs/reviews/ISSUE_64_GATEWAY_REVIEW.md'
+      - 'docs/STATUS.md'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Run gateway tests with no network routes
+        run: |
+          sudo unshare --net -- sh -eu -c '
+            ip -brief link
+            test -z "$(ip route show)"
+            test -z "$(ip -6 route show)"
+            python3 -B -m unittest discover -s tests -p "test_offline_gateway.py" -v
+          '
