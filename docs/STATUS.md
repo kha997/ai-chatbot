@@ -1,28 +1,41 @@
 # AI ChatBot — remote status
 
+## Issue #59 — NHD MVP architecture review (2026-11-23)
+
+- STATE: IN_PROGRESS
+- GATE: 1 — research/docs only under Issue #59; no runtime expansion.
+- RECOMMENDATION: NHD-first Python state machine, approved lexical retrieval and deterministic quote policy; bounded GPT-5.4 mini trial only after separate provider/budget authorization. Proposed ADR-002 awaits Architecture Acceptance.
+- COMPLETED: [Owner memo](NHD_MVP_OWNER_59.md), [accepted-code inventory and architecture](NHD_MVP_ARCHITECTURE_59.md), [costs/roadmap/gates](NHD_MVP_COST_ROADMAP_59.md), [dated sources](NHD_MVP_SOURCES_59.md). Confirmed PRs #56/#58 merged; historical receipts preserved.
+- VALIDATION: baseline main and merge metadata verified; document/static validation and independent review pending. Runtime/model/legacy qualification tests NOT_RUN in this docs task; historical 73/73 is not an AI benchmark.
+- OPEN RISKS: HIGH — real identity/recovery, source approval, provider cost/data controls and production operations absent; lead owns technical prerequisites, Owner retains reserved approvals. See dossier risk register.
+- NEXT: validate docs-only scope/links/arithmetic; freeze SHA and obtain fresh-context Codex review; publish corrections and await Architecture Acceptance.
+- OWNER DECISION: Architecture Acceptance after final review; no Gate 2, spending, data or deployment approval implied.
+- HEAD/BRANCH/PR: baseline `6243aa7806b9209e3df810fbe34f1dab7bc51a40`; `docs/issue59-nhd-mvp-architecture`; [PR #60](https://github.com/kha997/ai-chatbot/pull/60). Exact reviewed SHA will be recorded in [review receipt](reviews/ISSUE_59_ARCHITECTURE_REVIEW.md).
+
 ## Issue #57 — durable synthetic handoff and consent
 
-- STATE: READY_FOR_ARCHITECTURE_REVIEW
+- STATE: GATE_1_COMPLETE — Issue #57 accepted/closed, PR #58 merged (local synthetic scope only).
 - GATE: 1 (Issue #57 local development exception)
 - RECOMMENDATION: SYNTHETIC_SQLITE_HANDOFF_DURABILITY_PASS for local synthetic SQLite, with support-only continuity after full restart.
 - COMPLETED: [schema, restart demonstration, review and limitations](SQLITE_HANDOFF_57.md).
 - VALIDATION: `py -B -m unittest discover -s tests -p 'test_quote*.py'` passed 73/73. Also passed with only loopback in WSL. Independent Codex PASS at the technical SHA. [Hosted CI passed](https://github.com/kha997/ai-chatbot/actions/runs/45087489896).
 - OPEN RISKS: HIGH if used for real identity or data. Customer ownership recovery needs a separately approved identity design. Lead limits this to local synthetic fixtures.
-- NEXT: obtain Architecture Acceptance before merge.
-- OWNER DECISION: Architecture Acceptance for PR #58 only.
-- HEAD/BRANCH/PR: reviewed technical SHA `8678c4fb36c193775d4486d54acc00d7b60aa785` on `codex/issue57-sqlite-handoff`. [PR #58](https://github.com/kha997/ai-chatbot/pull/58). Subsequent receipt changes are documentation only.
+- NEXT: architecture review in Issue #59; no automatic runtime work.
+- OWNER DECISION: NONE for the completed Issue #57 scope.
+- HEAD/BRANCH/PR: merged as `6243aa7806b9209e3df810fbe34f1dab7bc51a40` on 2026-11-23; reviewed technical SHA `8678c4fb36c193775d4486d54acc00d7b60aa785`, receipt head `d6f4d25d53fcadab540cf5169a617b6241d3f369`, branch `codex/issue57-sqlite-handoff`. [PR #58](https://github.com/kha997/ai-chatbot/pull/58). Prior receipts remain historical.
 
 ## Issue #55 — local synthetic session boundary
 
-STATE: READY_FOR_ARCHITECTURE_REVIEW
+STATE: GATE_1_COMPLETE — Issue #55 accepted/closed, PR #56 merged (local synthetic scope only).
 GATE: 1 (narrow development exception: Issue #55)
-RECOMMENDATION: LOCAL_SYNTHETIC_SESSION_BOUNDARY_PASS for the offline adapter only; keep PR unmerged for architecture acceptance.
+RECOMMENDATION: LOCAL_SYNTHETIC_SESSION_BOUNDARY_PASS for the accepted offline adapter only.
 COMPLETED: [implementation, threat boundaries and validation evidence](SESSION_BOUNDARY_55.md); [PR #56](https://github.com/kha997/ai-chatbot/pull/56); original checkout preserved.
 VALIDATION: `py -B -m unittest discover -s tests -p 'test_quote*.py'` — PASS, 59 tests on Windows and in a private WSL network namespace; independent Codex reviewer reran 59/59 and confirmed both findings fixed; [CI SUCCESS](https://github.com/kha997/ai-chatbot/actions/runs/45085345535/job/137402571523); baseline-to-reviewed-head `git diff --check` PASS.
 OPEN RISKS: HIGH if used as real auth — synthetic identities only; sessions/revocation are ephemeral, and the HTTP preview remains a curated harness outside this adapter. No unresolved independent security findings within Issue #55 scope. Gate 2 and production remain NO-GO.
-NEXT: architecture acceptance of PR #56; merge only after acceptance; close Issue #55 only after accepted merge.
+NEXT: assess remaining real-identity gaps under Issue #59; no automatic runtime work.
 OWNER DECISION: NONE
-HEAD/BRANCH/PR: exact independently reviewed technical head `db3296fbe37515c76f6d24b1818da6b4dd9e740c`; `codex/issue55-session-boundary`; [PR #56](https://github.com/kha997/ai-chatbot/pull/56). Later receipt-only commit records this result without code/test changes.
+HEAD/BRANCH/PR: merged as `7da8524c5cb674197423a97684601cdafe4946c3` on 2026-11-23 Asia/Saigon; independently reviewed technical head `db3296fbe37515c76f6d24b1818da6b4dd9e740c`, receipt head `a40b03655c7d91af45c135d3f22d88a84f27c44c`; `codex/issue55-session-boundary`; [PR #56](https://github.com/kha997/ai-chatbot/pull/56). Prior receipts remain historical.
+
 ## Local quote developer preview — Issue #53
 
 - **STATE:** The loopback browser demo reuses the existing synthetic quote and support-handoff contracts for NHD, HANU and ZENA.
