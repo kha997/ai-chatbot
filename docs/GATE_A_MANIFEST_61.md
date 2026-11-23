@@ -22,14 +22,14 @@ Future manifest must be a versioned immutable record, signed off against its exa
 | isolation/network | Isolated local synthetic worker/store, no public listener or persistent service; gateway-only inference egress, no foreign tenant grants, no tools/telemetry exports; implementation UNKNOWN |
 | permitted input/output | Exact allowlist/schema hashes from controls document; synthetic/public rights-approved text only; both call stages captured; full approved payload hashes UNKNOWN |
 | time | Synthetic source clock `2030-01-15T00:00:00Z`; independent monotonic deadline clock; actual start/end UNKNOWN, <=2h approval window proposed |
-| model config | Reasoning none; standard tier; store false; non-streaming foreground; tools absent; <=8000 billed input /1000 total billed output, <=2 calls/turn, no hidden repairs |
+| model config | Reasoning none; standard tier; store false; non-streaming foreground; tools absent; <=8000 billed input /1000 total billed output per attempt, <=2 logical stages/turn or entire journey, no hidden repairs |
 | request allocations | QA240/dev24/adversarial48/journeys24/performance200/contingency64, total <=600, no automatic transfers; zero-egress paths zero calls |
-| concurrency / retries | Default 1; performance five turns, <=5 total in-flight requests; no automatic retries, <=1 eligible controlled retry/call and <=64 contingency attempts |
+| concurrency / retries | Default1; performance five turns, <=5 total in-flight requests including retries; no automatic retry, <=1 eligible retry per logical stage (<=4 physical attempts/execution), <=64 shared contingency. Retry debits contingency+global once, retains origin-suite metric tag, never replaces first scored result |
 | monetary envelope | Proposed <=US$10 all cash/fees, $8 admission stop-loss +$2 unavailable contingency; inactive; verified per-call/fixed fees/rates/tax UNKNOWN |
 | account protections | Hard account/project limit and no other spend routes/top-up/fallback to be verified; alert alone insufficient; protection proof UNKNOWN |
 | price evidence validity | Rate source/access timestamp, applicable invoice rules, bounded run-window price guarantee or conservative enforceable maximum, all fee upper bounds; UNKNOWN |
 | corpus order/split | Complete IDs from case ledger; two QA repetitions, frozen order/seeds/semantic families, disjoint dev set; exact ordered payload/oracle files UNKNOWN |
-| performance | 100 turns, <=200 calls, p95<=8s at five concurrent turns, <=1% failed provider attempts; bounded descriptive sample, not production SLO proof |
+| performance | 100 turns, <=200 initial attempts plus eligible retries charged to shared64 contingency (<=264 performance-origin attempts, not extra quota); p95<=8s at five concurrent turns, <=1% failed physical attempts including retries; bounded descriptive sample, not production SLO proof |
 | evaluator roles | Corpus author, implementer, two independent semantic evaluators, security reviewer, operator, Owner; named actual assignments UNKNOWN |
 | stop controls | Atomic STOP flag, permit revocation, no replay after crash, five-flight reservation, key revocation and billing reconciliation; evidence NOT_RUN |
 | retention/evidence | Proposed local synthetic content7d/audit30d; public only sanitized approved receipts; provider retention separate; exact approval UNKNOWN |

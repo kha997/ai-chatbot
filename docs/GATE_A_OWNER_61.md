@@ -11,22 +11,22 @@ Ngày: **23/11/2026**. [PR #62](https://github.com/kha997/ai-chatbot/pull/62) ·
 ## Những biện pháp đã thiết kế
 
 - Chỉ gửi các trường văn bản giả lập/công khai đã được duyệt và chốt nội dung; chặn thông tin cá nhân, dữ liệu kinh doanh thật, tài liệu riêng, file đính kèm và liên kết lạ trước cả bước gọi model. Model không được tự cấp quyền, tạo đơn, đồng ý chia sẻ hoặc chuyển dữ liệu cho nhân viên. [Chính sách dữ liệu](GATE_A_CONTROLS_61.md).
-- Chấm đúng/sai theo nguồn và quyền truy cập, không chỉ độ trôi chảy. Mỗi lượt cần ít nhất54/60 câu đúng, mỗi nhóm ít nhất5/6; lỗi rò rỉ tenant, sai giá/nguồn/quyền/đồng ý hay tự nâng chat thành chính sách đều chặn nghiệm thu dù điểm trung bình cao. Thiếu bằng chứng là INCONCLUSIVE; chưa chạy là NOT_RUN.
-- Trước mỗi request phải giữ chỗ chi phí tối đa, kể cả request đang chạy, lỗi và retry. Đề xuất dừng nhận request ở8 USD, giữ2 USD dự phòng trong trần10 USD; tối đa600 request tổng, tối đa5 đang chạy, không retry tự động hay tự đổi provider. Giá/mức sử dụng không xác định thì dừng. [Ngân sách và xử lý lỗi](GATE_A_BUDGET_61.md).
+- Chấm đúng/sai theo nguồn và quyền truy cập, không chỉ độ trôi chảy. Mỗi lượt cần ít nhất 54/60 câu đúng, mỗi nhóm ít nhất 5/6; lỗi rò rỉ tenant, sai giá/nguồn/quyền/đồng ý hay tự nâng chat thành chính sách đều chặn nghiệm thu dù điểm trung bình cao. PASS nghĩa là đạt đủ tiêu chí; FAIL là không đạt; STOP là dừng gửi thêm request; INCONCLUSIVE là chưa đủ bằng chứng để kết luận; NOT_RUN là chưa chạy.
+- Trước mỗi request phải giữ chỗ chi phí tối đa, kể cả request đang chạy, lỗi và retry. Đề xuất dừng nhận request ở 8 USD, giữ 2 USD dự phòng trong trần 10 USD; tối đa 600 request tổng, tối đa 5 đang chạy, không retry tự động hay tự đổi provider. Mỗi lần thử lại vẫn tốn một suất trong tổng 600 và quỹ dự phòng tối đa 64 request, không xóa kết quả lỗi ban đầu. Giá/mức sử dụng không xác định thì dừng. [Ngân sách và xử lý lỗi](GATE_A_BUDGET_61.md).
 
-Theo giá công khai đã kiểm tra ngày23/11/2026, 600 request ở trần8000 token đầu vào/1000 token đầu ra có giá model tối đa minh họa6,30 USD; nếu dùng xử lý theo vùng có phụ phí10% thì6,93 USD, **chưa xác minh thuế/phí của tài khoản**. Vì vậy chưa thể cam kết tổng10 USD: cơ chế chặn trước cuộc gọi, điều kiện giá/phí và kiểm soát tài khoản phải được kiểm chứng trước. Cảnh báo trên dashboard không đủ. [Nguồn chính thức và giả định](GATE_A_SOURCES_61.md).
+Theo giá công khai đã kiểm tra ngày 23/11/2026, 600 request ở trần 8000 token đầu vào/1000 token đầu ra có giá model tối đa minh họa 6,30 USD; nếu dùng xử lý theo vùng có phụ phí 10% thì 6,93 USD, **chưa xác minh thuế/phí của tài khoản**. Vì vậy chưa thể cam kết tổng 10 USD: cơ chế chặn trước cuộc gọi, điều kiện giá/phí và kiểm soát tài khoản phải được kiểm chứng trước. Cảnh báo trên dashboard không đủ. [Nguồn chính thức và giả định](GATE_A_SOURCES_61.md).
 
 ## Điều kiện còn thiếu
 
 | Điều kiện | Ý nghĩa với Owner |
 | --- | --- |
-| Bộ dữ liệu giả lập đủ rộng và đáp án độc lập | Chưa thể đánh giá chất lượng60 câu một cách trung thực |
+| Bộ dữ liệu giả lập đủ rộng và đáp án độc lập | Chưa thể đánh giá chất lượng 60 câu một cách trung thực |
 | Bộ chặn chi phí, kiểm soát dữ liệu và thử lỗi offline | Hồ sơ mới là thiết kế, chưa chứng minh phần mềm thực thi được |
 | Tài khoản/project, điều khoản, vùng xử lý, người giữ khóa, thuế/phí | Chưa kết nối; cần hồ sơ cụ thể trước khi xin phép dùng tài khoản/chi tiền |
 | Đối chiếu taxonomy v1.0 | Chưa xác nhận đủ tên intent/giai đoạn/playbook/trạng thái; không đọc hay đưa tài liệu riêng lên repo |
 | Kết quả AI và toàn hành trình | Tất cả NOT_RUN; 73 kiểm thử cũ chỉ là bằng chứng lõi giả lập |
 
-Mẫu100 lượt hiệu năng chỉ giúp quan sát ban đầu, không đủ chứng minh độ tin cậy production. Kết quả có thể phải ghi INCONCLUSIVE ngay cả khi không có lỗi quan sát được. Không tự tăng ngân sách để đạt kết luận đẹp hơn.
+Mẫu 100 lượt hiệu năng chỉ giúp quan sát ban đầu, không đủ chứng minh độ tin cậy production. Kết quả có thể phải ghi INCONCLUSIVE ngay cả khi không có lỗi quan sát được. Không tự tăng ngân sách để đạt kết luận đẹp hơn.
 
 ## Quyết định và bước tiếp theo
 
