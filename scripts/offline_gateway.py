@@ -14,6 +14,11 @@ MAX_ATTEMPTS, CONTINGENCY, CEILING, PROTECTED = 600, 64, 8_000_000, 2_000_000
 TEXT = "SYNTHETIC GATEWAY REFERENCE"
 TRANSIENT = {"429-rate", "500", "503"}
 HARD = {"400", "401", "403", "429-cap"}
+SCENARIOS = frozenset(HARD | TRANSIENT | {
+    "ok", "forged", "out-of-order", "model", "tier", "rate", "fixed", "over-token",
+    "missing", "timeout", "partial", "ambiguous", "cancel", "price-action", "tool",
+    "foreign-output", "stale-output", "typed-citation", "foreign-manifest", "nonce",
+})
 SCHEMA = (
     """CREATE TABLE run (id INTEGER PRIMARY KEY CHECK(id=1), manifest TEXT NOT NULL,
     serial TEXT NOT NULL, expiry INTEGER NOT NULL, worker TEXT NOT NULL, session TEXT NOT NULL,
@@ -168,18 +173,27 @@ class FakeTransport:
     __slots__ = ("_scenario", "_calls")
 
     def __init__(self, scenario="ok"):
-        self._scenario = scenario
-        self._calls = []
+        if type(scenario) is not str or scenario not in SCENARIOS:
+            raise Rejected("transport")
+        object.__setattr__(self, "_scenario", scenario)
+        object.__setattr__(self, "_calls", ())
+
+    def __setattr__(self, key, value):
+        raise AttributeError("fake transport state is internal")
+
+    def __delattr__(self, key):
+        raise AttributeError("fake transport state is internal")
 
     @property
     def calls(self):
-        return tuple(self._calls)
+        return self._calls
 
-    def _observe(self, attempt, payload, model, tier, rate_hash, fixed, source):
-        self._calls.append((attempt, digest(payload)))
+    def _observe(self, attempt, nonce, manifest, payload, model, tier, rate_hash, fixed, source):
+        object.__setattr__(self, "_calls", self._calls + ((attempt, digest(payload)),))
         scenario = self._scenario
         receipt = {
-            "attempt": attempt, "request": digest(payload), "model": model, "tier": tier,
+            "attempt": attempt, "nonce": nonce, "manifest": manifest,
+            "request": digest(payload), "model": model, "tier": tier,
             "rate": rate_hash, "fixed": fixed, "input": 100, "output": 50,
             "status": scenario if scenario in HARD | TRANSIENT else "ok",
             "output_data": {"citation": source, "disposition": "proposal-only"},
@@ -189,6 +203,8 @@ class FakeTransport:
             "model": ("model", "mutable"), "tier": ("tier", "unexpected"),
             "rate": ("rate", "0" * 64), "fixed": ("fixed", fixed + 1),
             "over-token": ("input", 8001),
+            "foreign-manifest": ("manifest", "0" * 64),
+            "nonce": ("nonce", "0" * 32),
         }
         if scenario in mutations:
             key, value = mutations[scenario]
@@ -203,6 +219,8 @@ class FakeTransport:
             receipt["output_data"]["citation"] = ["NHD", "SYN-GW-NHD-01", 0]
             if scenario == "foreign-output":
                 receipt["output_data"]["citation"][0] = "HANU"
+        if scenario == "typed-citation":
+            receipt["output_data"]["citation"][2] = True
         return receipt
 
 
@@ -243,6 +261,9 @@ class Gateway:
                 "SELECT sql FROM sqlite_master WHERE sql IS NOT NULL"))
             if actual != EXPECTED_SCHEMA:
                 raise sqlite3.DatabaseError("unexpected ledger schema")
+            if (db.execute("PRAGMA quick_check").fetchone()[0] != "ok"
+                    or db.execute("PRAGMA foreign_key_check").fetchone() is not None):
+                raise sqlite3.DatabaseError("ledger integrity")
             yield db
             db.commit()
         except sqlite3.Error as exc:
@@ -253,6 +274,7 @@ class Gateway:
 
     def _approved(self, approval):
         return (type(approval) is Approval and bool(self._data)
+                and type(approval.manifest) is str
                 and approval.manifest == self._digest
                 and type(approval.serial) is str
                 and re.fullmatch("[a-zA-Z0-9-]{1,80}", approval.serial) is not None
@@ -300,7 +322,9 @@ class Gateway:
             run = self._run(db)
             if type(worker) is not str or worker != run["worker"]:
                 raise Rejected("worker")
-            if (type(approval) is not Approval or approval.manifest != run["manifest"]
+            if (type(approval) is not Approval or type(approval.manifest) is not str
+                    or type(approval.serial) is not str or type(approval.expiry) is not int
+                    or approval.manifest != run["manifest"]
                     or self._digest != run["manifest"] or approval.serial != run["serial"]
                     or approval.expiry != run["expiry"]):
                 raise Rejected("approval")
@@ -333,7 +357,7 @@ class Gateway:
                 raise Rejected("worker")
             self._stop(db, "operator")
 
-    def _denial(self, db):
+    def _denial(self, db, dispatching=None):
         run = self._run(db)
         if run["status"] != "ACTIVE":
             return "stopped"
@@ -354,6 +378,11 @@ class Gateway:
                       WHERE s.id IS NULL AND a.deadline<=?""", (self._clock(),)).fetchone():
             self._stop(db, "stale")
             return "stale"
+        # The fake send pipeline admits one outstanding intent at a time.
+        # If a process dies between transactions, other workers cannot send past it.
+        if db.execute("""SELECT 1 FROM intent i LEFT JOIN settlement s USING(id)
+                      WHERE s.id IS NULL AND i.id!=?""", (dispatching or 0,)).fetchone():
+            return "dispatch-pending"
         return None
 
     @staticmethod
@@ -364,10 +393,6 @@ class Gateway:
                FROM attempt a LEFT JOIN settlement s USING(id)""").fetchone()
 
     def _validate_history(self, db):
-        if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
-            raise Rejected("storage")
-        if db.execute("PRAGMA foreign_key_check").fetchone() is not None:
-            raise Rejected("storage")
         rows = db.execute("""SELECT a.*,o.receipt,s.charge,s.result FROM attempt a
             LEFT JOIN observation o USING(id) LEFT JOIN settlement s USING(id) ORDER BY a.id""")
         history = {}
@@ -393,7 +418,7 @@ class Gateway:
                 result, amount = self._judge(row, json.loads(row["receipt"]))
             except (TypeError, ValueError) as exc:
                 raise Rejected("storage") from exc
-            if result != row["result"] or amount != row["charge"]:
+            if result == "receipt" or result != row["result"] or amount != row["charge"]:
                 raise Rejected("storage")
             history[identifier] = row
         _, hold, actual, _ = self._totals(db)
@@ -442,7 +467,7 @@ class Gateway:
         code = self._denial(db)
         if code:
             return code
-        if session != self.session or type(session) is not str:
+        if type(session) is not str or session != self.session:
             return "session"
         if type(payload) is not bytes or payload != self._payload:
             self._stop(db, "payload")
@@ -481,8 +506,6 @@ class Gateway:
         if self._rate["fixed_micro"] + hold + actual + self._worst > CEILING:
             self._stop(db, "money")
             return "money"
-        if fault == "before-write":
-            raise sqlite3.OperationalError("injected write fault")
         nonce = secrets.token_hex(16)
         deadline = min(self._clock() + 30, self._approval.expiry)
         if kind != "diagnostic":
@@ -493,11 +516,21 @@ class Gateway:
                 deadline = min(deadline, first)
             if deadline <= self._clock():
                 return "stage-deadline"
-        row = db.execute("INSERT INTO attempt VALUES (NULL,?,?,?,?,?,?,?,?,?)",
-                         (suite, execution, stage, kind, parent, digest(payload),
-                          nonce, self._worst, deadline))
-        if fault == "after-write":
-            raise sqlite3.OperationalError("injected write fault")
+        db.execute("SAVEPOINT reserve_grant")
+        try:
+            if fault == "before-write":
+                raise sqlite3.OperationalError("injected write fault")
+            row = db.execute("INSERT INTO attempt VALUES (NULL,?,?,?,?,?,?,?,?,?)",
+                             (suite, execution, stage, kind, parent, digest(payload),
+                              nonce, self._worst, deadline))
+            if fault == "after-write":
+                raise sqlite3.OperationalError("injected write fault")
+        except sqlite3.Error:
+            db.execute("ROLLBACK TO reserve_grant")
+            db.execute("RELEASE reserve_grant")
+            self._stop(db, "storage")
+            return "storage"
+        db.execute("RELEASE reserve_grant")
         return Permit(row.lastrowid, nonce)
 
     def reserve(self, session, suite, execution, stage, payload, *,
@@ -528,7 +561,8 @@ class Gateway:
         if code:
             return code
         row = None
-        if type(permit) is Permit and number(permit.attempt, 1, MAX_ATTEMPTS):
+        if (type(permit) is Permit and type(permit.nonce) is str
+                and number(permit.attempt, 1, MAX_ATTEMPTS)):
             row = db.execute("""SELECT a.*,i.id AS consumed FROM attempt a
                 LEFT JOIN intent i USING(id) WHERE a.id=?""", (permit.attempt,)).fetchone()
         if row is None or row["nonce"] != permit.nonce or row["consumed"] is not None:
@@ -540,8 +574,9 @@ class Gateway:
         return row
 
     def _judge(self, row, receipt):
-        if (not closed(receipt, "attempt request model tier rate fixed input output status output_data")
+        if (not closed(receipt, "attempt nonce manifest request model tier rate fixed input output status output_data")
                 or not number(receipt["attempt"], row["id"], row["id"])
+                or receipt["nonce"] != row["nonce"] or receipt["manifest"] != self._digest
                 or receipt["request"] != row["digest"] or receipt["model"] != MODEL
                 or receipt["tier"] != "standard" or receipt["rate"] != self._rate_hash
                 or not number(receipt["fixed"], self._rate["fixed_micro"], self._rate["fixed_micro"])
@@ -549,9 +584,13 @@ class Gateway:
                 or not number(receipt["output"], 0, 1000)
                 or type(receipt["status"]) is not str
                 or receipt["status"] not in HARD | TRANSIENT | {"ok"}
-                or receipt["output_data"] != {"citation": ["NHD", self._source["id"],
-                                                          self._source["version"]],
-                                              "disposition": "proposal-only"}):
+                or not closed(receipt["output_data"], "citation disposition")
+                or receipt["output_data"]["disposition"] != "proposal-only"):
+            return "receipt", 0
+        citation = receipt["output_data"]["citation"]
+        if (type(citation) is not list or len(citation) != 3
+                or citation[:2] != ["NHD", self._source["id"]]
+                or not number(citation[2], self._source["version"], self._source["version"])):
             return "receipt", 0
         result = ("hard-response" if receipt["status"] in HARD else
                   "transient" if receipt["status"] in TRANSIENT else "ok")
@@ -568,11 +607,12 @@ class Gateway:
             if fault == "after-intent":
                 raise SimulatedCrash()
             with self._transaction() as db:
-                code = self._denial(db)
+                code = self._denial(db, dispatching=row["id"])
                 if not code:
                     # Only the primitive fake observation runs under the STOP lock.
                     receipt = FakeTransport._observe(
-                        self._fake, row["id"], payload, MODEL, "standard", self._rate_hash,
+                        self._fake, row["id"], row["nonce"], self._digest, payload,
+                        MODEL, "standard", self._rate_hash,
                         self._rate["fixed_micro"], ["NHD", self._source["id"], self._source["version"]])
                     if fault == "after-send":
                         raise SimulatedCrash()
@@ -585,6 +625,8 @@ class Gateway:
             if fault == "after-observation":
                 raise SimulatedCrash()
             with self._transaction() as db:
+                if self._run(db)["worker"] != self.worker:
+                    raise Rejected("stopped")
                 if result != "receipt":
                     db.execute("INSERT INTO settlement VALUES (?,?,?)", (row["id"], amount, result))
                 if result in {"ok", "transient"} and self._denial(db):
@@ -602,12 +644,15 @@ class Gateway:
             attempts, hold, actual, inflight = self._totals(db)
             buckets = dict.fromkeys((*SUITES, "contingency"), 0)
             origins = {suite: {"sent": 0, "failed": 0} for suite in SUITES}
-            for row in db.execute("""SELECT a.suite,a.kind,i.id AS intended,s.result FROM attempt a
-                LEFT JOIN intent i USING(id) LEFT JOIN settlement s USING(id)"""):
+            ambiguous = 0
+            for row in db.execute("""SELECT a.suite,a.kind,i.id AS intended,
+                o.id AS observed,s.result FROM attempt a LEFT JOIN intent i USING(id)
+                LEFT JOIN observation o USING(id) LEFT JOIN settlement s USING(id)"""):
                 buckets[row["suite"] if row["kind"] == "initial" else "contingency"] += 1
-                if row["intended"] is not None and row["kind"] != "diagnostic":
+                ambiguous += row["intended"] is not None and row["observed"] is None
+                if row["observed"] is not None and row["kind"] != "diagnostic":
                     origin = origins[row["suite"]]
-                    origin["sent"] += 1  # conservative: includes ambiguous intent
+                    origin["sent"] += 1
                     origin["failed"] += row["result"] != "ok"
             run = self._run(db)
             fixed = self._rate["fixed_micro"] if self._rate else None
@@ -615,4 +660,5 @@ class Gateway:
                     "outstanding_micro": hold, "actual_micro": actual, "fixed_micro": fixed,
                     "committed_micro": None if fixed is None else actual + hold + fixed,
                     "protected_micro": PROTECTED, "in_flight": inflight,
+                    "ambiguous_intents": ambiguous,
                     "by_bucket": buckets, "by_origin": origins}

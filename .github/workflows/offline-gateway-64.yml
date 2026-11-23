@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630feea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - name: Run gateway tests with no network routes
@@ -26,5 +26,6 @@ jobs:
           sudo unshare --net -- sh -eu -c '
             ip -brief link
             test -z "$(ip route show)"
+            test -z "$(ip -6 route show)"
             python3 -B -m unittest discover -s tests -p "test_offline_gateway.py" -v
           '

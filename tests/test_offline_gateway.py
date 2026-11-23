@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from pathlib import Path
 
-from scripts.offline_gateway import Approval, FakeTransport, Gateway, Rejected, SimulatedCrash
+from scripts.offline_gateway import Approval, FakeTransport, Gateway, Permit, Rejected, SimulatedCrash
 
 
 SNAPSHOT = "gpt-5.4-mini-2026-03-17"
@@ -225,7 +225,7 @@ class OfflineGatewayTests(unittest.TestCase):
         self.assertEqual(self.gateway.snapshot()["by_bucket"]["qa"], 0)
 
     def test_599_600_and_601_and_contingency_63_64_65(self):
-        self.build()
+        self.build(scenario="503")
         for suite, count in BUCKETS.items():
             for case in range(1, count + 1):
                 for stage in (1, 2):
@@ -239,6 +239,10 @@ class OfflineGatewayTests(unittest.TestCase):
         self.assertEqual(self.gateway.snapshot()["by_bucket"]["contingency"], 64)
         self.denial("capacity", self.gateway.reserve, self.session, "qa", 65, 0, PAYLOAD,
                     kind="diagnostic", parent=129)
+        # A valid, previously unspent retry must reach persisted quota enforcement.
+        self.denial("capacity", self.gateway.reserve, self.session, "qa", 1, 1, PAYLOAD,
+                    kind="retry", parent=1)
+        self.assertEqual(self.gateway.snapshot()["reason"], "capacity")
         self.assertEqual(len(self.transport.calls), 600)
 
     def test_six_concurrent_workers_respect_five_in_flight_and_stop_all(self):
@@ -305,7 +309,8 @@ class OfflineGatewayTests(unittest.TestCase):
     def test_unknown_usage_and_invalid_output_causes_durable_stop(self):
         for scenario in ("missing", "forged", "out-of-order", "model", "tier", "rate",
                          "fixed", "over-token", "timeout", "partial", "ambiguous", "cancel",
-                         "price-action", "tool", "foreign-output", "stale-output"):
+                         "price-action", "tool", "foreign-output", "stale-output",
+                         "typed-citation", "foreign-manifest", "nonce"):
             with self.subTest(scenario=scenario):
                 self.build(scenario=scenario)
                 permit = self.gateway.reserve(self.session, "qa", 1, 1, PAYLOAD)
@@ -360,6 +365,69 @@ class OfflineGatewayTests(unittest.TestCase):
         self.denial("stopped", self.gateway.dispatch, permit, PAYLOAD)
         self.assertEqual(self.transport.calls, ())
         self.assertEqual(self.gateway.snapshot()["outstanding_micro"], 10500)
+
+    def test_survivor_cannot_dispatch_past_abandoned_intent(self):
+        for phase in ("after-intent", "after-send", "after-observation"):
+            with self.subTest(phase=phase):
+                self.build()
+                other_fake = FakeTransport()
+                worker = Gateway.join(self.path, self.raw, self.approved, self.gateway.worker,
+                                      other_fake, clock=lambda: self.tick)
+                first = self.gateway.reserve(self.session, "performance", 1, 1, PAYLOAD)
+                second = worker.reserve(self.session, "performance", 2, 1, PAYLOAD)
+                with self.assertRaises(SimulatedCrash):
+                    self.gateway.dispatch(first, PAYLOAD, fault=phase)
+                self.denial("dispatch-pending", worker.dispatch, second, PAYLOAD)
+                self.denial("dispatch-pending", worker.reserve, self.session, "performance", 3, 1,
+                            PAYLOAD)
+                self.tick += 30
+                self.denial("stale", worker.dispatch, second, PAYLOAD)
+                self.assertEqual(self.gateway.snapshot()["outstanding_micro"], 21000)
+                self.assertEqual(other_fake.calls, ())
+                state = self.gateway.snapshot()
+                known = int(phase == "after-observation")
+                self.assertEqual(state["by_origin"]["performance"]["sent"], known)
+                self.assertEqual(state["ambiguous_intents"], 1-known)
+
+    def test_stop_races_with_five_already_reserved_dispatches(self):
+        self.build()
+        permits = [self.gateway.reserve(self.session, "performance", n, 1, PAYLOAD)
+                   for n in range(1, 6)]
+        barrier = threading.Barrier(6)
+        def contender(permit):
+            barrier.wait(timeout=10)
+            try:
+                return self.gateway.dispatch(permit, PAYLOAD)
+            except Rejected as error:
+                return error.code
+        def stop():
+            barrier.wait(timeout=10)
+            self.gateway.stop()
+            return self.transport.calls
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            results = [pool.submit(contender, permit) for permit in permits]
+            stop_receipt = pool.submit(stop).result(timeout=15)
+            for result in results:
+                self.assertIn(result.result(timeout=15), {"ok", "stopped", "dispatch-pending"})
+        self.assertEqual(self.transport.calls, stop_receipt)
+        self.assertEqual(self.gateway.snapshot()["status"], "STOPPED")
+
+    def test_fake_rejects_callback_values_and_state_replacement(self):
+        self.build()
+        class Callback:
+            def __hash__(self):
+                raise AssertionError("callback executed")
+            def __eq__(self, other):
+                raise AssertionError("callback executed")
+        self.denial("transport", FakeTransport, Callback())
+        self.denial("transport", FakeTransport, "unknown")
+        fake = FakeTransport()
+        with self.assertRaises(AttributeError):
+            fake._calls = Callback()
+        self.denial("session", self.gateway.reserve, Callback(), "qa", 1, 1, PAYLOAD)
+        permit = self.gateway.reserve(self.session, "qa", 1, 1, PAYLOAD)
+        self.denial("permit", self.gateway.dispatch, Permit(permit.attempt, Callback()), PAYLOAD)
+        self.assertEqual(self.transport.calls, ())
 
     def test_hard_stop_survives_restart_and_new_approval(self):
         self.build(scenario="401")
