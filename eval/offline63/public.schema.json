@@ -1,0 +1,1254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "additionalProperties": false,
+      "properties": {
+        "claims": {
+          "items": {
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                    "type": "string"
+                  },
+                  "effective_from": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "family": {
+                    "const": "catalog"
+                  },
+                  "kind": {
+                    "const": "text"
+                  },
+                  "paragraph": {
+                    "pattern": "^p[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "permitted": {
+                    "type": "boolean"
+                  },
+                  "predicate": {
+                    "enum": [
+                      "material",
+                      "environment",
+                      "alias",
+                      "variant"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "retired",
+                      "untrusted",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tenant": {
+                    "const": "NHD"
+                  },
+                  "value": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "version": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "tenant",
+                  "document",
+                  "version",
+                  "paragraph",
+                  "family",
+                  "subject",
+                  "predicate",
+                  "kind",
+                  "value",
+                  "status",
+                  "effective_from",
+                  "expires_at",
+                  "permitted"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                    "type": "string"
+                  },
+                  "effective_from": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "family": {
+                    "const": "prices"
+                  },
+                  "kind": {
+                    "const": "price"
+                  },
+                  "paragraph": {
+                    "pattern": "^p[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "permitted": {
+                    "type": "boolean"
+                  },
+                  "predicate": {
+                    "enum": [
+                      "price-rule"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "retired",
+                      "untrusted",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tenant": {
+                    "const": "NHD"
+                  },
+                  "value": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "currency": {
+                        "const": "VND"
+                      },
+                      "minimum": {
+                        "pattern": "^(?:0|[1-9][0-9]{0,9})(?:\\.[0-9]{1,4})?$",
+                        "type": "string"
+                      },
+                      "unit": {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      },
+                      "unit_price": {
+                        "pattern": "^(?:0|[1-9][0-9]{0,9})(?:\\.[0-9]{1,4})?$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "unit_price",
+                      "minimum",
+                      "unit",
+                      "currency"
+                    ],
+                    "type": "object"
+                  },
+                  "version": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "tenant",
+                  "document",
+                  "version",
+                  "paragraph",
+                  "family",
+                  "subject",
+                  "predicate",
+                  "kind",
+                  "value",
+                  "status",
+                  "effective_from",
+                  "expires_at",
+                  "permitted"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                    "type": "string"
+                  },
+                  "effective_from": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "family": {
+                    "const": "quote-inputs"
+                  },
+                  "kind": {
+                    "const": "slots"
+                  },
+                  "paragraph": {
+                    "pattern": "^p[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "permitted": {
+                    "type": "boolean"
+                  },
+                  "predicate": {
+                    "enum": [
+                      "required-slots"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "retired",
+                      "untrusted",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tenant": {
+                    "const": "NHD"
+                  },
+                  "value": {
+                    "items": {
+                      "enum": [
+                        "sku",
+                        "variant",
+                        "unit",
+                        "quantity"
+                      ],
+                      "type": "string"
+                    },
+                    "maxItems": 4,
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "version": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "tenant",
+                  "document",
+                  "version",
+                  "paragraph",
+                  "family",
+                  "subject",
+                  "predicate",
+                  "kind",
+                  "value",
+                  "status",
+                  "effective_from",
+                  "expires_at",
+                  "permitted"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                    "type": "string"
+                  },
+                  "effective_from": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "family": {
+                    "const": "availability"
+                  },
+                  "kind": {
+                    "const": "count"
+                  },
+                  "paragraph": {
+                    "pattern": "^p[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "permitted": {
+                    "type": "boolean"
+                  },
+                  "predicate": {
+                    "enum": [
+                      "available-count"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "retired",
+                      "untrusted",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tenant": {
+                    "const": "NHD"
+                  },
+                  "value": {
+                    "maximum": 10000,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "tenant",
+                  "document",
+                  "version",
+                  "paragraph",
+                  "family",
+                  "subject",
+                  "predicate",
+                  "kind",
+                  "value",
+                  "status",
+                  "effective_from",
+                  "expires_at",
+                  "permitted"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                    "type": "string"
+                  },
+                  "effective_from": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "family": {
+                    "const": "availability"
+                  },
+                  "kind": {
+                    "const": "text"
+                  },
+                  "paragraph": {
+                    "pattern": "^p[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "permitted": {
+                    "type": "boolean"
+                  },
+                  "predicate": {
+                    "enum": [
+                      "stock-condition"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "retired",
+                      "untrusted",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tenant": {
+                    "const": "NHD"
+                  },
+                  "value": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "version": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "tenant",
+                  "document",
+                  "version",
+                  "paragraph",
+                  "family",
+                  "subject",
+                  "predicate",
+                  "kind",
+                  "value",
+                  "status",
+                  "effective_from",
+                  "expires_at",
+                  "permitted"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                    "type": "string"
+                  },
+                  "effective_from": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "family": {
+                    "const": "scope-exclusions"
+                  },
+                  "kind": {
+                    "const": "text"
+                  },
+                  "paragraph": {
+                    "pattern": "^p[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "permitted": {
+                    "type": "boolean"
+                  },
+                  "predicate": {
+                    "enum": [
+                      "scope",
+                      "excluded"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "retired",
+                      "untrusted",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tenant": {
+                    "const": "NHD"
+                  },
+                  "value": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "version": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "tenant",
+                  "document",
+                  "version",
+                  "paragraph",
+                  "family",
+                  "subject",
+                  "predicate",
+                  "kind",
+                  "value",
+                  "status",
+                  "effective_from",
+                  "expires_at",
+                  "permitted"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                    "type": "string"
+                  },
+                  "effective_from": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "family": {
+                    "const": "policy"
+                  },
+                  "kind": {
+                    "const": "text"
+                  },
+                  "paragraph": {
+                    "pattern": "^p[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "permitted": {
+                    "type": "boolean"
+                  },
+                  "predicate": {
+                    "enum": [
+                      "draft-cancel",
+                      "discount"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "retired",
+                      "untrusted",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tenant": {
+                    "const": "NHD"
+                  },
+                  "value": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "version": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "tenant",
+                  "document",
+                  "version",
+                  "paragraph",
+                  "family",
+                  "subject",
+                  "predicate",
+                  "kind",
+                  "value",
+                  "status",
+                  "effective_from",
+                  "expires_at",
+                  "permitted"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                    "type": "string"
+                  },
+                  "effective_from": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "family": {
+                    "const": "handoff"
+                  },
+                  "kind": {
+                    "const": "text"
+                  },
+                  "paragraph": {
+                    "pattern": "^p[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "permitted": {
+                    "type": "boolean"
+                  },
+                  "predicate": {
+                    "enum": [
+                      "handoff-mode",
+                      "receipt-rule"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "retired",
+                      "untrusted",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tenant": {
+                    "const": "NHD"
+                  },
+                  "value": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "version": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "tenant",
+                  "document",
+                  "version",
+                  "paragraph",
+                  "family",
+                  "subject",
+                  "predicate",
+                  "kind",
+                  "value",
+                  "status",
+                  "effective_from",
+                  "expires_at",
+                  "permitted"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "document": {
+                    "pattern": "^NHD-[a-z0-9-]{1,75}$",
+                    "type": "string"
+                  },
+                  "effective_from": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "expires_at": {
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+                    "type": "string"
+                  },
+                  "family": {
+                    "const": "authority"
+                  },
+                  "kind": {
+                    "const": "text"
+                  },
+                  "paragraph": {
+                    "pattern": "^p[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  "permitted": {
+                    "type": "boolean"
+                  },
+                  "predicate": {
+                    "enum": [
+                      "activation-rule",
+                      "override"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "retired",
+                      "untrusted",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  },
+                  "subject": {
+                    "anyOf": [
+                      {
+                        "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                        "type": "string"
+                      },
+                      {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tenant": {
+                    "const": "NHD"
+                  },
+                  "value": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "version": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "tenant",
+                  "document",
+                  "version",
+                  "paragraph",
+                  "family",
+                  "subject",
+                  "predicate",
+                  "kind",
+                  "value",
+                  "status",
+                  "effective_from",
+                  "expires_at",
+                  "permitted"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          "minItems": 8,
+          "type": "array"
+        },
+        "designation": {
+          "const": "SYNTHETIC—NOT BUSINESS POLICY"
+        },
+        "products": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "category": {
+                "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                "type": "string"
+              },
+              "sku": {
+                "pattern": "^SYN-[A-Z0-9]+(?:-[A-Z0-9]+)*$",
+                "type": "string"
+              },
+              "unit": {
+                "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                "type": "string"
+              },
+              "variant": {
+                "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "sku",
+              "category",
+              "variant",
+              "unit"
+            ],
+            "type": "object"
+          },
+          "minItems": 6,
+          "type": "array"
+        },
+        "provenance": {
+          "additionalProperties": false,
+          "properties": {
+            "author": {
+              "const": "issue63-codex-corpus-author"
+            },
+            "authored_on": {
+              "const": "2026-11-23"
+            },
+            "derivation": {
+              "const": "original-invented-fixtures"
+            },
+            "rights": {
+              "const": "no-third-party-text"
+            }
+          },
+          "required": [
+            "author",
+            "authored_on",
+            "derivation",
+            "rights"
+          ],
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "offline63-v1"
+        },
+        "synthetic": {
+          "const": true
+        },
+        "tenant": {
+          "const": "NHD"
+        }
+      },
+      "required": [
+        "schema_version",
+        "synthetic",
+        "designation",
+        "tenant",
+        "provenance",
+        "products",
+        "claims"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "cases": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "effects": {
+                "maxItems": 0,
+                "type": "array"
+              },
+              "family": {
+                "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^ga61-dev-(?:0[1-9]|1[0-2])$",
+                "type": "string"
+              },
+              "oracle": {
+                "oneOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "behavior": {
+                        "const": "answer"
+                      },
+                      "citation": {
+                        "pattern": "^NHD-pricing-v[1-9][0-9]*#p[1-9][0-9]*$",
+                        "type": "string"
+                      },
+                      "currency": {
+                        "const": "VND"
+                      },
+                      "reason": {
+                        "const": "quoted"
+                      },
+                      "total": {
+                        "pattern": "^(?:0|[1-9][0-9]{0,9})(?:\\.[0-9]{1,4})?$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "behavior",
+                      "reason",
+                      "total",
+                      "currency",
+                      "citation"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "behavior": {
+                        "enum": [
+                          "refuse",
+                          "clarify"
+                        ],
+                        "type": "string"
+                      },
+                      "reason": {
+                        "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "behavior",
+                      "reason"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "question": {
+                "maxLength": 400,
+                "minLength": 1,
+                "type": "string"
+              },
+              "seed": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "seed",
+              "family",
+              "question",
+              "oracle",
+              "effects"
+            ],
+            "type": "object"
+          },
+          "maxItems": 12,
+          "minItems": 12,
+          "type": "array"
+        },
+        "designation": {
+          "const": "SYNTHETIC—NOT BUSINESS POLICY"
+        },
+        "schema_version": {
+          "const": "offline63-v1"
+        },
+        "scoring": {
+          "const": false
+        },
+        "split": {
+          "const": "public-development"
+        },
+        "synthetic": {
+          "const": true
+        },
+        "tenant": {
+          "const": "NHD"
+        }
+      },
+      "required": [
+        "schema_version",
+        "synthetic",
+        "designation",
+        "split",
+        "scoring",
+        "tenant",
+        "cases"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "designation": {
+          "const": "SYNTHETIC—NOT BUSINESS POLICY"
+        },
+        "schema_version": {
+          "const": "offline63-v1"
+        },
+        "scoring_repetitions": {
+          "const": 2
+        },
+        "slots": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "category": {
+                "enum": [
+                  "offering",
+                  "scope",
+                  "price",
+                  "quote",
+                  "availability",
+                  "policy",
+                  "unknown",
+                  "ambiguity",
+                  "sources",
+                  "injection"
+                ],
+                "type": "string"
+              },
+              "family": {
+                "pattern": "^[a-z][a-z0-9-]{0,79}$",
+                "type": "string"
+              },
+              "focus": {
+                "maxLength": 400,
+                "minLength": 1,
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^ga61-qa-(?:offering|scope|price|quote|availability|policy|unknown|ambiguity|sources|injection)-0[1-6]$",
+                "type": "string"
+              },
+              "state": {
+                "const": "reserved"
+              }
+            },
+            "required": [
+              "id",
+              "category",
+              "family",
+              "focus",
+              "state"
+            ],
+            "type": "object"
+          },
+          "maxItems": 60,
+          "minItems": 60,
+          "type": "array"
+        },
+        "state": {
+          "const": "BLOCKED_HELDOUT_CUSTODY"
+        },
+        "synthetic": {
+          "const": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "synthetic",
+        "designation",
+        "state",
+        "scoring_repetitions",
+        "slots"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "approval": {
+          "const": "unapproved-for-execution"
+        },
+        "artifacts": {
+          "additionalProperties": false,
+          "properties": {
+            "coverage.json": {
+              "additionalProperties": false,
+              "properties": {
+                "byte_length": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "byte_length",
+                "sha256"
+              ],
+              "type": "object"
+            },
+            "custody.schema.json": {
+              "additionalProperties": false,
+              "properties": {
+                "byte_length": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "byte_length",
+                "sha256"
+              ],
+              "type": "object"
+            },
+            "development.json": {
+              "additionalProperties": false,
+              "properties": {
+                "byte_length": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "byte_length",
+                "sha256"
+              ],
+              "type": "object"
+            },
+            "public.schema.json": {
+              "additionalProperties": false,
+              "properties": {
+                "byte_length": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "byte_length",
+                "sha256"
+              ],
+              "type": "object"
+            },
+            "sources.json": {
+              "additionalProperties": false,
+              "properties": {
+                "byte_length": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "byte_length",
+                "sha256"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "coverage.json",
+            "custody.schema.json",
+            "development.json",
+            "public.schema.json",
+            "sources.json"
+          ],
+          "type": "object"
+        },
+        "author": {
+          "const": "issue63-codex-corpus-author"
+        },
+        "baseline": {
+          "const": "b213fb560902083ebeb87f3fd3f3aff25c25894d"
+        },
+        "custody": {
+          "const": "BLOCKED_HELDOUT_CUSTODY"
+        },
+        "designation": {
+          "const": "SYNTHETIC—NOT BUSINESS POLICY"
+        },
+        "egress": {
+          "const": "denied-by-default"
+        },
+        "schema_version": {
+          "const": "offline63-v1"
+        },
+        "source_approval": {
+          "const": "see-independent-review-receipt"
+        },
+        "synthetic": {
+          "const": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "synthetic",
+        "designation",
+        "baseline",
+        "approval",
+        "source_approval",
+        "author",
+        "custody",
+        "egress",
+        "artifacts"
+      ],
+      "type": "object"
+    }
+  ],
+  "title": "Issue #63 public synthetic artifacts"
+}

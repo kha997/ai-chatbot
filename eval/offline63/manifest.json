@@ -1,0 +1,33 @@
+{
+  "approval": "unapproved-for-execution",
+  "artifacts": {
+    "coverage.json": {
+      "byte_length": 11012,
+      "sha256": "8570f69046031414cfc6734749ea11c9941b223ed1730e6af13a433a3bf3310e"
+    },
+    "custody.schema.json": {
+      "byte_length": 13056,
+      "sha256": "043a1292b3aa6cb59c19553a8d9a0c25ad48cc549f3804ddfcd1e963b70df627"
+    },
+    "development.json": {
+      "byte_length": 3906,
+      "sha256": "0b50d2ab2d0510dd75e65b5e8b47ade3abf6337f6a098f551670017e3171d53a"
+    },
+    "public.schema.json": {
+      "byte_length": 38176,
+      "sha256": "21e16bbee526d0879ab4ab22c9328c60d8ee536b385a9b91fc45b6d19a20ac6d"
+    },
+    "sources.json": {
+      "byte_length": 17986,
+      "sha256": "8a4a86a8c613ba3030d142db7f0f409bbbc9f80fcd962ae7099b090998c5bffb"
+    }
+  },
+  "author": "issue63-codex-corpus-author",
+  "baseline": "b213fb560902083ebeb87f3fd3f3aff25c25894d",
+  "custody": "BLOCKED_HELDOUT_CUSTODY",
+  "designation": "SYNTHETIC—NOT BUSINESS POLICY",
+  "egress": "denied-by-default",
+  "schema_version": "offline63-v1",
+  "source_approval": "see-independent-review-receipt",
+  "synthetic": true
+}

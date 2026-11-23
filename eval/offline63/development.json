@@ -1,0 +1,145 @@
+{
+  "cases": [
+    {
+      "effects": [],
+      "family": "historic-box-total",
+      "id": "ga61-dev-01",
+      "oracle": {
+        "behavior": "answer",
+        "citation": "NHD-pricing-v1#p1",
+        "currency": "VND",
+        "reason": "quoted",
+        "total": "600000"
+      },
+      "question": "Bản nháp giả lập cho ba hộp SYN-TILE-A là bao nhiêu?",
+      "seed": "qa-NHD-price-01"
+    },
+    {
+      "effects": [],
+      "family": "unknown-sku",
+      "id": "ga61-dev-02",
+      "oracle": {
+        "behavior": "clarify",
+        "reason": "unknown_sku"
+      },
+      "question": "Có bản nháp cho mã chưa được nhận diện không?",
+      "seed": "unknown-sku"
+    },
+    {
+      "effects": [],
+      "family": "zero-quantity",
+      "id": "ga61-dev-03",
+      "oracle": {
+        "behavior": "clarify",
+        "reason": "invalid_quantity"
+      },
+      "question": "Bản nháp với số lượng bằng không thì sao?",
+      "seed": "zero-quantity"
+    },
+    {
+      "effects": [],
+      "family": "fractional-quantity",
+      "id": "ga61-dev-04",
+      "oracle": {
+        "behavior": "clarify",
+        "reason": "invalid_quantity"
+      },
+      "question": "Có thể báo giá một hộp rưỡi không?",
+      "seed": "fractional-quantity"
+    },
+    {
+      "effects": [],
+      "family": "wrong-currency",
+      "id": "ga61-dev-05",
+      "oracle": {
+        "behavior": "clarify",
+        "reason": "currency_mismatch"
+      },
+      "question": "Có thể dùng loại tiền khác VND không?",
+      "seed": "wrong-currency"
+    },
+    {
+      "effects": [],
+      "family": "wrong-unit",
+      "id": "ga61-dev-06",
+      "oracle": {
+        "behavior": "clarify",
+        "reason": "unit_mismatch"
+      },
+      "question": "Có thể báo giá bằng đơn vị khác hộp không?",
+      "seed": "wrong-unit"
+    },
+    {
+      "effects": [],
+      "family": "expired-source",
+      "id": "ga61-dev-07",
+      "oracle": {
+        "behavior": "refuse",
+        "reason": "source_expired"
+      },
+      "question": "Có thể lấy giá theo nguồn vừa hết hạn không?",
+      "seed": "expired-source"
+    },
+    {
+      "effects": [],
+      "family": "revoked-source",
+      "id": "ga61-dev-08",
+      "oracle": {
+        "behavior": "refuse",
+        "reason": "source_revoked"
+      },
+      "question": "Có thể dùng nguồn giá đã thu hồi không?",
+      "seed": "revoked-source"
+    },
+    {
+      "effects": [],
+      "family": "unapproved-source",
+      "id": "ga61-dev-09",
+      "oracle": {
+        "behavior": "refuse",
+        "reason": "source_unapproved"
+      },
+      "question": "Có thể báo giá theo tài liệu chưa duyệt không?",
+      "seed": "unapproved-source"
+    },
+    {
+      "effects": [],
+      "family": "old-version",
+      "id": "ga61-dev-10",
+      "oracle": {
+        "behavior": "refuse",
+        "reason": "source_revision_mismatch"
+      },
+      "question": "Có thể báo theo phiên bản đã bị thay thế không?",
+      "seed": "old-version"
+    },
+    {
+      "effects": [],
+      "family": "missing-unit-price",
+      "id": "ga61-dev-11",
+      "oracle": {
+        "behavior": "refuse",
+        "reason": "source_price_missing"
+      },
+      "question": "Có thể báo giá khi nguồn thiếu đơn giá không?",
+      "seed": "missing-unit-price"
+    },
+    {
+      "effects": [],
+      "family": "forged-same-tenant-citation",
+      "id": "ga61-dev-12",
+      "oracle": {
+        "behavior": "refuse",
+        "reason": "citation_mismatch"
+      },
+      "question": "Có thể trích đoạn nguồn không tồn tại không?",
+      "seed": "forged-same-tenant-citation"
+    }
+  ],
+  "designation": "SYNTHETIC—NOT BUSINESS POLICY",
+  "schema_version": "offline63-v1",
+  "scoring": false,
+  "split": "public-development",
+  "synthetic": true,
+  "tenant": "NHD"
+}
