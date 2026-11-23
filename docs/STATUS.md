@@ -2,15 +2,15 @@
 
 ## Issue #67 — Offline held-out harness (2026-11-24)
 
-- STATE: IN_PROGRESS — public dummy proof and review pending.
+- STATE: READY_FOR_ARCHITECTURE_REVIEW — OFFLINE_HELDOUT_HARNESS_READY_FOR_OWNER.
 - GATE: 1, offline only under [Issue #67](https://github.com/kha997/ai-chatbot/issues/67), baseline `d7ada367443051ebe45c7461c2c6330733cad6bd`.
 - RECOMMENDATION: Verify the public harness and keep actual private evaluation with the authorized custodian.
 - COMPLETED: [Vietnamese dossier, revocation and private procedure](OFFLINE_HELDOUT_67.md).
-- VALIDATION: 16 local dummy tests PASS. Full regression, no-egress CI and independent review pending. Actual private audit, AI and six E2Es NOT_RUN.
+- VALIDATION: 18 dummy harness, 15 corpus, 26 gateway, 73 quote tests and hosted CI PASS. [Independent exact-SHA review](reviews/ISSUE_67_HELDOUT_REVIEW.md) PASS. Actual private audit, AI and six E2Es NOT_RUN.
 - OPEN RISKS: HIGH — BLOCKED_PRIVATE_AUDIT / BLOCKED_HELDOUT_CUSTODY_WORKFLOW. BLOCKED_CORPUS_BREADTH and provider-level BLOCKED_COST_CONTROL remain.
-- NEXT: Offline regression and public exact-SHA review. Separate later custodian-only evidence and Architecture Acceptance.
-- OWNER DECISION: NONE while public validation proceeds. Issue #63 stays open.
-- HEAD/BRANCH/PR: `codex/issue67-heldout-harness`. Exact SHA and PR recorded once frozen.
+- NEXT: Await Architecture Acceptance for PR #68. Separately verify custody and private audit with authorized people.
+- OWNER DECISION: Architecture Acceptance of the public harness only. Issue #63 stays open.
+- HEAD/BRANCH/PR: `codex/issue67-heldout-harness`, [PR #68](https://github.com/kha997/ai-chatbot/pull/68). Review SHA `0992c15f86db032cd706866a1f9880dd2017b7e7`. Exact reporting HEAD will be recorded on the PR.
 
 ## Issue #64 — Offline fake gateway (2026-11-23)
 

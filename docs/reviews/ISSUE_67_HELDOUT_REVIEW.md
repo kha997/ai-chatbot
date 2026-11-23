@@ -1,0 +1,17 @@
+# Independent public review — Issue #67
+
+Date 2026-11-24 (Asia/Saigon). **PUBLIC_OFFLINE_REVIEW_PASS** at frozen technical SHA [0992c15](https://github.com/kha997/ai-chatbot/commit/0992c15f86db032cd706866a1f9880dd2017b7e7), from baseline [d7ada367](https://github.com/kha997/ai-chatbot/commit/d7ada367443051ebe45c7461c2c6330733cad6bd). Read-only fresh-context reviewer `/root/harness67_review` did not author changes. This is independent Codex review, with no formal GitHub review submitted. [PR #68](https://github.com/kha997/ai-chatbot/pull/68) awaits Architecture Acceptance.
+
+| Initial finding at 6d1b555 | Resolution at 427d4b0, rechecked at the final technical SHA |
+| --- | --- |
+| A scheduled revocation and asserted abstention could pass without a denied stale delivery. | The fake renderer records a single-use denied delivery. Scoring binds the source and actual read to the revocation and later denial, in exact order. No emitted facts, citations or actions are allowed on that trace. |
+| A read or abstention trace could pass with an unrelated positive epoch. | Read stamps are checked against the authorized frozen source epoch. Revoked delivery must report lost authority and no valid delivery epoch. |
+| Caller-supplied receipts were detached from schedule and scoring STOP. | Run pins and validates the schedule, scores and appends atomically in memory, rejects skipped positions and changed replay, and latches STOP. The custodian stops on rejected submissions and controls durable restart/rollback. |
+
+Final tests-only commit adds a structural 120-position mock schedule and deterministic cross-thread prepare, revoke and delivery. The mock schedule records every position as NOT_RUN. The threaded test observes zero deliveries, one denial. The reviewer reported no unresolved blocking public issue at the final SHA.
+
+- Windows and route-free Ubuntu-24.04 WSL: `python -B -m unittest discover -s tests -p 'test_offline_heldout67.py'` PASS, 18 tests. The independent final run loaded exact Git blobs in a network namespace with only down loopback and no IPv4/IPv6 routes.
+- Existing 15 corpus, 26 gateway and 73 quote tests PASS on Windows and WSL on the same implementation at 427d4b0 (only new harness tests changed at 0992c15). In WSL, loopback was enabled for the existing preview regression only. Independent reviewer also confirmed Windows regressions.
+- `git diff --check` baseline to final technical commit PASS. Hosted CI at 0992c15: [harness](https://github.com/kha997/ai-chatbot/actions/runs/45247258837), [corpus](https://github.com/kha997/ai-chatbot/actions/runs/45247258433), [gateway](https://github.com/kha997/ai-chatbot/actions/runs/45247259000), [quote regression](https://github.com/kha997/ai-chatbot/actions/runs/45247258471) all PASS. The final reporting commit changes documentation only. Final HEAD CI is linked from PR #68.
+
+The public result qualifies the generic mechanism with dummy data. It establishes neither private trace provenance/semantic independence nor lasting custody/ACL and storage behavior. The custodian must pin the current approved checkpoint, preserve receipts privately, and stop on protocol rejection. **BLOCKED_PRIVATE_AUDIT / BLOCKED_HELDOUT_CUSTODY_WORKFLOW** remain. Issue #63 remains OPEN with BLOCKED_CORPUS_BREADTH. Provider-level BLOCKED_COST_CONTROL remains. Actual private audit by this task, AI scoring and six business E2Es are NOT_RUN. No private data/Drive access, provider call, model run, or spend.
