@@ -10,7 +10,7 @@
 - OPEN RISKS: HIGH — `BLOCKED_PRIVATE_AUDIT`, `BLOCKED_HELDOUT_CUSTODY_WORKFLOW`, `BLOCKED_CORPUS_BREADTH`, `BLOCKED_COST_CONTROL`. Tool gaps: `Run` does not enforce `required_reads`/`forbidden_fact_ids`; durable journal is dummy-only; retrieval relevance and private source validation are not implemented.
 - NEXT: Owner designates private storage/ACL/custodian/reviewers; fix the runner/journal/custody/source-validation gaps; rehearse the full public dummy schedule.
 - OWNER DECISION: REQUIRED — approve the private data-processing boundary and access method before Phase B ([custody decision](OFFLINE_CORPUS_63.md#held-out-custody-decision)).
-- HEAD/BRANCH/PR: `audit/issue63-phase-a`; draft PR recorded on delivery. Issue #63 stays OPEN; no merge.
+- HEAD/BRANCH/PR: `audit/issue63-phase-a`; draft [PR #71](https://github.com/kha997/ai-chatbot/pull/71). Issue #63 stays OPEN; no merge.
 
 ## Issue #69 — Public harness remediation (2026-11-24)
 
