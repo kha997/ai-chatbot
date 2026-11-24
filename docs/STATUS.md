@@ -1,5 +1,17 @@
 # AI ChatBot — remote status
 
+## Issue #72 — Public synthetic qualification
+
+- STATE: READY_FOR_ARCHITECTURE_REVIEW after hosted checks; independent review remains `INDEPENDENT_REVIEW_BLOCKED`.
+- GATE: 1, offline public remediation under [Issue #72](https://github.com/kha997/ai-chatbot/issues/72), baseline `588b8fe1d3e54161fe194739d2c06552ca8c79f4`.
+- RECOMMENDATION: Review the public-synthetic F3–F7 package at the frozen technical SHA named on the Draft PR.
+- COMPLETED: [F3–F7 matrix, trust boundary and OpenCode handoff](OFFLINE_QUALIFICATION_72.md).
+- VALIDATION: See the Draft PR for the exact Windows, WSL, and hosted CI receipts. Actual private audit, provider/model and six E2Es NOT_RUN.
+- OPEN RISKS: HIGH — `BLOCKED_PRIVATE_AUDIT`, `BLOCKED_HELDOUT_CUSTODY_WORKFLOW`, `BLOCKED_CORPUS_BREADTH`, `BLOCKED_COST_CONTROL`.
+- NEXT: Verify an isolated, zero-egress audit environment for independent review. Issue #63 stays OPEN.
+- OWNER DECISION: Architecture review of the public package after independent audit evidence.
+- HEAD/BRANCH/PR: `codex/issue72-public-offline`. Exact SHA and PR are recorded as evidence on [Issue #72](https://github.com/kha997/ai-chatbot/issues/72).
+
 ## Issue #69 — Public harness remediation (2026-11-24)
 
 - STATE: BLOCKED — PARTIAL_REMEDIATION / BLOCKED pending Qoder re-review.

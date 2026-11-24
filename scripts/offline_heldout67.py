@@ -300,8 +300,8 @@ class Receipt:
 
 
 def evaluate(manifest_raw, approved_sha, index, bundle_raw, observation_raw, *,
-             forbidden_fact_ids=frozenset()):
-    """Grade one record at its frozen position. Supply a trusted manifest pin separately."""
+             forbidden_fact_ids=frozenset(), required_reads=frozenset()):
+    """Return a diagnostic grade. This helper does not authorize an official receipt."""
     safe_pin = approved_sha if is_hash(approved_sha) else ""
     safe_index = index if integer(index, 0, 119) else -1
     # Capture each exact observation (including malformed evidence) without echoing it.
@@ -380,6 +380,8 @@ def evaluate(manifest_raw, approved_sha, index, bundle_raw, observation_raw, *,
                     and sources[ref]["epoch"] == epoch and key in actual_facts
                     and actual_facts[key] == expected[key], "unsupported-output")
         require(actual_facts.keys() == {key for key, _ in actual_links}, "unsupported-output")
+        if observed["status"] == "complete":
+            require(required_reads <= seen.keys(), "missing-required-read")
         if observed["status"] == "incomplete":
             return receipt("INCONCLUSIVE", "incomplete-trace")
         if (observed["behavior"] != oracle["behavior"] or actual_facts != expected
@@ -391,7 +393,7 @@ def evaluate(manifest_raw, approved_sha, index, bundle_raw, observation_raw, *,
 
 
 class Run:
-    """In-memory coordinator. A trusted custodian owns persistence and prevents reset."""
+    """Legacy in-memory diagnostics. Results are not official receipts."""
 
     def __init__(self, manifest_raw, approved_sha):
         require(is_hash(approved_sha) and type(manifest_raw) is bytes

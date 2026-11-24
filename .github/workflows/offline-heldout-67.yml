@@ -9,6 +9,10 @@ on:
       - 'scripts/offline_revocation67.py'
       - 'scripts/offline_evidence69.py'
       - 'scripts/offline_journal69.py'
+      - 'scripts/offline_*72.py'
+      - 'tests/offline_fixture72.py'
+      - 'tests/test_offline_qualification72.py'
+      - 'docs/OFFLINE_QUALIFICATION_72.md'
       - 'tests/test_offline_heldout67.py'
       - 'tests/test_offline_remediation69.py'
       - '.github/workflows/offline-heldout-67.yml'
@@ -23,6 +27,10 @@ on:
       - 'scripts/offline_revocation67.py'
       - 'scripts/offline_evidence69.py'
       - 'scripts/offline_journal69.py'
+      - 'scripts/offline_*72.py'
+      - 'tests/offline_fixture72.py'
+      - 'tests/test_offline_qualification72.py'
+      - 'docs/OFFLINE_QUALIFICATION_72.md'
       - 'tests/test_offline_heldout67.py'
       - 'tests/test_offline_remediation69.py'
       - 'eval/offline63/development.json'
@@ -41,12 +49,17 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - name: Test public dummy records in an isolated network namespace
+      - name: Rehearse public synthetic qualification and regressions without external routes
         run: |
           sudo unshare --net -- sh -eu -c '
             ip -brief link
             test -z "$(ip route show)"
             test -z "$(ip -6 route show)"
-            python3 -B -m unittest discover -s tests -p "test_offline_heldout67.py" -v
-            python3 -B -m unittest discover -s tests -p "test_offline_remediation69.py" -v
+            python3 -B -m scripts.offline_corpus63
+            python3 -B -m unittest discover -s tests -p "test_offline*.py" -v
+            ip link set lo up
+            ip -brief link
+            test -z "$(ip route show)"
+            test -z "$(ip -6 route show)"
+            python3 -B -m unittest discover -s tests -p "test_quote*.py" -v
           '

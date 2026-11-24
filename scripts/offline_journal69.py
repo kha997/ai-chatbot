@@ -45,9 +45,8 @@ class Receipt:
     anchor: str
 
 
-class Journal:
+class SQLiteChain:
     def __init__(self, path, approval):
-        h.require(type(approval) is ApprovedRun, "approved-mock-envelope")
         self._path = Path(path).resolve()
         self._uri = self._path.as_uri() + "?mode=rw"
         self._approved = approval
@@ -64,13 +63,6 @@ class Journal:
                 db.execute("INSERT INTO journal_context VALUES (1,?)", (approval.genesis,))
         except OSError:
             raise h.Invalid("journal-create") from None
-        return self
-
-    @classmethod
-    def open(cls, path, approval, latest_anchor):
-        self = cls(path, approval)
-        with self._transaction() as db:
-            self._history(db, latest_anchor)
         return self
 
     @contextmanager
@@ -91,6 +83,19 @@ class Journal:
         finally:
             if db is not None:
                 db.close()
+
+
+class Journal(SQLiteChain):
+    def __init__(self, path, approval):
+        h.require(type(approval) is ApprovedRun, "approved-mock-envelope")
+        super().__init__(path, approval)
+
+    @classmethod
+    def open(cls, path, approval, latest_anchor):
+        self = cls(path, approval)
+        with self._transaction() as db:
+            self._history(db, latest_anchor)
+        return self
 
     def _position(self, index):
         size = len(self._approved.cases)
@@ -129,7 +134,7 @@ class Journal:
         return records
 
     def submit(self, index, bundle_raw, observation_raw, tick, latest_anchor):
-        """Generate an official mock receipt in the transaction that appends it."""
+        """Generate a version 69 mock journal result. Use version 72 for qualification."""
         repetition, (case, category, frozen_bundle, required_reads, forbidden_ids) = self._position(index)
         h.require(type(bundle_raw) is bytes
                   and (observation_raw is None or type(observation_raw) is bytes)
@@ -157,13 +162,9 @@ class Journal:
             else:
                 diagnostic = h.evaluate(agreed.manifest_raw, agreed.manifest_sha,
                                         index, bundle_raw, observation_raw,
-                                        forbidden_fact_ids=forbidden_ids)
+                                        forbidden_fact_ids=forbidden_ids,
+                                        required_reads=required_reads)
                 outcome, code = diagnostic.outcome, diagnostic.code
-                if observation_raw is not None and outcome != "STOP":
-                    observed = h.parse(observation_raw)
-                    reads = {h.reference(read["ref"]) for read in observed["reads"]}
-                    if observed["status"] == "complete" and not required_reads <= reads:
-                        outcome, code = "STOP", "missing-required-read"
             row = dict(run_id=agreed.run_id, envelope=agreed.envelope_sha, manifest=agreed.manifest_sha,
                        case=case, category=category, index=index, repetition=repetition,
                        sequence=index+1, tick=tick, bundle=bundle, observation=observation,
