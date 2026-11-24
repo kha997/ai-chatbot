@@ -1,5 +1,17 @@
 # AI ChatBot — remote status
 
+## Issue #63 — Independent held-out audit, Phase A (2026-11-24)
+
+- STATE: BLOCKED — `PRIVATE_AUDIT_ENVIRONMENT_BLOCKED`.
+- GATE: 1, offline preparation only under [Issue #63](https://github.com/kha997/ai-chatbot/issues/63). Baseline `588b8fe1d3e54161fe194739d2c06552ca8c79f4` (`origin/main`, PR #70).
+- RECOMMENDATION: Approve the custodian procedure and close the environment/tool gaps before any private access; do not start Phase B yet.
+- COMPLETED: [Phase A audit report](reviews/ISSUE_63_PHASE_A_AUDIT.md) and [custodian procedure](PRIVATE_AUDIT_PROCEDURE_63.md). No private data, oracle or model call.
+- VALIDATION: 5/5 public artifact hashes, 60 reserved slots, 37 claims, 12 dev cases; 78/78 offline and 73/73 quote tests PASS on Windows. WSL `unshare -Urn` shows only `lo DOWN`; IPv4/DNS blocked. Qoder is cloud-backed (`openapi.qoder.sh`), indexes the workspace and keeps local telemetry/buffers; host has no admin.
+- OPEN RISKS: HIGH — `BLOCKED_PRIVATE_AUDIT`, `BLOCKED_HELDOUT_CUSTODY_WORKFLOW`, `BLOCKED_CORPUS_BREADTH`, `BLOCKED_COST_CONTROL`. Tool gaps: `Run` does not enforce `required_reads`/`forbidden_fact_ids`; durable journal is dummy-only; retrieval relevance and private source validation are not implemented.
+- NEXT: Owner designates private storage/ACL/custodian/reviewers; fix the runner/journal/custody/source-validation gaps; rehearse the full public dummy schedule.
+- OWNER DECISION: REQUIRED — approve the private data-processing boundary and access method before Phase B ([custody decision](OFFLINE_CORPUS_63.md#held-out-custody-decision)).
+- HEAD/BRANCH/PR: `audit/issue63-phase-a`; draft [PR #71](https://github.com/kha997/ai-chatbot/pull/71). Issue #63 stays OPEN; no merge.
+
 ## Issue #69 — Public harness remediation (2026-11-24)
 
 - STATE: BLOCKED — PARTIAL_REMEDIATION / BLOCKED pending Qoder re-review.
