@@ -1,14 +1,26 @@
 # AI ChatBot — remote status
 
+## Issue #69 — Public harness remediation (2026-11-24)
+
+- STATE: BLOCKED — PARTIAL_REMEDIATION / BLOCKED pending Qoder re-review.
+- GATE: 1, public offline only under [Issue #69](https://github.com/kha997/ai-chatbot/issues/69). Baseline `7e2a775acfd542d5d4db0ac4c5b061e2214e37ae`.
+- RECOMMENDATION: Review the bounded remediation using public dummy cases.
+- COMPLETED: [H1–H6 closure matrix and Qoder handoff](OFFLINE_REMEDIATION_69.md).
+- VALIDATION: 15 original remediation tests + 4 correction tests + 132 baseline regressions PASS on Windows and route-free WSL. Four hosted checks PASS at technical SHA. Qoder re-review pending; 30 outside-repo checks NOT_RUN. The previous main harness CI result was NOT_RUN — no trigger. AI and six E2Es NOT_RUN.
+- OPEN RISKS: HIGH — BLOCKED_PRIVATE_AUDIT / BLOCKED_HELDOUT_CUSTODY_WORKFLOW, BLOCKED_CORPUS_BREADTH, BLOCKED_COST_CONTROL.
+- NEXT: Await the exact-SHA public [Qoder re-review](https://github.com/kha997/ai-chatbot/pull/70#issuecomment-7121343608) before Architecture Acceptance.
+- OWNER DECISION: NONE while public proof is pending. Issue #63 stays OPEN.
+- HEAD/BRANCH/PR: `codex/issue69-harness-remediation`, [Draft PR #70](https://github.com/kha997/ai-chatbot/pull/70), frozen correction SHA `bd56785dadbf1ee7fb8343edfd89d9278862b12e`. Exact reporting HEAD appears on the PR.
+
 ## Issue #67 — Offline held-out harness (2026-11-24)
 
-- STATE: READY_FOR_ARCHITECTURE_REVIEW — OFFLINE_HELDOUT_HARNESS_READY_FOR_OWNER.
+- STATE: GATE_1_COMPLETE — public harness merged at `7e2a775acfd542d5d4db0ac4c5b061e2214e37ae`.
 - GATE: 1, offline only under [Issue #67](https://github.com/kha997/ai-chatbot/issues/67), baseline `d7ada367443051ebe45c7461c2c6330733cad6bd`.
 - RECOMMENDATION: Verify the public harness and keep actual private evaluation with the authorized custodian.
 - COMPLETED: [Vietnamese dossier, revocation and private procedure](OFFLINE_HELDOUT_67.md).
 - VALIDATION: 18 dummy harness, 15 corpus, 26 gateway, 73 quote tests and hosted CI PASS. [Independent exact-SHA review](reviews/ISSUE_67_HELDOUT_REVIEW.md) PASS. Actual private audit, AI and six E2Es NOT_RUN.
 - OPEN RISKS: HIGH — BLOCKED_PRIVATE_AUDIT / BLOCKED_HELDOUT_CUSTODY_WORKFLOW. BLOCKED_CORPUS_BREADTH and provider-level BLOCKED_COST_CONTROL remain.
-- NEXT: Await Architecture Acceptance for PR #68. Separately verify custody and private audit with authorized people.
+- NEXT: Issue #67 is closed. Track public audit remediation in Issue #69 and private audit separately.
 - OWNER DECISION: Architecture Acceptance of the public harness only. Issue #63 stays open.
 - HEAD/BRANCH/PR: `codex/issue67-heldout-harness`, [PR #68](https://github.com/kha997/ai-chatbot/pull/68). Review SHA `0992c15f86db032cd706866a1f9880dd2017b7e7`. Exact reporting HEAD will be recorded on the PR.
 
@@ -29,11 +41,11 @@
 - STATE: BLOCKED — public preparation merged; Issue #63 stays OPEN. `PARTIAL_CORPUS_READY / BLOCKED_HELDOUT_CUSTODY`.
 - GATE: 1 — Issue #63 offline evidence only. The accepted baseline is [b213fb56](https://github.com/kha997/ai-chatbot/commit/b213fb560902083ebeb87f3fd3f3aff25c25894d).
 - RECOMMENDATION: Keep the 60 private cases pending an authorized custody location and access policy.
-- COMPLETED: [Public sources and separate development evidence](OFFLINE_CORPUS_63.md), [frozen public manifest](../eval/offline63/manifest.json), 60 reserved coverage IDs. Zero actual held-out questions or oracles were authored or published.
+- COMPLETED: [Public sources and separate development evidence](OFFLINE_CORPUS_63.md), [frozen public manifest](../eval/offline63/manifest.json), 60 reserved public coverage IDs. As recorded in the sanitized Issue #63 receipt, Snapshot v2 has 60/60 Owner content approvals. Independent technical verification and approved private custody workflow remain pending. No questions, answer keys, private pins or storage locators are published here.
 - VALIDATION: 15 corpus tests on Windows and isolated WSL, 73 quote regressions, both hosted checks and [independent exact-SHA review](reviews/ISSUE_63_CORPUS_REVIEW.md) PASS. AI and all six E2E scenarios are NOT_RUN.
-- OPEN RISKS: HIGH — `BLOCKED_HELDOUT_CUSTODY` and umbrella `BLOCKED_CORPUS_BREADTH`. Project Owner designates existing private custody and access roles, then independent corpus team authors/reviews the held-out bundle. No spending or external system approval.
+- OPEN RISKS: HIGH — `BLOCKED_HELDOUT_CUSTODY` and umbrella `BLOCKED_CORPUS_BREADTH`. The authorized custodian and independent reviewer must verify the privately held Snapshot v2 and access/retention workflow. No spending or external system approval.
 - NEXT: Full corpus work awaits the separate custody decision below.
-- OWNER DECISION: Approve one existing organization-controlled private location and named access roles before authoring exact held-out cases. [Custody decision](OFFLINE_CORPUS_63.md#held-out-custody-decision)
+- OWNER DECISION: Confirm authorized custody and an independent review procedure for Snapshot v2 before private audit. [Custody decision](OFFLINE_CORPUS_63.md#held-out-custody-decision)
 - HEAD/BRANCH/PR: Reviewed SHA `d0f475f0ebcfa5d2cca6dc2437223bf6dbaa145d`, branch `codex/issue63-offline-corpus`, [PR #65](https://github.com/kha997/ai-chatbot/pull/65). Owner accepted public preparation at HEAD `33d24cd5efe2f55941cf698efb2785ececd9dd45` (ACCEPT_PARTIAL_FOR_MERGE). Verified merge `7aa7e77b1ad949a425ec2aa1a9265e10e7df0bb9`.
 
 ## Issue #61 — Gate A preparation (2026-11-23)
