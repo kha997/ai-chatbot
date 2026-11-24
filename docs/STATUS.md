@@ -6,11 +6,11 @@
 - GATE: 1, public offline only under [Issue #69](https://github.com/kha997/ai-chatbot/issues/69). Baseline `7e2a775acfd542d5d4db0ac4c5b061e2214e37ae`.
 - RECOMMENDATION: Review the bounded remediation using public dummy cases.
 - COMPLETED: [H1–H6 closure matrix and Qoder handoff](OFFLINE_REMEDIATION_69.md).
-- VALIDATION: 15 new tests plus 132 regressions PASS on Windows and route-free WSL. Four hosted checks PASS at technical SHA. Qoder re-review pending; 30 outside-repo checks NOT_RUN. The previous main harness CI result was NOT_RUN — no trigger. AI and six E2Es NOT_RUN.
+- VALIDATION: 15 original remediation tests + 4 correction tests + 132 baseline regressions PASS on Windows and route-free WSL. Four hosted checks PASS at technical SHA. Qoder re-review pending; 30 outside-repo checks NOT_RUN. The previous main harness CI result was NOT_RUN — no trigger. AI and six E2Es NOT_RUN.
 - OPEN RISKS: HIGH — BLOCKED_PRIVATE_AUDIT / BLOCKED_HELDOUT_CUSTODY_WORKFLOW, BLOCKED_CORPUS_BREADTH, BLOCKED_COST_CONTROL.
-- NEXT: Obtain exact-SHA read-only Qoder report on public inputs; then request Architecture Acceptance.
+- NEXT: Await the exact-SHA public [Qoder re-review](https://github.com/kha997/ai-chatbot/pull/70#issuecomment-7121343608) before Architecture Acceptance.
 - OWNER DECISION: NONE while public proof is pending. Issue #63 stays OPEN.
-- HEAD/BRANCH/PR: `codex/issue69-harness-remediation`, [Draft PR #70](https://github.com/kha997/ai-chatbot/pull/70), frozen technical SHA `0e3abff5d5698106b9e5a85ba4a4b9bffec379a3`. Exact reporting HEAD appears on the PR.
+- HEAD/BRANCH/PR: `codex/issue69-harness-remediation`, [Draft PR #70](https://github.com/kha997/ai-chatbot/pull/70), frozen correction SHA `bd56785dadbf1ee7fb8343edfd89d9278862b12e`. Exact reporting HEAD appears on the PR.
 
 ## Issue #67 — Offline held-out harness (2026-11-24)
 

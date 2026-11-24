@@ -46,3 +46,12 @@ SHA kỹ thuật `0e3abff5d5698106b9e5a85ba4a4b9bffec379a3`. [Draft PR #70](http
 - Qoder mới: **PENDING**, đã đăng yêu cầu read-only tại SHA cố định. 30 ca bổ sung ngoài repo: **NOT_RUN / chưa có artifact tái lập**. Chưa có kết luận độc lập FIXED/PARTIAL/BLOCKED từ Qoder. Kiểm tra bộ riêng, provider/model và sáu E2E đều NOT_RUN; 0 chi phí thí nghiệm.
 
 Worktree gốc sạch tại `b84f54ebac829b3d86762b642177c73212b01d05`. Issue #63 vẫn OPEN. Draft PR chưa merge.
+
+## Biên nhận vòng sửa CHANGES_REQUIRED
+
+SHA kỹ thuật [bd56785](https://github.com/kha997/ai-chatbot/commit/bd56785dadbf1ee7fb8343edfd89d9278862b12e). [Bàn giao Qoder chỉ đọc tại SHA mới](https://github.com/kha997/ai-chatbot/pull/70#issuecomment-7121343608). Báo cáo vòng mới **PENDING**.
+
+- Windows: `py -B -m unittest discover -s tests -p 'test_offline*.py'` 78/78 PASS; `py -B -m unittest discover -s tests -p 'test_quote*.py'` 73/73 PASS. Tổng 132 hồi quy baseline, 15 ca remediation ban đầu và 4 ca bổ sung. Ca kiểm tra mệnh đề cấm còn đối chiếu đúng mã cho bốn đầu vào.
+- WSL Ubuntu-24.04 `unshare -Urn`: cùng 78/78 và 73/73 PASS. Bộ offline chạy với loopback down và không tuyến IPv4/IPv6. Chỉ bật loopback trong namespace riêng để chạy hồi quy quote preview.
+- Bốn job tại SHA kỹ thuật PASS: [harness/remediation](https://github.com/kha997/ai-chatbot/actions/runs/45321286585), [corpus](https://github.com/kha997/ai-chatbot/actions/runs/45321286547), [gateway](https://github.com/kha997/ai-chatbot/actions/runs/45321286781), [quote](https://github.com/kha997/ai-chatbot/actions/runs/45321286623). Kiểm thử filter xác minh hai đường dẫn nằm trong khối `pull_request.paths`; job harness tiếp tục dùng namespace cô lập và `contents: read`. `git diff --check` PASS.
+- 30 ca ngoài repo của Qoder chưa được tái chạy trong vòng sửa. Issues #69 và #63 giữ OPEN. Không truy cập bộ riêng, chạy model, phát sinh chi phí hoặc merge.
