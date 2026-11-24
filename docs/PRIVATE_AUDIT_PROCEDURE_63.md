@@ -128,7 +128,7 @@ Các điểm dưới đây được xác minh ở baseline `588b8fe1d3e54161fe19
 3. **`retrieval_relevance` chưa được chấm.** `custody.schema.json` khai báo trường này nhưng bộ chấm hiện tại không tính recall@5. Cần bổ sung nếu muốn chứng minh tiêu chí retrieval.
 4. **Custody schema chưa đủ bằng chứng vận hành.** Schema chỉ là hợp đồng trường; không có access log, retention days, deletion receipt, zero-egress attestation, role-separation evidence. Cần mẫu biên nhận custody riêng.
 5. **Chưa có validator nguồn riêng.** Validator công khai chỉ kiểm 37 claim công khai; `custody.schema.json` chỉ pin `source_bundle` bằng hash, không kiểm tenant/version/paragraph/excerpt/rights/revocation bên trong. Cần validator nguồn riêng hoặc quy trình kiểm tay có biên nhận.
-6. **Chưa có ánh xạ custody case → scorer bundle.** Schema case riêng không chứa `totals`, `sources`, `revocations`, `writes/effects` như bundle của bộ chấm; cần hợp đồng ánh xạ và kiểm thử trước khi chấm.
+6. **Chưa có ánh xạ custody case → scorer bundle.** Schema case riêng không chứa `totals`, `sources`, `revocations`; các trường writes/effects ở dạng phẳng khác bundle của bộ chấm; cần hợp đồng ánh xạ và kiểm thử trước khi chấm.
 
 ## 8. STOP và xử lý sự cố
 

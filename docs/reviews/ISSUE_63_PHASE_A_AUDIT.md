@@ -36,7 +36,7 @@ Issue #63 giữ **OPEN**; bốn blocker hiện tại vẫn mở: `BLOCKED_PRIVAT
 | A12. `Run` thực thi `required_reads`/`forbidden_fact_ids` | **FAIL** | Tái hiện: `Run` trả `PASS matched` với trace **không đọc nguồn nào**, dù oracle `reads` có nguồn. `Run.submit` không có tham số `required_reads`; `evaluate` được gọi không truyền `forbidden_fact_ids`. `Journal` có kiểm tra nhưng không dùng được cho `heldout`. |
 | A13. Chấm `retrieval_relevance` / recall@5 | **BLOCKED** | Trường có trong `custody.schema.json` nhưng không được bộ chấm hiện tại sử dụng; không có hàm tính recall@5. |
 | A14. Validator nguồn riêng (37 claim, excerpt, rights, revocation) | **BLOCKED** | Validator công khai chỉ kiểm nguồn công khai; schema riêng chỉ pin `source_bundle` bằng hash, không kiểm cấu trúc bên trong. |
-| A15. Ánh xạ custody case → scorer bundle | **BLOCKED** | Case schema riêng không chứa `totals`, `sources`, `revocations`, `writes/effects`; chưa có hợp đồng ánh xạ/kiểm thử. |
+| A15. Ánh xạ custody case → scorer bundle | **BLOCKED** | Case schema riêng không chứa `totals`, `sources`, `revocations`; các trường writes/effects ở dạng phẳng khác bundle của bộ chấm; chưa có hợp đồng ánh xạ/kiểm thử. |
 | A16. Kiểm toán 60 ca riêng và oracle–nguồn | **NOT_RUN** | Chưa được phép truy cập Snapshot v2/bộ 60 ca; đây là Giai đoạn B. |
 | A17. Độc lập ngữ nghĩa với 12 ca phát triển | **NOT_RUN** | Kiểm tra cơ học NFKC/casefold có, nhưng đánh giá trùng ý/dịch/paraphrase cần reviewer người được ủy quyền xem dữ liệu riêng. |
 | A18. Chi phí thử nghiệm | **PASS** | 0 model/API call; 0 VND; chỉ chạy Python/stdlib và WSL cục bộ. |
