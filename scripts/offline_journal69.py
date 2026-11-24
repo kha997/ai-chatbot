@@ -156,15 +156,13 @@ class Journal:
                 outcome, code = "STOP", "frozen-record"
             else:
                 diagnostic = h.evaluate(agreed.manifest_raw, agreed.manifest_sha,
-                                        index, bundle_raw, observation_raw)
+                                        index, bundle_raw, observation_raw,
+                                        forbidden_fact_ids=forbidden_ids)
                 outcome, code = diagnostic.outcome, diagnostic.code
                 if observation_raw is not None and outcome != "STOP":
                     observed = h.parse(observation_raw)
                     reads = {h.reference(read["ref"]) for read in observed["reads"]}
-                    claims = {fact["id"] for fact in observed["facts"]}
-                    if not claims.isdisjoint(forbidden_ids):
-                        outcome, code = "STOP", "forbidden-typed-fact"
-                    elif observed["status"] == "complete" and not required_reads <= reads:
+                    if observed["status"] == "complete" and not required_reads <= reads:
                         outcome, code = "STOP", "missing-required-read"
             row = dict(run_id=agreed.run_id, envelope=agreed.envelope_sha, manifest=agreed.manifest_sha,
                        case=case, category=category, index=index, repetition=repetition,

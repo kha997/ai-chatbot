@@ -3,6 +3,8 @@ name: Offline held-out harness 67
 on:
   pull_request:
     paths:
+      - 'scripts/offline_corpus63.py'
+      - 'eval/offline63/**'
       - 'scripts/offline_heldout67.py'
       - 'scripts/offline_revocation67.py'
       - 'scripts/offline_evidence69.py'

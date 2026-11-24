@@ -7,7 +7,8 @@ from scripts import offline_corpus63 as corpus
 from scripts import offline_heldout67 as h
 
 BRIDGE = "offline69-synthetic-bridge-v1"
-ENVELOPE = "offline69-mock-gate-a-v1"
+ENVELOPE = "offline69-mock-gate-a-v2"
+DESIGNATION = "SYNTHETIC—NOT BUSINESS POLICY"
 INDENTED = "utf8-lf-sorted-keys-2spaces-v1"
 COMPACT = "utf8-lf-sorted-keys-compact-v1"
 BASELINE = "7e2a775acfd542d5d4db0ac4c5b061e2214e37ae"
@@ -80,7 +81,7 @@ def _parse_indented(raw):
 
 def normalized(value):
     h.require(h.text(value), "text")
-    return "".join(c for c in normalize("NFKC", value).casefold() if c.isalnum())
+    return h.normalize_overlap(value)
 
 
 @dataclass(frozen=True)
@@ -190,11 +191,20 @@ def verify(raw, approved_pin, manifest_raw, dev_raw, custody_schema_raw, setting
     """Validate an independently pinned public-dummy envelope and exact input bytes."""
     check_pin(raw, approved_pin)
     packet = h.parse(raw)
-    h.shape(packet, "schema scope run_id baseline tenant clock roles approval pins source_policy "
-            "attestations outcomes retention repetition_seeds cases")
+    h.shape(packet, "schema scope designation canonicalization schedule run_id baseline tenant clock "
+            "roles approval pins source_policy attestations outcomes retention repetition_seeds cases")
     h.require(packet["schema"] == ENVELOPE and packet["scope"] == "PUBLIC_DUMMY"
+              and packet["designation"] == DESIGNATION
               and h.token(packet["run_id"]) and packet["run_id"].startswith("SYN-")
               and packet["baseline"] == BASELINE and packet["tenant"] == "NHD", "envelope-scope")
+    h.require(packet["canonicalization"] == {"envelope": COMPACT, "bridge_input": INDENTED,
+                                             "scorer": COMPACT}, "canonicalization")
+    schedule = packet["schedule"]
+    h.shape(schedule, "mode expected_cases")
+    expected_count = schedule["expected_cases"]
+    h.require((schedule["mode"] == "small-dummy" and h.integer(expected_count, 1, 59))
+              or (schedule["mode"] == "full-dummy" and h.integer(expected_count, 60, 60)),
+              "schedule")
     roles = packet["roles"]
     h.shape(roles, "author reviewer custodian implementer")
     h.require(all(h.token(x) and x.startswith("mock-") for x in roles.values())
@@ -241,7 +251,12 @@ def verify(raw, approved_pin, manifest_raw, dev_raw, custody_schema_raw, setting
               "repetition-seeds")
     cases = h.array(packet["cases"], 60)
     bridge_bytes = h.array(bridges, 60)
-    h.require(len(cases) == len(bridge_bytes) == len(manifest["entries"]), "case-inventory")
+    h.require(len(cases) == len(bridge_bytes) == len(manifest["entries"]) == expected_count,
+              "case-inventory")
+    if schedule["mode"] == "full-dummy":
+        full_ids = [case_id.replace("ga61-qa-", "dummy-", 1) for case_id in h.expected_ids()]
+        h.require([entry["case"] for entry in manifest["entries"]] == full_ids,
+                  "full-dummy-inventory")
     state_raw = h.canonical(state)
     verified = []
     records = []

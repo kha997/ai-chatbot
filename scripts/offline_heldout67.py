@@ -244,23 +244,27 @@ def order_key(case_id, category):
     return CATEGORIES.index(category), case_id
 
 
+def normalize_overlap(value):
+    return "".join(c for c in normalize("NFKC", value).casefold() if c.isalnum())
+
+
 def freeze(mode, bundles, *, development_families=()):
     """Build a candidate manifest. Custodian must independently pin/review returned bytes."""
     require(type(mode) is str and mode in ("dummy", "heldout"), "mode")
     require(type(development_families) in (tuple, list)
             and all(token(family) for family in development_families), "development-families")
-    entries, families, questions = [], set(development_families), set()
+    entries, families, questions = [], {normalize_overlap(x) for x in development_families}, set()
     if mode == "heldout":
         require(len(development_families) == len(families) == 12, "development-families")
     for bundle in array(bundles, 60):
         raw = canonical(bundle)  # enforce native value types before interpreting records
         case = validate_bundle(bundle, mode)[0]
-        signature = "".join(c for c in normalize("NFKC", case["question"]).casefold()
-                            if c.isalnum())
-        require(bool(signature) and signature not in questions and case["family"] not in families,
+        signature = normalize_overlap(case["question"])
+        family = normalize_overlap(case["family"])
+        require(bool(signature) and signature not in questions and family not in families,
                 "mechanical-overlap")
         questions.add(signature)
-        families.add(case["family"])
+        families.add(family)
         entries.append({"case": case["id"], "category": case["category"],
                         "sha256": digest(raw), "bytes": len(raw)})
     manifest = {"schema": VERSION, "mode": mode, "repetitions": [1, 2], "entries": entries}
@@ -295,7 +299,8 @@ class Receipt:
     code: str
 
 
-def evaluate(manifest_raw, approved_sha, index, bundle_raw, observation_raw):
+def evaluate(manifest_raw, approved_sha, index, bundle_raw, observation_raw, *,
+             forbidden_fact_ids=frozenset()):
     """Grade one record at its frozen position. Supply a trusted manifest pin separately."""
     safe_pin = approved_sha if is_hash(approved_sha) else ""
     safe_index = index if integer(index, 0, 119) else -1
@@ -368,6 +373,7 @@ def evaluate(manifest_raw, approved_sha, index, bundle_raw, observation_raw):
                     and integer(attempt["tick"], events[ref]+1, tick), "denial-evidence")
             denied.add(ref)
         require(denied == events.keys(), "missing-delivery-denial")
+        require(actual_facts.keys().isdisjoint(forbidden_fact_ids), "forbidden-typed-fact")
         require(actual_links.isdisjoint(forbidden), "forbidden-link")
         for key, ref in actual_links:
             require((key, ref) in required and ref in seen and active(sources[ref], tick)

@@ -45,6 +45,10 @@ def package(bundle=None, required_reads=()):
                          "prompt": None, "initial_state": {"epoch": 1, "tenant": "NHD"}})
     case = src["bundle"]["case"]
     packet = {"schema": e.ENVELOPE, "scope": "PUBLIC_DUMMY", "run_id": "SYN-69-A",
+              "designation": "SYNTHETIC—NOT BUSINESS POLICY",
+              "canonicalization": {"envelope": e.COMPACT, "bridge_input": e.INDENTED,
+                                   "scorer": e.COMPACT},
+              "schedule": {"mode": "small-dummy", "expected_cases": 1},
               "baseline": e.BASELINE, "tenant": "NHD", "clock": 2,
               "roles": {"author": "mock-author", "reviewer": "mock-reviewer",
                         "custodian": "mock-custodian", "implementer": "mock-engineer"},
@@ -79,6 +83,65 @@ def commit_then_exit(path, app, bundle, obs):
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_pinned_schedule_rejects_truncation_designation_and_format_mismatch(self):
+        for key, bad, error in (
+            ("schedule", {"mode": "small-dummy", "expected_cases": 2}, "case-inventory"),
+            ("schedule", {"mode": "small-dummy", "expected_cases": True}, "schedule"),
+            ("schedule", {"mode": "full-dummy", "expected_cases": 60}, "case-inventory"),
+            ("designation", "PRIVATE", "envelope-scope"),
+            ("canonicalization", {"envelope": e.INDENTED, "bridge_input": e.COMPACT,
+                                  "scorer": e.COMPACT}, "canonicalization"),
+        ):
+            pkg = package()
+            pkg[0][key] = bad
+            with self.subTest(key=key, bad=bad), self.assertRaisesRegex(h.Invalid, error):
+                approval(pkg)
+
+    def test_normalized_family_collision_in_candidate_corpus(self):
+        left, right = dummy(), dummy()
+        left["case"]["family"] = "a-b"
+        right["case"].update(id="dummy-price-02", family="AB", question="Different dummy facts.")
+        with self.assertRaisesRegex(h.Invalid, "mechanical-overlap"):
+            e.freeze_screened("dummy", [left, right], DEV, e.pin(DEV))
+
+    def test_full_dummy_schedule_accepts_exactly_sixty_ordered_public_slots(self):
+        packet, _, setup, _, _ = package()
+        template = packet["cases"][0]
+        bundles, bridges, cases = [], [], []
+        for i, case_id in enumerate(h.expected_ids()):
+            b = dummy()
+            b["case"].update(id=case_id.replace("ga61-qa-", "dummy-", 1),
+                             category=case_id.split("-")[2], family=f"mock-{i}",
+                             question=f"Public inventory stub {i}.")
+            _, raw, _, descriptor = fixture(b)
+            bundles.append(b)
+            bridges.append(raw)
+            cases.append(template | {"id": b["case"]["id"],
+                                     "category": b["case"]["category"], "bridge": descriptor})
+        manifest = h.freeze("dummy", bundles)
+        packet["pins"]["manifest"] = e.pin(manifest)
+        packet["schedule"] = {"mode": "full-dummy", "expected_cases": 60}
+        packet["cases"] = cases
+
+        def verify():
+            raw = h.canonical(packet)
+            return e.verify(raw, e.pin(raw), manifest, DEV, CUSTODY_SCHEMA, setup, bridges)
+
+        self.assertEqual(len(verify().cases), 60)
+        packet["cases"] = list(reversed(cases))
+        with self.assertRaisesRegex(h.Invalid, "case-schedule"):
+            verify()
+        packet["cases"] = cases
+        packet["schedule"]["mode"] = "small-dummy"
+        with self.assertRaisesRegex(h.Invalid, "schedule"):
+            verify()
+
+    def test_pull_request_filter_covers_public_corpus_inputs(self):
+        workflow = (ROOT / ".github/workflows/offline-heldout-67.yml").read_text(encoding="utf-8")
+        pr_paths = workflow.split("  pull_request:\n", 1)[1].split("  push:\n", 1)[0]
+        self.assertIn("'scripts/offline_corpus63.py'", pr_paths)
+        self.assertIn("'eval/offline63/**'", pr_paths)
+
     def test_bridge_requires_both_byte_pins_and_exact_representation(self):
         src, raw, out, pins = fixture()
         self.assertNotEqual(pins["input"], pins["output"])
@@ -296,11 +359,15 @@ class JournalTests(unittest.TestCase):
         observations = [
             observed(facts=[invented], links=[]),
             observed(answer_text="Unverified free text is outside the closed trace."),
+            observed(facts=[{**invented, "value": True}], links=[]),
+            observed(facts=[{**invented, "id": "other-stock"}], links=[]),
         ]
-        for i, obs in enumerate(observations):
+        for i, (obs, code) in enumerate(zip(
+            observations, ("forbidden-typed-fact", "schema", "integer-fact", "unsupported-output")
+        )):
             j = Journal.create(Path(self.tmp.name)/f"forbidden{i}.sqlite", app)
             decision = j.submit(0, out, h.canonical(obs), 2, app.genesis)
-            self.assertEqual(decision.outcome, "STOP")
+            self.assertEqual((decision.outcome, decision.code), ("STOP", code))
             self.assertNotIn("fake-stock", repr(decision))
 
     def test_expired_mock_approval_stops_and_cannot_be_refreshed_by_open(self):
