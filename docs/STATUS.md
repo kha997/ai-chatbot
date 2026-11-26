@@ -2,15 +2,15 @@
 
 ## Issue #72 — Public synthetic qualification
 
-- STATE: READY_FOR_ARCHITECTURE_REVIEW after hosted checks; independent review remains `INDEPENDENT_REVIEW_BLOCKED`.
-- GATE: 1, offline public remediation under [Issue #72](https://github.com/kha997/ai-chatbot/issues/72), baseline `588b8fe1d3e54161fe194739d2c06552ca8c79f4`.
-- RECOMMENDATION: Review the public-synthetic F3–F7 package at the frozen technical SHA named on the Draft PR.
-- COMPLETED: [F3–F7 matrix, trust boundary and OpenCode handoff](OFFLINE_QUALIFICATION_72.md).
-- VALIDATION: See the Draft PR for the exact Windows, WSL, and hosted CI receipts. Actual private audit, provider/model and six E2Es NOT_RUN.
-- OPEN RISKS: HIGH — `BLOCKED_PRIVATE_AUDIT`, `BLOCKED_HELDOUT_CUSTODY_WORKFLOW`, `BLOCKED_CORPUS_BREADTH`, `BLOCKED_COST_CONTROL`.
-- NEXT: Verify an isolated, zero-egress audit environment for independent review. Issue #63 stays OPEN.
-- OWNER DECISION: Architecture review of the public package after independent audit evidence.
-- HEAD/BRANCH/PR: `codex/issue72-public-offline`. Exact SHA and PR are recorded as evidence on [Issue #72](https://github.com/kha997/ai-chatbot/issues/72).
+- STATE: IN_PROGRESS — F3–F7 remediation on a new branch; independent review remains `INDEPENDENT_REVIEW_BLOCKED`; PR #73 stays Draft and unmerged.
+- GATE: 1, offline public remediation under [Issue #72](https://github.com/kha997/ai-chatbot/issues/72), audited baseline `0d884c9152d3812ad7f02b44f93f1375229c89ab`, base `588b8fe1d3e54161fe194739d2c06552ca8c79f4`.
+- RECOMMENDATION: CONDITIONAL for the public-synthetic layer only. Confirmed code defects (guard authentication, legacy diagnostic authority, custody v2 model) are fixed and tested; F3/F6 real-custody claims remain `NOT_VERIFIED`.
+- COMPLETED: [F3–F7 matrix and contract](OFFLINE_QUALIFICATION_72.md); [remediation report](reviews/PR73_F3_F7_REMEDIATION.md) with findings classification, changes and residual risks.
+- VALIDATION: Windows Python 3.14.3 — offline suite 119/119 PASS (including 20 new adversarial regressions), quote suite 73/73 PASS, `offline_corpus63` validator PASS, `git diff --check` exit 0. Hosted CI and WSL `NOT_RUN` this session. Private audit, provider/model and six E2Es `NOT_RUN`.
+- OPEN RISKS: HIGH — `BLOCKED_PRIVATE_AUDIT`, `BLOCKED_HELDOUT_CUSTODY_WORKFLOW`, `BLOCKED_CORPUS_BREADTH`, `BLOCKED_COST_CONTROL`; journal + checkpoint compromise remains an external trust boundary.
+- NEXT: Obtain qualified independent review of the fixed diff at the exact technical SHA; verify an isolated zero-egress audit environment. Issue #63 stays OPEN.
+- OWNER DECISION: Architecture review of the public package after independent audit evidence. This work does not approve the Owner Gate or merge PR #73.
+- HEAD/BRANCH/PR: `remediation/f3-f7-pr73` (pushed to Draft PR #73); exact reporting HEAD and evidence are recorded on [Issue #72](https://github.com/kha997/ai-chatbot/issues/72) / PR #73.
 
 ## Issue #69 — Public harness remediation (2026-11-24)
 

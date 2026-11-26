@@ -215,12 +215,12 @@ class QualificationTests(unittest.TestCase):
                 runner.submit(0, replay, tick, tip)
         with self.assertRaisesRegex(h.Invalid, "rewound-clock"):
             runner.submit(1, None, 5, tip)
-        expired = runner.submit(1, None, 25, tip)
+        expired = runner.submit(1, None, 30, tip)
         final = checkpoint(self.run_spec, 2, expired.anchor)
         reopened = q.Runner.open(path, final, **self.inputs)
         self.assertEqual(reopened.confirm(1, final).code, "expired-mock-custody")
         with self.assertRaisesRegex(h.Invalid, "ledger-stopped"):
-            reopened.submit(2, None, 27, final)
+            reopened.submit(2, None, 31, final)
 
     def test_committed_stop_blocks_even_when_subsequent_trace_is_valid(self):
         _, runner = self.runner()
@@ -394,8 +394,9 @@ class CustodyTests(unittest.TestCase):
             (proof | {"roles": proof["roles"] | {"semantic_two": "mock-Semantic_one"}},
              "role-collision"),
             (proof | {"roles": proof["roles"] | {"developer": "mock-custodian"}}, "role-collision"),
-            (proof | {"approval": {"status": "MOCK_ONLY", "by": "mock-developer",
-                                    "reference": "mock-ok"}}, "custody-approval"),
+            (proof | {"approval": proof["approval"] | {"by": "mock-developer"}}, "custody-approval"),
+            (proof | {"approval": {"status": "MOCK_ONLY", "by": "mock-owner",
+                                    "reference": "mock-ok"}}, "schema"),
             (proof | {"approval": {}}, "schema"),
             (proof | {"retention": {}}, "schema"),
             (proof | {"retention": proof["retention"] | {"deletion_receipt": ""}},

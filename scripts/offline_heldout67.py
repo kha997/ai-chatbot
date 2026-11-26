@@ -297,6 +297,9 @@ class Receipt:
     evidence: str
     outcome: str
     code: str
+    # This helper cannot enforce case-level required reads or forbidden facts.
+    # Never present its result as an official qualification receipt.
+    authority: str = "DIAGNOSTIC"
 
 
 def evaluate(manifest_raw, approved_sha, index, bundle_raw, observation_raw, *,

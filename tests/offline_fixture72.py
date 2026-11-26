@@ -4,6 +4,7 @@ from pathlib import Path
 
 from scripts import offline_heldout67 as h
 from scripts import offline_qualification72 as q
+from scripts import offline_receipt72 as receipt
 from scripts import offline_source72 as s
 from scripts.offline_revocation67 import Gate
 
@@ -57,6 +58,10 @@ def examples():
             price = original["unit_price"]
             answer = [required(CLAIMS[key], format(quantity * Decimal(price), "f"))]
             totals = [dict(id=key, quantity=format(quantity, "f"), price=price)]
+        if case_id == "dummy-offering-01":
+            # One case must require a source that contributes no answer fact,
+            # otherwise the required-read guard is never exercised end to end.
+            reads = sorted({key, next(other for other in allowed if other != key)})
         if case_id == s.REVOCATION_CASE:
             behavior, answer, reads, gold = "abstain", [], [key], []
             revocations = [dict(id=key, tick=3)]
@@ -70,35 +75,48 @@ def examples():
         )
 
 
-LOG = dict(acl_revision=1, reviewed=1, entries=[
+LOG = dict(acl_revision=1, reviewed=2, entries=[
     dict(principal="mock-custodian", action="MOCK_READ", tick=1)])
+
+REVIEWS = [
+    dict(by="mock-semantic_one", verdict="MOCK_REVIEWED", tick=2, reference="mock-review-one"),
+    dict(by="mock-semantic_two", verdict="MOCK_REVIEWED", tick=2, reference="mock-review-two"),
+]
 
 
 def prove(inputs):
-    isolation = dict(scope="MOCK_ONLY", ipv4_routes=[], ipv6_routes=[], observed=1,
+    isolation = dict(scope="MOCK_ONLY", ipv4_routes=[], ipv6_routes=[], observed=2,
                      by="mock-security")
     receipts = h.canonical(dict(
-        schema="offline72-mock-receipts-v1",
+        schema="offline72-mock-receipts-v2",
         architecture=dict(reference="mock-architecture-receipt", envelope=inputs["envelope_pin"],
-                          by="mock-owner", approved=1, scope="PUBLIC_SYNTHETIC"),
+                          by="mock-owner", approved=2, scope="PUBLIC_SYNTHETIC"),
         retention=dict(reference="mock-deletion-receipt", envelope=inputs["envelope_pin"],
                        by="mock-custodian", delete_by=40, state="MOCK_SCHEDULED_NOT_DELETED"),
         isolation=isolation, access_log=LOG,
     ))
-    inputs.update(receipts_raw=receipts, receipts_pin=h.digest(receipts))
+    acl = h.canonical(dict(
+        schema="offline72-acl-v2", revision=1,
+        rights={role: list(q.custody.ROLE_RIGHTS[role]) for role in q.custody.ROLES},
+        reviewed=LOG["reviewed"], expires=25, access_log=h.digest(h.canonical(LOG)),
+    ))
     raw = h.canonical(dict(
-        schema="offline72-custody-v1", scope="PUBLIC_SYNTHETIC",
+        schema="offline72-custody-v2", scope="PUBLIC_SYNTHETIC",
         envelope=inputs["envelope_pin"], sources=inputs["source_pin"],
-        genesis=q.genesis(inputs["envelope_pin"]), roles={
-            name: "mock-" + name for name in q.custody.ROLES},
-        approval=dict(status="MOCK_ONLY", by="mock-owner", reference="mock-architecture-receipt"),
-        acl=inputs["acl_pin"], **{"from": 1, "until": 30},
+        genesis=q.genesis(inputs["envelope_pin"]),
+        roles={name: "mock-" + name for name in q.custody.ROLES},
+        approval=dict(status="MOCK_ONLY", by="mock-owner", reference="mock-architecture-receipt",
+                      **{"from": 1, "until": 30}),
+        acl=h.digest(acl), **{"from": 1, "until": 30},
         retention=dict(delete_by=40, deletion_receipt="mock-deletion-receipt", status="MOCK_PLAN"),
         isolation=dict(status="MOCK_ZERO_EGRESS", reference=h.digest(h.canonical(isolation)),
                        requests=0, spend=0),
-        real_evidence="NOT_VERIFIED", receipts=inputs["receipts_pin"],
+        real_evidence="NOT_VERIFIED", reviews=REVIEWS, revocations=[],
+        receipts=h.digest(receipts),
     ))
-    inputs.update(custody_raw=raw, custody_pin=h.digest(raw))
+    inputs.update(receipts_raw=receipts, receipts_pin=h.digest(receipts),
+                  acl_raw=acl, acl_pin=h.digest(acl),
+                  custody_raw=raw, custody_pin=h.digest(raw))
 
 
 def fixture():
@@ -114,16 +132,34 @@ def fixture():
         cases=[dict(id=row["case"], sha256=h.digest(raw), bytes=len(raw))
                for row, raw in zip(rows, cases, strict=True)],
     ))
-    acl = h.canonical(dict(
-        schema="offline72-acl-v1", revision=1, reviewed=1, expires=25,
-        principals=["mock-custodian", "mock-owner", "mock-security"], access_log=h.digest(h.canonical(LOG)),
-    ))
     inputs = dict(envelope_raw=envelope, envelope_pin=h.digest(envelope), source_raw=SOURCES,
                   source_pin=s.PUBLIC_SOURCE_PIN, development_raw=DEVELOPMENT, cases_raw=cases,
-                  acl_raw=acl, acl_pin=h.digest(acl),
                   tick=5)
     prove(inputs)
     return inputs
+
+
+def trusted():
+    return {receipt.MOCK_ISSUER: (receipt.MOCK_KEY_ID, receipt.MOCK_KEY)}
+
+
+def sign_receipt(inputs, checkpoint_pair, *, tip=None, issued=4, expires=20,
+                 nonce="mock-nonce-1", envelope=None, root=None, checkpoint=None,
+                 issuer=None, key_id=None, key=None):
+    """Produce a public-test-key mock receipt. It proves no real custody."""
+    parsed = h.parse(checkpoint_pair[0])
+    body = dict(
+        sequence=parsed["sequence"], issued=issued, expires=expires,
+        envelope=inputs["envelope_pin"] if envelope is None else envelope,
+        root=q.genesis(inputs["envelope_pin"]) if root is None else root,
+        checkpoint=checkpoint_pair[1] if checkpoint is None else checkpoint,
+        tip=parsed["tip"] if tip is None else tip, nonce=nonce,
+    )
+    doc = dict(body, schema=receipt.SCHEMA, issuer=issuer or receipt.MOCK_ISSUER,
+               key_id=key_id or receipt.MOCK_KEY_ID, attestation="MOCK_ONLY")
+    doc["mac"] = receipt.mac(doc, key or receipt.MOCK_KEY)
+    raw = h.canonical(doc)
+    return raw, h.digest(raw)
 
 
 def trace(run, index):

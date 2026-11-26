@@ -9,7 +9,10 @@ from scripts.offline_journal69 import OUTCOMES, SQLiteChain
 
 SCHEMA = "offline72-envelope-v1"
 SIZE = 60
-FIELDS = ("envelope index tick case repetition bundle observation outcome code "
+# Digest over the 60 ordered raw case SHA-256 values of the reviewed public
+# profile. A new corpus is a new profile version, not a resealed envelope.
+PUBLIC_CASESET_PIN = "ded0730ddbfdf98340f604b68a1301fa3253af8add609e987111f9cd26ef7970"
+FIELDS = ("envelope index tick case repetition bundle guards observation outcome code "
           "hits gold previous")
 
 
@@ -34,6 +37,12 @@ def genesis(envelope_pin):
     return h.digest(h.canonical({"schema": "offline72-genesis-v1", "envelope": envelope_pin}))
 
 
+def caseset(cases_raw):
+    """Ordered digest of the exact raw case bytes; guards live in these bytes."""
+    h.require(type(cases_raw) in (tuple, list), "case-inventory")
+    return h.digest(h.canonical([h.digest(raw) for raw in cases_raw]))
+
+
 def prepare(*, envelope_raw, envelope_pin, source_raw, source_pin, development_raw, cases_raw,
             custody_raw, custody_pin, acl_raw, acl_pin, receipts_raw, receipts_pin, tick):
     envelope = source.checked(envelope_raw, envelope_pin)
@@ -48,9 +57,10 @@ def prepare(*, envelope_raw, envelope_pin, source_raw, source_pin, development_r
               and envelope["source"] == source_pin
               and envelope["development"] == evidence.DEV_SHA, "envelope-policy")
     root = genesis(envelope_pin)
-    start, until = custody.verify(custody_raw, custody_pin, acl_raw, acl_pin, receipts_raw,
-                                  receipts_pin, envelope=envelope_pin,
-                                  sources=source_pin, genesis=root, tick=tick)
+    custody_run = custody.verify(custody_raw, custody_pin, acl_raw, acl_pin, receipts_raw,
+                                 receipts_pin, envelope=envelope_pin,
+                                 sources=source_pin, genesis=root, tick=tick)
+    start, until = custody_run.start, custody_run.until
     claims = source.corpus(source_raw, source_pin)
     entries = h.array(envelope["cases"], SIZE)
     h.require(type(cases_raw) in (tuple, list) and len(entries) == len(cases_raw) == SIZE,
@@ -69,6 +79,10 @@ def prepare(*, envelope_raw, envelope_pin, source_raw, source_pin, development_r
                                        development_raw, evidence.pin(development_raw))
     manifest_pin = h.digest(manifest)
     h.require(envelope["manifest"] == manifest_pin, "manifest-pin")
+    # The manifest covers compiled bundles only. required_reads and
+    # forbidden_claims are not bundle fields, so the raw case profile must be
+    # pinned independently or a caller could strip a safeguard and still match.
+    h.require(caseset(cases_raw) == PUBLIC_CASESET_PIN, "case-profile")
     ledger_root = h.digest(h.canonical({"envelope_genesis": root, "custody": custody_pin,
                                         "acl": acl_pin}))
     return _Run(envelope_pin, manifest, manifest_pin, ledger_root, start, until, tick, tuple(cases))
@@ -129,6 +143,10 @@ class Receipt:
     row_anchor: str
     verified_tip: str
     chain_length: int
+    guards: str
+    # The external checkpoint is caller-supplied. This value records that the
+    # chain is internally consistent, not that a custodian/WORM store issued it.
+    trust: str = "EXTERNAL_ANCHOR_UNVERIFIED"
 
 
 class Runner:
@@ -175,6 +193,7 @@ class Runner:
             h.require(row["previous"] == tip and h.digest(raw) == next_tip
                       and row["envelope"] == self._run.envelope and row["case"] == case.id
                       and row["bundle"] == h.digest(case.bundle)
+                      and row["guards"] == case.guards and h.is_hash(row["guards"])
                       and h.integer(row["index"], seq-1, seq-1)
                       and h.integer(row["repetition"], repetition, repetition)
                       and h.integer(row["tick"], last_tick) and row["outcome"] in OUTCOMES
@@ -199,7 +218,7 @@ class Runner:
         grade = (_score(self._run, index, raw) if tick < self._run.until
                  else Grade("STOP", "expired-mock-custody"))
         return dict(envelope=self._run.envelope, index=index, tick=tick, case=case.id,
-                    repetition=repetition, bundle=h.digest(case.bundle),
+                    repetition=repetition, bundle=h.digest(case.bundle), guards=case.guards,
                     observation="ABSENT" if raw is None else h.digest(raw),
                     outcome=grade.outcome, code=grade.code, hits=grade.hits, gold=grade.gold,
                     previous=previous)
@@ -242,4 +261,4 @@ class Runner:
             h.require(index < len(rows), "uncommitted-receipt")
             row, anchor = rows[index]
             return Receipt(index, row["case"], row["repetition"], row["outcome"], row["code"],
-                           row["hits"], row["gold"], anchor, rows[-1][1], len(rows))
+                           row["hits"], row["gold"], anchor, rows[-1][1], len(rows), row["guards"])

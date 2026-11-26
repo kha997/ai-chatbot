@@ -79,6 +79,12 @@ def ordered_ids(values):
     return frozenset(values)
 
 
+def guards_digest(must_read, forbidden):
+    """Bind the exact safeguard set so a receipt names the guards that applied."""
+    return h.digest(h.canonical({"required": sorted([list(ref) for ref in must_read]),
+                                 "forbidden": sorted(forbidden)}))
+
+
 @dataclass(frozen=True)
 class Case:
     id: str
@@ -90,6 +96,7 @@ class Case:
     gold: frozenset
     start: int
     revocations: tuple
+    guards: str
 
 
 def adapt(raw, claims):
@@ -191,11 +198,12 @@ def adapt(raw, claims):
         ],
     }
     h.validate_bundle(bundle, "dummy")
+    must_read_refs = frozenset(tuple(refs[key]) for key in must_read)
     return Case(item["case"], item["category"], h.canonical(bundle),
                 tuple((key, tuple(refs[key]), tick_of(claims[key]["expires_at"]))
                       for key in sorted(allowed)),
-                frozenset(tuple(refs[key]) for key in must_read), forbidden, gold, start,
-                tuple(revocations.items()))
+                must_read_refs, forbidden, gold, start,
+                tuple(revocations.items()), guards_digest(must_read_refs, forbidden))
 
 
 def recall(case, ranked, end):
