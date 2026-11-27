@@ -49,22 +49,22 @@ Green probe: `_pr73_work/probes/round2_verify.py`, same attacks, independent exp
 
 `probes_failed=0` on Windows and in a route-free WSL network namespace (`unshare --net`, empty IPv4/IPv6 routes; loopback enabled only for the quote suite). Log: `_pr73_work/evidence/round2_routefree_wsl.log`.
 
-Permanent regressions: `tests/test_offline_hardening73.py` (24 tests) plus the updated `tests/test_offline_remediation73.py` (21 tests).
+Permanent regressions: `tests/test_offline_hardening73.py` (25 tests) plus the updated `tests/test_offline_remediation73.py` (21 tests).
 
 | Command (worktree `D:\Projects\_pr73_work\repo`) | Result |
 | --- | --- |
-| `py -B -m unittest discover -s tests -p "test_offline*.py"` | **Ran 144 tests — OK**, exit 0 |
+| `py -B -m unittest discover -s tests -p "test_offline*.py"` | **Ran 145 tests — OK**, exit 0 |
 | `py -B -m unittest discover -s tests -p "test_quote*.py"` | **Ran 73 tests — OK**, exit 0 |
 | `py -B -m scripts.offline_corpus63` | `Validated 9 products, 37 source claims, 12 public development oracles and 60 reserved slots. Held-out frozen: 0.` exit 0 |
 | `git diff --check` | exit 0 |
-| WSL Ubuntu 24.04, route-free netns: offline + quote + corpus | **144 OK + 73 OK**, routes empty before/after loopback up |
+| WSL Ubuntu 24.04, route-free netns: offline + quote + corpus | **145 OK + 73 OK**, routes empty before/after loopback up |
 | Hosted CI at the final exact SHA | `NOT_RUN` in this session — requires the branch push; the previous SHA's checks are historical only |
 
 ## 5. Finding-to-test traceability
 
 | ID | Regression tests |
 | --- | --- |
-| NEW-7 | `test_derived_ledger_root_is_the_only_accepted_root`, `test_omitted_journal_root_is_rejected`, `test_arbitrary_caller_root_is_rejected`, `test_stale_root_after_acl_change_is_rejected`, `test_checkpoint_must_match_the_ledger_root` |
+| NEW-7 | `test_derived_ledger_root_is_the_only_accepted_root`, `test_omitted_journal_root_is_rejected`, `test_arbitrary_caller_root_is_rejected`, `test_stale_root_after_acl_change_is_rejected`, `test_checkpoint_must_match_the_ledger_root`, `test_official_path_derives_genesis_from_the_envelope` |
 | NEW-1/NEW-2 | `test_validation_is_pure_and_repeatable`, `test_same_process_double_consumption_is_rejected`, `test_cross_process_consumption_persists`, `test_concurrent_consumption_admits_exactly_one`, `test_invalid_receipt_never_consumes`, `test_distinct_valid_nonces_are_independent`, `test_same_nonce_with_different_bytes_conflicts`, `test_receipt_requires_a_persistent_store`, `test_store_schema_tamper_is_rejected`, `test_consumption_is_labelled_mock_not_external_trust`; existing `test_mock_external_receipt_is_labelled_and_replay_protected`, `test_receipt_requires_a_persistent_replay_store`, `test_receipt_rejects_tamper_stale_issuer_and_binding` |
 | NEW-3 | `test_reversed_review_ticks_are_rejected`, `test_equal_ticks_follow_explicit_list_order`, `test_chronological_ticks_are_accepted`, `test_duplicate_reviewer_and_reference_are_rejected`, `test_reviewer_role_separation_survives_ordering`; existing `test_two_ordered_independent_reviews_are_required` |
 | NEW-4 | `test_live_revocation_blocks_use_and_future_revocation_does_not`, `test_unknown_and_duplicate_revocation_targets_are_rejected`, `test_real_evidence_cannot_be_claimed`, `test_pinned_role_names_are_caller_labels_not_identities` |
@@ -73,13 +73,16 @@ Permanent regressions: `tests/test_offline_hardening73.py` (24 tests) plus the u
 
 - **HIGH — trust boundary (unchanged):** a caller who controls SQLite, the checkpoint channel and the pinned documents can still present a consistent chain. The ledger root is now derived rather than caller-chosen, but derivation only binds authenticated pins; it does not create an external anchor. WORM/anti-rollback needs a store outside this repository.
 - **HIGH — real custody:** the MAC key is public; identities, signatures, system ACLs, retention deletion and revocation authority are simulated. `real_evidence` stays `NOT_VERIFIED`.
-- **MEDIUM — replay store is local mock state:** persistence is a local SQLite file. It proves one-time consumption inside this harness, not a distributed or authenticated replay service; deleting the file resets it, which is why it must never be read as external trust.
-- **MEDIUM — review ordering is a mock contract:** non-decreasing ticks plus list position is explicit, but reviewer identity and real-world review independence are not verified.
+- **MEDIUM — replay store is local mock state:** persistence is a local SQLite file. It proves one-time consumption inside this harness, not a distributed or authenticated replay service. Deleting **or copying/replacing** the file resets apparent consumption, and a caller that substitutes its own store class bypasses the check; store identity is not recorded in `Finalized`. `consume` also accepts a hand-built `Receipt` object, so validation and consumption must stay separate in any caller.
+- **MEDIUM — review ordering is a mock contract:** non-decreasing ticks plus list position is explicit, but reviewer identity and real-world review independence are not verified. Role names are caller labels: relabelling `semantic_one`/`semantic_two` can place a later event first. The `custody-review-conflict` check is retained as defence-in-depth but is unreachable while `role-collision` enforces distinct roles.
+- **MEDIUM — `finalize` vs `prepare`:** `finalize` binds the pins the caller presents; only `prepare` ties `proof.genesis` back to the pinned envelope (`custody-binding`). A caller using `finalize` directly must not treat its output as qualification.
 - **HIGH — private audit:** held-out corpus, private metric, model and six E2Es remain `NOT_RUN`; handling rights `NOT_AUTHORIZED`.
 
-## 7. Independent review
+## 7. Separate agent review (not third-party)
 
-Not performed in this session; status `INDEPENDENT_REVIEW_BLOCKED`. A separate reviewer should, at the exact final SHA: (a) omit / substitute / stale the journal root and confirm `journal-root`; (b) consume one receipt twice in-process and across processes, and race four concurrent consumers; (c) confirm invalid receipts never consume and same-nonce conflicts are rejected; (d) reverse and equalize review ticks and confirm the ordering contract; (e) confirm revocation checks and that no real authority is claimed.
+A separate read-only agent session (different context, same vendor — **not** a qualified third-party reviewer) independently reviewed commit `71003a7`, wrote its own probes outside the repository and reran the suites. Reported evidence: omitted/`None`/empty/uppercase/foreign-pin roots → `journal-root`; stale root after ACL change rejected; checkpoint mismatch → `checkpoint-binding`; fresh store object on a consumed file → `receipt-replay`; two-process sequence and four concurrent processes gave exactly one `MOCK_CONSUMED_ONCE`; same-nonce/different-bytes → `receipt-conflict`; invalid MAC left zero rows; missing store path → `replay-storage` with no file created; reversed ticks → `custody-review-order`; equal/ordered ticks accepted; duplicate reviewer/reference rejected. Suites it reran: hardening 25 OK, remediation 21 OK, offline 145 OK, quote 73 OK, corpus PASS, `git diff --check` exit 0. Verdict: NEW-7 and NEW-1/NEW-2 FIXED, NEW-3 FIXED as a list/role contract but only role-label chronology, NEW-4 correctly scoped with no real authority claimed. Its boundary findings are folded into §6, and one gap it named (envelope-to-genesis binding) is now covered at the official path by `test_official_path_derives_genesis_from_the_envelope`.
+
+This does **not** satisfy the governance requirement for a qualified independent review. Third-party review remains `INDEPENDENT_REVIEW_BLOCKED`. A reviewer should, at the exact final SHA: (a) omit / substitute / stale the journal root and confirm `journal-root`; (b) consume one receipt twice in-process and across processes, and race four concurrent consumers; (c) confirm invalid receipts never consume and same-nonce conflicts are rejected; (d) reverse and equalize review ticks and confirm the ordering contract; (e) confirm revocation checks and that no real authority is claimed.
 
 ## 8. Recommendation
 

@@ -110,6 +110,16 @@ class LedgerRootBindingTests(unittest.TestCase):
             finalize(self.inputs, (forged, h.digest(forged)),
                      journal_root=self.run_spec.genesis)
 
+    def test_official_path_derives_genesis_from_the_envelope(self):
+        # finalize binds what the caller asserts; only prepare ties proof.genesis
+        # back to the pinned envelope, so substitution must fail there.
+        proof = h.parse(self.inputs["custody_raw"])
+        proof["genesis"] = "c"*64
+        packed = h.canonical(proof)
+        with self.assertRaisesRegex(h.Invalid, "custody-binding"):
+            q.prepare(**(self.inputs | {"custody_raw": packed,
+                                        "custody_pin": h.digest(packed)}))
+
 
 class ReplayConsumptionTests(unittest.TestCase):
     """NEW-1/NEW-2: validation is pure, consumption is one-time and persistent."""
