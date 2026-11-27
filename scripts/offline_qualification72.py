@@ -83,8 +83,7 @@ def prepare(*, envelope_raw, envelope_pin, source_raw, source_pin, development_r
     # forbidden_claims are not bundle fields, so the raw case profile must be
     # pinned independently or a caller could strip a safeguard and still match.
     h.require(caseset(cases_raw) == PUBLIC_CASESET_PIN, "case-profile")
-    ledger_root = h.digest(h.canonical({"envelope_genesis": root, "custody": custody_pin,
-                                        "acl": acl_pin}))
+    ledger_root = custody.ledger_root(root, custody_pin, acl_pin)
     return _Run(envelope_pin, manifest, manifest_pin, ledger_root, start, until, tick, tuple(cases))
 
 

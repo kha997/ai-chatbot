@@ -1,9 +1,11 @@
 """Validate externally pinned mock custody evidence. Real custody is NOT_VERIFIED.
 
 The module enforces role separation, least-privilege rights, two independent
-reviews, revocation, retention relationships and final-checkpoint binding for
-synthetic data only. It cannot verify real identities, real signatures,
-system ACLs, actual deletion or a trusted anchor.
+reviews in explicit event order, revocation, retention relationships, a derived
+(not caller-chosen) ledger root and final-checkpoint binding for synthetic data
+only. A mock receipt is validated statelessly and then consumed once in a
+persistent store. It cannot verify real identities, real signatures, system
+ACLs, actual deletion or a trusted anchor.
 """
 from dataclasses import dataclass
 
@@ -42,6 +44,25 @@ class Finalized:
     checkpoint: dict
     external: object
     trust: str
+    replay: str = "NOT_APPLICABLE"
+
+
+# Sentinel distinguishes "caller omitted the root" from an explicit value, so a
+# missing root is rejected instead of silently falling back to the genesis.
+_MISSING = object()
+
+
+def ledger_root(genesis, custody_pin, acl_pin):
+    """Derive the prepared ledger root from the authenticated custody pins.
+
+    The journal root is not an independent authority: it is a function of the
+    envelope genesis and the pinned custody and ACL documents. A caller cannot
+    substitute an arbitrary root and have it accepted.
+    """
+    h.require(h.is_hash(genesis) and h.is_hash(custody_pin) and h.is_hash(acl_pin),
+              "journal-root")
+    return h.digest(h.canonical({"envelope_genesis": genesis, "custody": custody_pin,
+                                 "acl": acl_pin}))
 
 
 def verify(raw, pin, acl_raw, acl_pin, receipts_raw, receipts_pin, *,
@@ -109,6 +130,9 @@ def verify(raw, pin, acl_raw, acl_pin, receipts_raw, receipts_pin, *,
                   and review["reference"] != approval["reference"]
                   and review["reference"] not in references, "custody-review")
         references.add(review["reference"])
+    # Explicit event order. Two independent reviews may share one logical tick,
+    # but the earlier review may not be listed after the later one.
+    h.require(reviews[0]["tick"] <= reviews[1]["tick"], "custody-review-order")
     acting = {roles[name] for name in ("author", "custodian", "developer", "owner", "security")}
     h.require(all(review["by"] not in acting for review in reviews), "custody-review-conflict")
 
@@ -138,31 +162,39 @@ def verify(raw, pin, acl_raw, acl_pin, receipts_raw, receipts_pin, *,
 
 def finalize(raw, pin, acl_raw, acl_pin, receipts_raw, receipts_pin,
              checkpoint_raw, checkpoint_pin, *, envelope, sources, genesis, tick,
-             journal_root=None, receipt_raw=None, receipt_pin=None, trusted=None, seen=None):
+             journal_root=_MISSING, receipt_raw=None, receipt_pin=None, trusted=None,
+             store=None):
     """Bind the final journal checkpoint and optional external receipt to custody.
 
     `genesis` is the envelope genesis bound by the custody proof. `journal_root`
-    is the ledger root committed by the journal; it defaults to `genesis` only
-    for callers that use the same root for both.
+    is mandatory and must equal `ledger_root(genesis, pin, acl_pin)`; there is no
+    fallback and no caller-supplied alternative. A receipt is validated purely by
+    `receipt.verify`, then consumed exactly once in the persistent `store`; the
+    resulting replay state is mock bookkeeping, never external trust.
     """
     verified = verify(raw, pin, acl_raw, acl_pin, receipts_raw, receipts_pin,
                       envelope=envelope, sources=sources, genesis=genesis, tick=tick)
-    root = genesis if journal_root is None else journal_root
+    h.require(journal_root is not _MISSING and type(journal_root) is str
+              and h.is_hash(journal_root)
+              and journal_root == ledger_root(genesis, pin, acl_pin), "journal-root")
     checkpoint = checked(checkpoint_raw, checkpoint_pin)
     h.shape(checkpoint, "schema root sequence tip")
     h.require(checkpoint["schema"] == "offline72-checkpoint-v1"
-              and checkpoint["root"] == root
+              and checkpoint["root"] == journal_root
               and h.integer(checkpoint["sequence"], 0, 120) and h.is_hash(checkpoint["tip"]),
               "checkpoint-binding")
     if receipt_raw is None:
         # Pins and hashes alone are not a trusted channel.
         return Finalized(verified, checkpoint, None, "EXTERNAL_ANCHOR_UNVERIFIED")
-    external = receipt.verify(receipt_raw, receipt_pin, trusted=trusted, now=tick, seen=seen,
+    h.require(isinstance(store, receipt.ReplayStore), "replay-store-required")
+    external = receipt.verify(receipt_raw, receipt_pin, trusted=trusted, now=tick,
                               envelope=verified.proof["envelope"],
                               checkpoint_pin=checkpoint_pin, root=checkpoint["root"],
                               sequence=checkpoint["sequence"], tip=checkpoint["tip"])
-    # The receipt is a public test-key mock, never proof of real custody.
-    return Finalized(verified, checkpoint, external, "MOCK_EXTERNAL_RECEIPT")
+    consumed = receipt.consume(store, external, tick)
+    # The receipt is a public test-key mock, never proof of real custody. The
+    # replay label records mock bookkeeping only.
+    return Finalized(verified, checkpoint, external, "MOCK_EXTERNAL_RECEIPT", consumed)
 
 
 def _check_receipts(receipts, proof, acl, roles, tick):

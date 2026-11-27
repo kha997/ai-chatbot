@@ -133,7 +133,12 @@ class CheckpointTrustTests(unittest.TestCase):
         self.assertEqual(q.Runner.open(path, pinned, **self.inputs)
                          .confirm(0, pinned).trust, "EXTERNAL_ANCHOR_UNVERIFIED")
 
-    def finalize(self, pinned, *, receipt_pair=None, seen=None):
+    def store(self):
+        tmp = TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        return receipt.ReplayStore.create(Path(tmp.name) / "replay.db")
+
+    def finalize(self, pinned, *, receipt_pair=None, store=None):
         material = self.inputs
         return custody.finalize(
             material["custody_raw"], material["custody_pin"],
@@ -144,7 +149,7 @@ class CheckpointTrustTests(unittest.TestCase):
             journal_root=self.run_spec.genesis, tick=5,
             receipt_raw=None if receipt_pair is None else receipt_pair[0],
             receipt_pin=None if receipt_pair is None else receipt_pair[1],
-            trusted=trusted(), seen=seen)
+            trusted=trusted(), store=store)
 
     def test_checkpoint_only_finalization_is_unverified(self):
         _, _, pinned = self.appended()
@@ -160,11 +165,18 @@ class CheckpointTrustTests(unittest.TestCase):
     def test_mock_external_receipt_is_labelled_and_replay_protected(self):
         _, _, pinned = self.appended()
         signed = sign_receipt(self.inputs, pinned, root=self.run_spec.genesis)
-        seen = set()
-        finalized = self.finalize(pinned, receipt_pair=signed, seen=seen)
+        store = self.store()
+        finalized = self.finalize(pinned, receipt_pair=signed, store=store)
         self.assertEqual(finalized.trust, "MOCK_EXTERNAL_RECEIPT")
+        self.assertEqual(finalized.replay, "MOCK_CONSUMED_ONCE")
         with self.assertRaisesRegex(h.Invalid, "receipt-replay"):
-            self.finalize(pinned, receipt_pair=signed, seen=seen)
+            self.finalize(pinned, receipt_pair=signed, store=store)
+
+    def test_receipt_requires_a_persistent_replay_store(self):
+        _, _, pinned = self.appended()
+        signed = sign_receipt(self.inputs, pinned, root=self.run_spec.genesis)
+        with self.assertRaisesRegex(h.Invalid, "replay-store-required"):
+            self.finalize(pinned, receipt_pair=signed)
 
     def test_receipt_rejects_tamper_stale_issuer_and_binding(self):
         _, _, pinned = self.appended()
@@ -183,7 +195,7 @@ class CheckpointTrustTests(unittest.TestCase):
              "receipt-binding"),
         ):
             with self.subTest(code=code), self.assertRaisesRegex(h.Invalid, code):
-                self.finalize(pinned, receipt_pair=pair)
+                self.finalize(pinned, receipt_pair=pair, store=self.store())
 
 
 class CustodyModelTests(unittest.TestCase):
