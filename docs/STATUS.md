@@ -1,5 +1,17 @@
 # AI ChatBot — remote status
 
+## Issue #72 — Public synthetic qualification
+
+- STATE: IN_PROGRESS — Round 2 targeted hardening on the remediation branch; independent review remains `INDEPENDENT_REVIEW_BLOCKED`; PR #73 stays Draft and unmerged.
+- GATE: 1, offline public remediation under [Issue #72](https://github.com/kha997/ai-chatbot/issues/72), audited baseline `0d884c9152d3812ad7f02b44f93f1375229c89ab`, base `588b8fe1d3e54161fe194739d2c06552ca8c79f4`.
+- RECOMMENDATION: CONDITIONAL for the public-synthetic layer only. Round 1 code defects are fixed; Round 2 closes caller-chosen ledger roots, in-memory replay and reviewer ordering on the public path. F3/F6 real-custody claims remain `NOT_VERIFIED`.
+- COMPLETED: [F3–F7 matrix and contract](OFFLINE_QUALIFICATION_72.md); [Round 1 remediation report](reviews/PR73_F3_F7_REMEDIATION.md); [Round 2 hardening report](reviews/PR73_ROUND2_HARDENING.md) with red/green evidence, traceability and residual risks.
+- VALIDATION: Windows Python 3.14.3 — offline suite 145/145 PASS (21 remediation + 25 hardening regressions), quote suite 73/73 PASS, `offline_corpus63` validator PASS, `git diff --check` exit 0. Route-free WSL netns: 145 + 73 PASS, empty IPv4/IPv6 routes. Round 2 probe `probes_failed=0` on Windows and route-free WSL. A separate same-vendor read-only agent session reran probes and suites and confirmed the fixes (report §7); it is not third-party review. Hosted CI `NOT_RUN` — workflows trigger on `pull_request` only and this branch has no PR. Private audit, provider/model and six E2Es `NOT_RUN`.
+- OPEN RISKS: HIGH — `BLOCKED_PRIVATE_AUDIT`, `BLOCKED_HELDOUT_CUSTODY_WORKFLOW`, `BLOCKED_CORPUS_BREADTH`, `BLOCKED_COST_CONTROL`; journal + checkpoint compromise remains an external trust boundary; replay store is local mock state (delete/copy/subclass resets it), not external trust.
+- NEXT: Obtain qualified third-party review of the Round 2 diff at the exact technical SHA; verify an isolated zero-egress audit environment. Issue #63 stays OPEN.
+- OWNER DECISION: Architecture review of the public package after independent audit evidence. This work does not approve the Owner Gate or merge PR #73.
+- HEAD/BRANCH/PR: `remediation/f3-f7-pr73` (pushed to Draft PR #73); Round 2 reviewed source SHA `329813e3db83265d4f6ed7862bcf9715ecb70ed5`; exact reporting HEAD and evidence are recorded on [Issue #72](https://github.com/kha997/ai-chatbot/issues/72) / PR #73.
+
 ## Issue #69 — Public harness remediation (2026-11-24)
 
 - STATE: BLOCKED — PARTIAL_REMEDIATION / BLOCKED pending Qoder re-review.
